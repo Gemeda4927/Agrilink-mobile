@@ -1,55 +1,66 @@
-class AuthModel {
+class AuthUser {
   final String id;
-  final String phone;
   final String email;
-  final String password;
-  final Role role;
-  final UserStatus status;
-  final DateTime? lastLogin;
+  final String phone;
+  final String role;
+  final String status;
+  final String? firebaseUid;
   final DateTime createdAt;
 
-  AuthModel({
+  AuthUser({
     required this.id,
-    required this.phone,
     required this.email,
-    required this.password,
+    required this.phone,
     required this.role,
     required this.status,
-    this.lastLogin,
+    this.firebaseUid,
     required this.createdAt,
   });
 
-  // From JSON
-  factory AuthModel.fromJson(Map<String, dynamic> json) {
-    return AuthModel(
-      id: json['id'],
-      phone: json['phone'],
-      email: json['email'],
-      password: json['password'],
-      role: Role.values.firstWhere((e) => e.name == json['role']),
-      status: UserStatus.values.firstWhere((e) => e.name == json['status']),
-      lastLogin: json['lastLogin'] != null
-          ? DateTime.parse(json['lastLogin'])
-          : null,
-      createdAt: DateTime.parse(json['createdAt']),
+  factory AuthUser.fromJson(Map<String, dynamic> json) {
+    return AuthUser(
+      id: json['id'] ?? json['_id'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone'] ?? '',
+      role: json['role'] ?? '',
+      status: json['status'] ?? 'active',
+      firebaseUid: json['firebaseUid'],
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt']) 
+          : DateTime.now(),
     );
   }
 
-  // To JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'phone': phone,
       'email': email,
-      'password': password,
-      'role': role.name,
-      'status': status.name,
-      'lastLogin': lastLogin?.toIso8601String(),
+      'phone': phone,
+      'role': role,
+      'status': status,
+      'firebaseUid': firebaseUid,
       'createdAt': createdAt.toIso8601String(),
     };
   }
 }
 
-enum Role { FARMER, BUYER, AGENT, ADMIN }
+class AuthResponse {
+  final AuthUser user;
+  final String token;
 
-enum UserStatus { ACTIVE, INACTIVE, PENDING }
+  AuthResponse({required this.user, required this.token});
+
+  factory AuthResponse.fromJson(Map<String, dynamic> json) {
+    return AuthResponse(
+      user: AuthUser.fromJson(json['user'] ?? {}),
+      token: json['token'] ?? json['accessToken'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'user': user.toJson(),
+      'token': token,
+    };
+  }
+}
