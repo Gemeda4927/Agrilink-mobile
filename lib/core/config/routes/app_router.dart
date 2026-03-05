@@ -1,6 +1,9 @@
 import 'package:agrilink/features/SplashScreen/splash_page.dart';
 import 'package:agrilink/features/auth/presentation/login_page.dart';
+import 'package:agrilink/features/auth/presentation/forgot_password_page.dart';
 import 'package:agrilink/features/home/homescreen.dart';
+import 'package:agrilink/features/auth/presentation/otp_verify_page.dart';
+import 'package:agrilink/features/auth/presentation/signup_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'route_name.dart';
@@ -20,7 +23,8 @@ class PlaceholderScreen extends StatelessWidget {
 }
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _shellNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   debugLogDiagnostics: true,
@@ -40,13 +44,30 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RouteName.signup,
       name: RouteName.signup,
-      builder: (context, state) => const PlaceholderScreen(title: 'Signup'),
+      builder: (context, state) => SignUpPage(),
     ),
     GoRoute(
-      path: RouteName.todo,
-      name: RouteName.todo,
-      builder: (context, state) => const PlaceholderScreen(title: 'Todo'),
+      path: RouteName.forgotPassword,
+      name: RouteName.forgotPassword,
+      builder: (context, state) => ForgotPasswordPage(),
     ),
+  
+
+  GoRoute(
+  path: RouteName.verifyOtp,
+  name: RouteName.verifyOtp,
+  builder: (context, state) {
+    // Get the identifier and purpose from the extra
+    final extra = state.extra as Map<String, dynamic>? ?? {};
+    final identifier = extra['identifier'] as String? ?? '';
+    final purpose = extra['purpose'] as String? ?? 'SIGNUP';
+
+    return VerifyOtpPage(
+      identifier: identifier,
+      purpose: purpose,
+    );
+  },
+),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) => Scaffold(body: child),
@@ -59,7 +80,8 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: RouteName.wishlist,
           name: RouteName.wishlist,
-          builder: (context, state) => const PlaceholderScreen(title: 'Wishlist'),
+          builder: (context, state) =>
+              const PlaceholderScreen(title: 'Wishlist'),
         ),
         GoRoute(
           path: RouteName.chat,
@@ -74,17 +96,20 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: RouteName.profile,
           name: RouteName.profile,
-          builder: (context, state) => const PlaceholderScreen(title: 'Profile'),
+          builder: (context, state) =>
+              const PlaceholderScreen(title: 'Profile'),
         ),
         GoRoute(
           path: RouteName.itemDetails,
           name: RouteName.itemDetails,
-          builder: (context, state) => const PlaceholderScreen(title: 'Item Details'),
+          builder: (context, state) =>
+              const PlaceholderScreen(title: 'Item Details'),
         ),
         GoRoute(
           path: RouteName.categoryDetails,
           name: RouteName.categoryDetails,
-          builder: (context, state) => const PlaceholderScreen(title: 'Category Details'),
+          builder: (context, state) =>
+              const PlaceholderScreen(title: 'Category Details'),
         ),
       ],
     ),

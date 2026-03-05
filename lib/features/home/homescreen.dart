@@ -1,15 +1,16 @@
-import 'package:agrilink/features/auth/presentation/bloc/auth_event.dart';
+import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authBloc = context.read<AuthBloc>();
+    context.read<AuthBloc>();
 
     return Scaffold(
       appBar: AppBar(
@@ -18,9 +19,7 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              // Trigger logout
-              authBloc.add(LogoutEvent());
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              context.goNamed(RouteName.login);
             },
           ),
         ],

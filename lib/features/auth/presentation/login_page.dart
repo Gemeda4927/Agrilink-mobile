@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_event.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,7 +15,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
+
+  final TextEditingController _identifierController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   @override
@@ -28,38 +30,55 @@ class _LoginPageState extends State<LoginPage> {
         child: SizedBox(
           height: size.height,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo or App Name
                 const Icon(Icons.agriculture, size: 80, color: Colors.green),
                 const SizedBox(height: 16),
                 const Text(
-                  'Welcome Back!',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                  "Welcome Back!",
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Login to your account',
+                  "Login using email or phone",
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 32),
+
                 Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      // Email Field
+                      // Email or Phone
                       TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
+                        controller: _identifierController,
                         decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.email),
-                          labelText: 'Email',
+                          prefixIcon: const Icon(Icons.person),
+                          labelText: "Email or Phone",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Enter email or phone";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.lock),
+                          labelText: "Password",
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -67,56 +86,56 @@ class _LoginPageState extends State<LoginPage> {
                           fillColor: Colors.white,
                         ),
                         validator: (value) =>
-                            value != null && value.contains('@')
-                            ? null
-                            : 'Enter a valid email',
+                            value != null && value.length >= 6
+                                ? null
+                                : "Password must be at least 6 characters",
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Forgot Password
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            context.goNamed(RouteName.forgotPassword);
+                          },
+                          child: const Text(
+                            "Forgot Password?",
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      // Password Field
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.lock),
-                          labelText: 'Password',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                        ),
-                        validator: (value) => value != null && value.length >= 6
-                            ? null
-                            : 'Password must be at least 6 characters',
-                      ),
-                      const SizedBox(height: 24),
-                      // BlocListener handles auth state changes
+
+                      // BlocListener + BlocBuilder
                       BlocListener<AuthBloc, AuthState>(
                         listener: (context, state) {
                           if (state is AuthSuccess) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'Welcome ${state.authResponse.user.email}',
-                                ),
+                                    "Welcome ${state.authResponse.user.email}"),
                               ),
                             );
-                            Navigator.pushReplacementNamed(
-                              context,
-                              RouteName.home,
-                            );
-                          } else if (state is AuthFailure) {
+                            context.goNamed(RouteName.home);
+                          }
+
+                          if (state is AuthFailure) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(state.error),
-                                backgroundColor: Colors.redAccent,
+                                backgroundColor: Colors.red,
                               ),
                             );
-                          } else if (state is AuthMessage) {
+                          }
+
+                          if (state is AuthMessage) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(state.message),
-                                backgroundColor: Colors.blueAccent,
+                                backgroundColor: Colors.blue,
                               ),
                             );
                           }
@@ -126,6 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                             if (state is AuthLoading) {
                               return const CircularProgressIndicator();
                             }
+
                             return Column(
                               children: [
                                 // Login Button
@@ -141,27 +161,32 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     onPressed: () {
                                       if (_formKey.currentState!.validate()) {
-                                        authBloc.add(
-                                          SignInEvent(
-                                            data: {
-                                              'email': _emailController.text
-                                                  .trim(),
-                                              'password': _passwordController
-                                                  .text
-                                                  .trim(),
-                                            },
-                                          ),
-                                        );
+                                        final input =
+                                            _identifierController.text.trim();
+
+                                        Map<String, dynamic> data = {
+                                          "password":
+                                              _passwordController.text.trim(),
+                                        };
+
+                                        if (input.contains("@")) {
+                                          data["email"] = input;
+                                        } else {
+                                          data["phone"] = input;
+                                        }
+
+                                        authBloc.add(SignInEvent(data: data));
                                       }
                                     },
                                     child: const Text(
-                                      'Login',
+                                      "Login",
                                       style: TextStyle(fontSize: 18),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                // Google Sign-In
+
+                                // Google Login
                                 SizedBox(
                                   width: double.infinity,
                                   height: 50,
@@ -172,7 +197,7 @@ class _LoginPageState extends State<LoginPage> {
                                       size: 28,
                                     ),
                                     label: const Text(
-                                      'Sign in with Google',
+                                      "Sign in with Google",
                                       style: TextStyle(fontSize: 16),
                                     ),
                                     style: OutlinedButton.styleFrom(
@@ -187,23 +212,28 @@ class _LoginPageState extends State<LoginPage> {
                                     },
                                   ),
                                 ),
+                                const SizedBox(height: 20),
+
+                                // Create Account Link
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Text("Don't have an account?"),
+                                    TextButton(
+                                      onPressed: () {
+                                        context.goNamed(RouteName.signup);
+                                      },
+                                      child: const Text(
+                                        "Create Account",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    )
+                                  ],
+                                )
                               ],
                             );
                           },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () {
-                          // Navigate to Forgot Password page
-                          // Navigator.pushNamed(context, RouteName.forgotPassword);
-                        },
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(
-                            decoration: TextDecoration.underline,
-                            color: Colors.grey,
-                          ),
                         ),
                       ),
                     ],
