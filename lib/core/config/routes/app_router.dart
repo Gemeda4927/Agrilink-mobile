@@ -1,23 +1,27 @@
+import 'package:agrilink/base_page.dart';
+import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/features/SplashScreen/splash_page.dart';
 import 'package:agrilink/features/auth/presentation/login_page.dart';
-import 'package:agrilink/features/auth/presentation/forgot_password_page.dart';
-import 'package:agrilink/features/home/homescreen.dart';
-import 'package:agrilink/features/auth/presentation/otp_verify_page.dart';
 import 'package:agrilink/features/auth/presentation/signup_page.dart';
+import 'package:agrilink/features/auth/presentation/forgot_password_page.dart';
+import 'package:agrilink/features/auth/presentation/resetPassword.dart';
+import 'package:agrilink/features/auth/presentation/otp_verify_page.dart';
+import 'package:agrilink/features/home/homescreen.dart';
+import 'package:agrilink/features/marketplace/marketplace.dart';
+import 'package:agrilink/features/recommendation/aiRecommendation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'route_name.dart';
 
-// Placeholder screens
 class PlaceholderScreen extends StatelessWidget {
   final String title;
+
   const PlaceholderScreen({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: Center(child: Text('Screen: $title')),
+      body: Center(child: Text(title)),
     );
   }
 }
@@ -31,85 +35,114 @@ final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: RouteName.splash,
   routes: [
+    /// SPLASH
     GoRoute(
       path: RouteName.splash,
       name: RouteName.splash,
       builder: (context, state) => SplashScreen(),
     ),
+
+    /// LOGIN
     GoRoute(
       path: RouteName.login,
       name: RouteName.login,
-      builder: (context, state) => LoginPage(),
+      builder: (context, state) => const LoginPage(),
     ),
+
+    /// SIGNUP
     GoRoute(
       path: RouteName.signup,
       name: RouteName.signup,
-      builder: (context, state) => SignUpPage(),
+      builder: (context, state) => const SignUpPage(),
     ),
+
+    /// FORGOT PASSWORD
     GoRoute(
       path: RouteName.forgotPassword,
       name: RouteName.forgotPassword,
-      builder: (context, state) => ForgotPasswordPage(),
+      builder: (context, state) => const ForgotPasswordPage(),
     ),
-  
 
-  GoRoute(
-  path: RouteName.verifyOtp,
-  name: RouteName.verifyOtp,
-  builder: (context, state) {
-    // Get the identifier and purpose from the extra
-    final extra = state.extra as Map<String, dynamic>? ?? {};
-    final identifier = extra['identifier'] as String? ?? '';
-    final purpose = extra['purpose'] as String? ?? 'SIGNUP';
+    /// VERIFY OTP
+    GoRoute(
+      path: RouteName.verifyOtp,
+      name: RouteName.verifyOtp,
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        final identifier = extra['identifier'] ?? '';
+        final purpose = extra['purpose'] ?? 'SIGNUP';
 
-    return VerifyOtpPage(
-      identifier: identifier,
-      purpose: purpose,
-    );
-  },
-),
+        return VerifyOtpPage(identifier: identifier, purpose: purpose);
+      },
+    ),
+
+    /// RESET PASSWORD
+    GoRoute(
+      path: RouteName.resetPassword,
+      name: RouteName.resetPassword,
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+
+        return ResetPasswordPage(extra: extra);
+      },
+    ),
+
+    /// SHELL ROUTE (BOTTOM NAVIGATION)
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) => Scaffold(body: child),
+      builder: (context, state, child) {
+        return BasePage(child: child);
+      },
       routes: [
+        /// HOME
         GoRoute(
           path: RouteName.home,
           name: RouteName.home,
           builder: (context, state) => const HomeScreen(),
         ),
+
         GoRoute(
-          path: RouteName.wishlist,
-          name: RouteName.wishlist,
-          builder: (context, state) =>
-              const PlaceholderScreen(title: 'Wishlist'),
+          path: RouteName.marketplace,
+          name: RouteName.marketplace,
+          builder: (context, state) => MarketplaceScreen(),
         ),
+
+        /// CHAT
         GoRoute(
-          path: RouteName.chat,
-          name: RouteName.chat,
-          builder: (context, state) => const PlaceholderScreen(title: 'Chat'),
+          path: RouteName.aiRecommendation,
+          name: RouteName.aiRecommendation,
+          builder: (context, state) => AIRecommendationScreen(),
         ),
-        GoRoute(
-          path: RouteName.cart,
-          name: RouteName.cart,
-          builder: (context, state) => const PlaceholderScreen(title: 'Cart'),
-        ),
+
+        /// PROFILE
         GoRoute(
           path: RouteName.profile,
           name: RouteName.profile,
           builder: (context, state) =>
-              const PlaceholderScreen(title: 'Profile'),
+              const PlaceholderScreen(title: "Profile"),
         ),
+
+        /// CART
+        GoRoute(
+          path: RouteName.cart,
+          name: RouteName.cart,
+          builder: (context, state) => const PlaceholderScreen(title: "Cart"),
+        ),
+
+        /// ITEM DETAILS
         GoRoute(
           path: RouteName.itemDetails,
           name: RouteName.itemDetails,
           builder: (context, state) =>
-              const PlaceholderScreen(title: 'Item Details'),
+              const PlaceholderScreen(title: "Item Details"),
         ),
+
+        /// CATEGORY DETAILS
         GoRoute(
           path: RouteName.categoryDetails,
           name: RouteName.categoryDetails,
           builder: (context, state) =>
-              const PlaceholderScreen(title: 'Category Details'),
+              const PlaceholderScreen(title: "Category Details"),
         ),
       ],
     ),
