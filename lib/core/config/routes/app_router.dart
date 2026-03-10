@@ -11,6 +11,7 @@ import 'package:agrilink/features/auth/presentation/otp_verify_page.dart';
 import 'package:agrilink/features/home/homescreen.dart';
 import 'package:agrilink/features/marketplace/marketplace.dart';
 import 'package:agrilink/features/recommendation/aiRecommendation.dart';
+import 'package:agrilink/features/registration/presentation/screen/register_page.dart';
 import 'package:agrilink/injector.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -123,8 +124,7 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: RouteName.dashboard,
           name: RouteName.dashboard,
-          builder: (context, state) =>
-              const PlaceholderScreen(title: "Agent Dashboard"),
+          builder: (context, state) => const RegisterPage(),
         ),
 
         GoRoute(

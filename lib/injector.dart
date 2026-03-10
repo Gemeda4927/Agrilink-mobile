@@ -15,11 +15,16 @@ import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 // ================= CATEGORY =================
 import 'package:agrilink/features/category/data/service/category_service.dart';
 import 'package:agrilink/features/category/data/repository/category_repository_impl.dart';
-
 import 'package:agrilink/features/category/domain/usecases/get_categories.dart';
 import 'package:agrilink/features/category/domain/usecases/get_subcategories.dart';
-
 import 'package:agrilink/features/category/presentation/bloc/categories_bloc.dart';
+
+// ================= REGISTRATION =================
+import 'package:agrilink/features/registration/data/services/registration_service.dart';
+import 'package:agrilink/features/registration/data/repositories/registration_repository_impl.dart';
+import 'package:agrilink/features/registration/domain/repositories/registration_repository.dart';
+import 'package:agrilink/features/registration/domain/usecases/registration_usecases.dart';
+import 'package:agrilink/features/registration/presentation/bloc/registration_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -35,9 +40,7 @@ Future<void> initInjector() async {
 
   sl.registerSingleton<TokenManager>(tokenManager);
 
-  sl.registerSingleton<DioClient>(
-    DioClient(tokenManager: sl<TokenManager>()),
-  );
+  sl.registerSingleton<DioClient>(DioClient(tokenManager: sl<TokenManager>()));
 
   // ==================================================
   // ================= AUTH FEATURE ===================
@@ -61,13 +64,9 @@ Future<void> initInjector() async {
   );
 
   // -------- Auth UseCases --------
-  sl.registerSingleton<SignInUseCase>(
-    SignInUseCase(sl<AuthRepositoryImpl>()),
-  );
+  sl.registerSingleton<SignInUseCase>(SignInUseCase(sl<AuthRepositoryImpl>()));
 
-  sl.registerSingleton<SignUpUseCase>(
-    SignUpUseCase(sl<AuthRepositoryImpl>()),
-  );
+  sl.registerSingleton<SignUpUseCase>(SignUpUseCase(sl<AuthRepositoryImpl>()));
 
   sl.registerSingleton<VerifyOtpUseCase>(
     VerifyOtpUseCase(sl<AuthRepositoryImpl>()),
@@ -122,9 +121,30 @@ Future<void> initInjector() async {
 
   // -------- Category Bloc --------
   sl.registerFactory<CategoryBloc>(
-    () => CategoryBloc(
-      sl<GetCategories>(),
-      sl<GetSubCategories>(),
-    ),
+    () => CategoryBloc(sl<GetCategories>(), sl<GetSubCategories>()),
+  );
+
+  // ==================================================
+  // ================= REGISTRATION FEATURE ===========
+  // ==================================================
+
+  // -------- Registration Service --------
+  sl.registerSingleton<RegistrationService>(
+    RegistrationService(dioClient: sl<DioClient>()),
+  );
+
+  // -------- Registration Repository --------
+  sl.registerSingleton<RegistrationRepository>(
+    RegistrationRepositoryImpl(sl<RegistrationService>()),
+  );
+
+  // -------- Registration UseCases --------
+  sl.registerSingleton<RegistrationUseCases>(
+    RegistrationUseCases(sl<RegistrationRepository>()),
+  );
+
+  // -------- Registration Bloc --------
+  sl.registerFactory<RegistrationBloc>(
+    () => RegistrationBloc(sl<RegistrationUseCases>()),
   );
 }
