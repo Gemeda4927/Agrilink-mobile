@@ -53,15 +53,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     });
 
     // Google SignIn
-    // on<GoogleSignInEvent>((event, emit) async {
-    //   emit(AuthLoading());
-    //   try {
-    //     final auth = await googleSignInUseCase.execute();
-    //     emit(AuthSuccess(authResponse: auth));
-    //   } catch (e) {
-    //     emit(AuthFailure(error: e.toString()));
-    //   }
-    // });
+    on<GoogleSignInEvent>((event, emit) async {
+      emit(AuthLoading());
+      try {
+        final auth = await googleSignInUseCase.execute();
+        emit(AuthSuccess(authResponse: auth));
+      } catch (e) {
+        emit(AuthFailure(error: e.toString()));
+      }
+    });
 
     // Forgot Password
     on<ForgotPasswordEvent>((event, emit) async {
@@ -89,7 +89,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutEvent>((event, emit) async {
       emit(AuthLoading());
       try {
-        // Just emit initial state after logout
+        // TODO: Add logout use case when implemented
+        // await logoutUseCase.execute();
         emit(AuthInitial());
       } catch (e) {
         emit(AuthFailure(error: e.toString()));

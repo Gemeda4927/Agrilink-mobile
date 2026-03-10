@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'app.dart';
-import 'injector.dart';
+import 'package:agrilink/app.dart';
+import 'package:agrilink/injector.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

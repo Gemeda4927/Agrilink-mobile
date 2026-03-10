@@ -7,7 +7,8 @@ class RouteName {
   static const String verifyOtp = '/verifyOtp';
   static const String forgotPassword = '/forgotpassword';
   static const String resetPassword = '/resetPassword';
-  static const String cart = '/cart';
+  static const String cart = '/cart'; 
+  static const String dashboard ='/dashboard';
 
   // Main tabs
   static const String home = '/home';

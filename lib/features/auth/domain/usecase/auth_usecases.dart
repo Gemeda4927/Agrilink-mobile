@@ -61,6 +61,30 @@ class VerifyOtpUseCase {
   }
 }
 
+/// Google SignIn Use Case
+class GoogleSignInUseCase {
+  final AuthRepository repository;
+
+  GoogleSignInUseCase(this.repository);
+
+  Future<AuthResponseEntity> execute() async {
+    final authResponse = await repository.googleSignin();
+
+    return AuthResponseEntity(
+      user: AuthUserEntity(
+        id: authResponse.user.id,
+        email: authResponse.user.email,
+        phone: authResponse.user.phone,
+        role: authResponse.user.role,
+        status: authResponse.user.status,
+        firebaseUid: authResponse.user.firebaseUid,
+        createdAt: authResponse.user.createdAt,
+      ),
+      token: authResponse.token,
+    );
+  }
+}
+
 /// Forgot Password Use Case
 class ForgotPasswordUseCase {
   final AuthRepository repository;
@@ -81,30 +105,4 @@ class ResetPasswordUseCase {
   Future<String> execute(Map<String, dynamic> data) async {
     return await repository.resetPassword(data);
   }
-}
-
-/// Google SignIn Use Case
-class GoogleSignInUseCase {
-  final AuthRepository repository;
-
-  GoogleSignInUseCase(this.repository);
-
-  // Future<AuthResponseEntity> execute() async {
-  //   final authResponse = await repository.googleSignin();/
-
-  //   return AuthResponseEntity(
-  //     user: AuthUserEntity(
-  //       id: authResponse.user.id,
-  //       email: authResponse.user.email,
-  //       phone: authResponse.user.phone,
-  //       role: authResponse.user.role,
-  //       status: authResponse.user.status,
-  //       firebaseUid: authResponse.user.firebaseUid,
-  //       createdAt: authResponse.user.createdAt,
-  //     ),
-  //     token: authResponse.token,
-  //   );
-  // }
-
-
 }

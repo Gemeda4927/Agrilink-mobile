@@ -2,12 +2,16 @@ import 'package:agrilink/features/auth/data/model/auth_model.dart';
 import 'package:agrilink/core/network/token_manager.dart';
 import 'package:agrilink/features/auth/data/service/auth_service.dart';
 import 'package:agrilink/features/auth/domain/repository/auth_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart' show User;
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthService authService;
   final TokenManager tokenManager;
 
-  AuthRepositoryImpl({required this.authService, required this.tokenManager});
+  AuthRepositoryImpl({
+    required this.authService,
+    required this.tokenManager,
+  });
 
   @override
   Future<String> signup(Map<String, dynamic> data) async {
@@ -37,16 +41,22 @@ class AuthRepositoryImpl implements AuthRepository {
     return authResponse;
   }
 
-  // @override
-  // Future<AuthResponse> googleSignin() async {
-  //   final json = await authService.googleSignin();
-  //   final authResponse = AuthResponse.fromJson(json);
+  @override
+  Future<AuthResponse> googleSignin() async {
+    // Step 1: Sign in with Google via Firebase
+    final User? user = await authService.signInWithGoogle();
+    if (user == null) throw Exception('Google Sign-In cancelled');
 
-  //   if (authResponse.token.isNotEmpty) {
-  //     await tokenManager.saveToken(authResponse.token);
-  //   }
-  //   return authResponse;
-  // }
+    // Step 2: Send token to your backend
+    final json = await authService.sendGoogleTokenToBackend(user);
+    final authResponse = AuthResponse.fromJson(json);
+
+    // Step 3: Save token locally
+    if (authResponse.token.isNotEmpty) {
+      await tokenManager.saveToken(authResponse.token);
+    }
+    return authResponse;
+  }
 
   @override
   Future<String> forgotPassword(Map<String, dynamic> data) async {

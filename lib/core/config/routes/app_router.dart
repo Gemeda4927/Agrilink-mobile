@@ -1,6 +1,8 @@
 import 'package:agrilink/base_page.dart';
 import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/features/SplashScreen/splash_page.dart';
+import 'package:agrilink/features/auth/data/service/auth_service.dart';
+import 'package:agrilink/features/auth/domain/entities/auth_user.dart';
 import 'package:agrilink/features/auth/presentation/login_page.dart';
 import 'package:agrilink/features/auth/presentation/signup_page.dart';
 import 'package:agrilink/features/auth/presentation/forgot_password_page.dart';
@@ -9,6 +11,7 @@ import 'package:agrilink/features/auth/presentation/otp_verify_page.dart';
 import 'package:agrilink/features/home/homescreen.dart';
 import 'package:agrilink/features/marketplace/marketplace.dart';
 import 'package:agrilink/features/recommendation/aiRecommendation.dart';
+import 'package:agrilink/injector.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -35,35 +38,30 @@ final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: RouteName.splash,
   routes: [
-    /// SPLASH
     GoRoute(
       path: RouteName.splash,
       name: RouteName.splash,
       builder: (context, state) => SplashScreen(),
     ),
 
-    /// LOGIN
     GoRoute(
       path: RouteName.login,
       name: RouteName.login,
       builder: (context, state) => const LoginPage(),
     ),
 
-    /// SIGNUP
     GoRoute(
       path: RouteName.signup,
       name: RouteName.signup,
       builder: (context, state) => const SignUpPage(),
     ),
 
-    /// FORGOT PASSWORD
     GoRoute(
       path: RouteName.forgotPassword,
       name: RouteName.forgotPassword,
       builder: (context, state) => const ForgotPasswordPage(),
     ),
 
-    /// VERIFY OTP
     GoRoute(
       path: RouteName.verifyOtp,
       name: RouteName.verifyOtp,
@@ -76,25 +74,40 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    /// RESET PASSWORD
     GoRoute(
       path: RouteName.resetPassword,
       name: RouteName.resetPassword,
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-
         return ResetPasswordPage(extra: extra);
       },
     ),
 
-    /// SHELL ROUTE (BOTTOM NAVIGATION)
+    /// MAIN APP SHELL
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) {
-        return BasePage(child: child);
+        return FutureBuilder<AuthUserEntity?>(
+          future: sl<AuthService>().getLoggedInUser(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final user = snapshot.data;
+
+            /// if user not logged in redirect to login
+            if (user == null) {
+              return const LoginPage();
+            }
+
+            return BasePage(child: child, user: user);
+          },
+        );
       },
       routes: [
-        /// HOME
         GoRoute(
           path: RouteName.home,
           name: RouteName.home,
@@ -107,14 +120,19 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => MarketplaceScreen(),
         ),
 
-        /// CHAT
+        GoRoute(
+          path: RouteName.dashboard,
+          name: RouteName.dashboard,
+          builder: (context, state) =>
+              const PlaceholderScreen(title: "Agent Dashboard"),
+        ),
+
         GoRoute(
           path: RouteName.aiRecommendation,
           name: RouteName.aiRecommendation,
           builder: (context, state) => AIRecommendationScreen(),
         ),
 
-        /// PROFILE
         GoRoute(
           path: RouteName.profile,
           name: RouteName.profile,
@@ -122,14 +140,12 @@ final GoRouter appRouter = GoRouter(
               const PlaceholderScreen(title: "Profile"),
         ),
 
-        /// CART
         GoRoute(
           path: RouteName.cart,
           name: RouteName.cart,
           builder: (context, state) => const PlaceholderScreen(title: "Cart"),
         ),
 
-        /// ITEM DETAILS
         GoRoute(
           path: RouteName.itemDetails,
           name: RouteName.itemDetails,
@@ -137,7 +153,6 @@ final GoRouter appRouter = GoRouter(
               const PlaceholderScreen(title: "Item Details"),
         ),
 
-        /// CATEGORY DETAILS
         GoRoute(
           path: RouteName.categoryDetails,
           name: RouteName.categoryDetails,
