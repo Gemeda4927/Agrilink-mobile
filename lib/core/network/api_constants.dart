@@ -23,5 +23,6 @@ class ApiConstants {
   static const String kebeles = "$baseUrl/kebeles";
   static const String kebelesByWoreda = "$baseUrl/kebeles/by-woreda";
   static const String register = "$baseUrl/auth/signup";
+  static const String roleRequest = "/role-request";
 
 }
