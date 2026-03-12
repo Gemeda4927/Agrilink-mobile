@@ -4,6 +4,9 @@ import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_bloc.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_event.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_state.dart';
+import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
+import 'package:agrilink/features/role_request/presentation/bloc/role_request_event.dart';
+import 'package:agrilink/features/role_request/presentation/bloc/role_request_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -47,19 +50,12 @@ class HomeScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
                   const Text(
                     'Categories',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 10),
-
                   Expanded(
                     child: BlocBuilder<CategoryBloc, CategoryState>(
                       builder: (context, state) {
@@ -96,6 +92,12 @@ class HomeScreen extends StatelessWidget {
 
   /// Drawer
   Drawer _buildDrawer(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
+    String role = "";
+    if (authState is AuthSuccess) {
+      role = authState.authResponse.user.role;
+    }
+
     return Drawer(
       child: ListView(
         children: [
@@ -121,6 +123,49 @@ class HomeScreen extends StatelessWidget {
             title: const Text('Profile'),
             onTap: () => context.goNamed(RouteName.profile),
           ),
+
+          // Show role status / request only for non-AGENT & non-ADMIN
+          if (role == 'AGENT')
+            const ListTile(
+              leading: Icon(Icons.handshake),
+              title: Text('Role: AGENT'),
+            )
+          else if (role != 'ADMIN')
+            BlocConsumer<RoleRequestBloc, RoleRequestState>(
+              listener: (context, state) {
+                if (state is RoleRequestError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message)),
+                  );
+                }
+                if (state is RoleRequestSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Request Status: ${state.status}')),
+                  );
+                }
+              },
+              builder: (context, state) {
+                String title = 'Join as Agent';
+
+                if (state is RoleRequestLoading) {
+                  title = 'Sending request...';
+                } else if (state is RoleRequestSuccess) {
+                  title = 'Status: ${state.status}';
+                }
+
+                return ListTile(
+                  leading: const Icon(Icons.handshake),
+                  title: Text(title),
+                  onTap: state is RoleRequestLoading
+                      ? null
+                      : () {
+                          context.read<RoleRequestBloc>().add(
+                                CreateRoleRequestEvent(),
+                              );
+                        },
+                );
+              },
+            ),
         ],
       ),
     );
@@ -139,9 +184,7 @@ class HomeScreen extends StatelessWidget {
             title: Text(category.name),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
-              context.read<CategoryBloc>().add(
-                    LoadSubCategories(category.id),
-                  );
+              context.read<CategoryBloc>().add(LoadSubCategories(category.id));
             },
           ),
         );
@@ -150,30 +193,23 @@ class HomeScreen extends StatelessWidget {
   }
 
   /// SubCategory List
-  Widget _buildSubCategoryList(
-      BuildContext context, SubCategoryLoaded state) {
+  Widget _buildSubCategoryList(BuildContext context, SubCategoryLoaded state) {
     final subs = state.subCategories;
 
     if (subs.isEmpty) {
-      return const Center(
-        child: Text("No subcategories found"),
-      );
+      return const Center(child: Text("No subcategories found"));
     }
 
     return Column(
       children: [
         ElevatedButton.icon(
           onPressed: () {
-            context.read<CategoryBloc>().add(
-                  LoadCategories(),
-                );
+            context.read<CategoryBloc>().add(LoadCategories());
           },
           icon: const Icon(Icons.arrow_back),
           label: const Text("Back to Categories"),
         ),
-
         const SizedBox(height: 10),
-
         Expanded(
           child: ListView.builder(
             itemCount: subs.length,

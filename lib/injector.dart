@@ -1,3 +1,4 @@
+import 'package:agrilink/features/role_request/domain/usecases/create_role_request_usecase.dart';
 import 'package:get_it/get_it.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -26,27 +27,30 @@ import 'package:agrilink/features/registration/domain/repositories/registration_
 import 'package:agrilink/features/registration/domain/usecases/registration_usecases.dart';
 import 'package:agrilink/features/registration/presentation/bloc/registration_bloc.dart';
 
+// ================= ROLE REQUEST =================
+import 'package:agrilink/features/role_request/data/repositories/role_request_repository_impl.dart';
+import 'package:agrilink/features/role_request/data/service/role_request_service.dart';
+import 'package:agrilink/features/role_request/domain/repositories/role_request_repository.dart';
+import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
+
 final sl = GetIt.instance;
 
 Future<void> initInjector() async {
   // ================= FIREBASE =================
   await Firebase.initializeApp();
-
   sl.registerSingleton<FirebaseAuth>(FirebaseAuth.instance);
   sl.registerSingleton<GoogleSignIn>(GoogleSignIn());
 
   // ================= CORE =================
   final tokenManager = await TokenManager.getInstance();
-
   sl.registerSingleton<TokenManager>(tokenManager);
-
   sl.registerSingleton<DioClient>(DioClient(tokenManager: sl<TokenManager>()));
 
   // ==================================================
   // ================= AUTH FEATURE ===================
   // ==================================================
 
-  // -------- Auth Service --------
+  // Auth Service
   sl.registerSingleton<AuthService>(
     AuthService(
       dioClient: sl<DioClient>(),
@@ -55,7 +59,7 @@ Future<void> initInjector() async {
     ),
   );
 
-  // -------- Auth Repository --------
+  // Auth Repository
   sl.registerSingleton<AuthRepositoryImpl>(
     AuthRepositoryImpl(
       authService: sl<AuthService>(),
@@ -63,28 +67,23 @@ Future<void> initInjector() async {
     ),
   );
 
-  // -------- Auth UseCases --------
+  // Auth UseCases
   sl.registerSingleton<SignInUseCase>(SignInUseCase(sl<AuthRepositoryImpl>()));
-
   sl.registerSingleton<SignUpUseCase>(SignUpUseCase(sl<AuthRepositoryImpl>()));
-
   sl.registerSingleton<VerifyOtpUseCase>(
     VerifyOtpUseCase(sl<AuthRepositoryImpl>()),
   );
-
   sl.registerSingleton<GoogleSignInUseCase>(
     GoogleSignInUseCase(sl<AuthRepositoryImpl>()),
   );
-
   sl.registerSingleton<ForgotPasswordUseCase>(
     ForgotPasswordUseCase(sl<AuthRepositoryImpl>()),
   );
-
   sl.registerSingleton<ResetPasswordUseCase>(
     ResetPasswordUseCase(sl<AuthRepositoryImpl>()),
   );
 
-  // -------- Auth Bloc --------
+  // Auth Bloc
   sl.registerFactory<AuthBloc>(
     () => AuthBloc(
       signInUseCase: sl<SignInUseCase>(),
@@ -100,26 +99,21 @@ Future<void> initInjector() async {
   // ================= CATEGORY FEATURE ===============
   // ==================================================
 
-  // -------- Category Service --------
   sl.registerSingleton<CategoryService>(
     CategoryService(dioClient: sl<DioClient>()),
   );
 
-  // -------- Category Repository --------
   sl.registerSingleton<CategoryRepositoryImpl>(
     CategoryRepositoryImpl(service: sl<CategoryService>()),
   );
 
-  // -------- Category UseCases --------
   sl.registerSingleton<GetCategories>(
     GetCategories(sl<CategoryRepositoryImpl>()),
   );
-
   sl.registerSingleton<GetSubCategories>(
     GetSubCategories(sl<CategoryRepositoryImpl>()),
   );
 
-  // -------- Category Bloc --------
   sl.registerFactory<CategoryBloc>(
     () => CategoryBloc(sl<GetCategories>(), sl<GetSubCategories>()),
   );
@@ -128,23 +122,41 @@ Future<void> initInjector() async {
   // ================= REGISTRATION FEATURE ===========
   // ==================================================
 
-  // -------- Registration Service --------
   sl.registerSingleton<RegistrationService>(
     RegistrationService(dioClient: sl<DioClient>()),
   );
 
-  // -------- Registration Repository --------
   sl.registerSingleton<RegistrationRepository>(
     RegistrationRepositoryImpl(sl<RegistrationService>()),
   );
 
-  // -------- Registration UseCases --------
   sl.registerSingleton<RegistrationUseCases>(
     RegistrationUseCases(sl<RegistrationRepository>()),
   );
 
-  // -------- Registration Bloc --------
   sl.registerFactory<RegistrationBloc>(
     () => RegistrationBloc(sl<RegistrationUseCases>()),
+  );
+
+  // ==================================================
+  // ================= ROLE REQUEST FEATURE ==========
+  // ==================================================
+
+  // Role Request Service
+  sl.registerSingleton<RoleRequestService>(RoleRequestService(sl<DioClient>()));
+
+  // Role Request Repository
+  sl.registerSingleton<RoleRequestRepository>(
+    RoleRequestRepositoryImpl(sl<RoleRequestService>()),
+  );
+
+  // Role Request UseCases
+  sl.registerSingleton<RoleRequestUseCases>(
+    RoleRequestUseCases(sl<RoleRequestRepository>()),
+  );
+
+  // Role Request Bloc
+  sl.registerFactory<RoleRequestBloc>(
+    () => RoleRequestBloc(sl<RoleRequestUseCases>()),
   );
 }

@@ -20,4 +20,7 @@ class RouteName {
   static const String todo = '/todo';
   static const String itemDetails = '/itemDetails';
   static const String categoryDetails = '/categoryDetails';
+
+    // ROLE REQUEST
+  static const String roleRequest = "/role-request";
 }
