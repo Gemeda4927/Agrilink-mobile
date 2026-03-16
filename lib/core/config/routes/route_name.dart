@@ -7,20 +7,22 @@ class RouteName {
   static const String verifyOtp = '/verifyOtp';
   static const String forgotPassword = '/forgotpassword';
   static const String resetPassword = '/resetPassword';
-  static const String cart = '/cart'; 
-  static const String dashboard ='/dashboard';
+  static const String cart = '/cart';
+  static const String dashboard = '/dashboard';
 
   // Main tabs
   static const String home = '/home';
   static const String marketplace = '/marketplace';
   static const String aiRecommendation = '/recommendation';
   static const String profile = '/profile';
+  static const String viewProfile = '/view-profile';
+  static const String updateProfile = '/update-profile';
 
   // Other screens
   static const String todo = '/todo';
   static const String itemDetails = '/itemDetails';
   static const String categoryDetails = '/categoryDetails';
 
-    // ROLE REQUEST
+  // ROLE REQUEST
   static const String roleRequest = "/role-request";
 }

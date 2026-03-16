@@ -1,5 +1,4 @@
 class ApiConstants {
-
   static const String baseUrl = "https://agrilink-1-x6ph.onrender.com";
 
   // ================= AUTH =================
@@ -25,4 +24,8 @@ class ApiConstants {
   static const String register = "$baseUrl/auth/signup";
   static const String roleRequest = "/role-request";
 
+  // ================= PROFILE =================
+  static const String profileCreate = "$baseUrl/profile"; 
+  static const String profileUpdate = "$baseUrl/profile"; 
+  static const String profileGetByUser = "$baseUrl/user"; 
 }

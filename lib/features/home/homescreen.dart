@@ -118,11 +118,11 @@ class HomeScreen extends StatelessWidget {
             title: const Text('Marketplace'),
             onTap: () => context.goNamed(RouteName.marketplace),
           ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Profile'),
-            onTap: () => context.goNamed(RouteName.profile),
-          ),
+          // ListTile(
+          //   leading: const Icon(Icons.person),
+          //   title: const Text('Profile'),
+          //   onTap: () => context.goNamed(RouteName.profile),
+          // ),
 
           // Show role status / request only for non-AGENT & non-ADMIN
           if (role == 'AGENT')
