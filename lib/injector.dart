@@ -1,3 +1,8 @@
+import 'package:agrilink/features/profile/data/repository/profile_repository_impl.dart';
+import 'package:agrilink/features/profile/data/services/profile_service.dart';
+import 'package:agrilink/features/profile/domain/repository/profile_repository.dart';
+import 'package:agrilink/features/profile/domain/usecases/profile_usecases.dart';
+import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:agrilink/features/role_request/domain/usecases/create_role_request_usecase.dart';
 import 'package:get_it/get_it.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -158,5 +163,31 @@ Future<void> initInjector() async {
   // Role Request Bloc
   sl.registerFactory<RoleRequestBloc>(
     () => RoleRequestBloc(sl<RoleRequestUseCases>()),
+  );
+
+  // ================= PROFILE FEATURE =================
+  sl.registerSingleton<ProfileService>(
+    ProfileService(dioClient: sl<DioClient>()),
+  );
+
+  sl.registerSingleton<ProfileRepository>(
+    ProfileRepositoryImpl(profileService: sl<ProfileService>()),
+  );
+  sl.registerSingleton<CreateProfileUseCase>(
+    CreateProfileUseCase(sl<ProfileRepository>()),
+  );
+  sl.registerSingleton<UpdateProfileUseCase>(
+    UpdateProfileUseCase(sl<ProfileRepository>()),
+  );
+  sl.registerSingleton<GetProfileUseCase>(
+    GetProfileUseCase(sl<ProfileRepository>()),
+  );
+
+  sl.registerFactory<ProfileBloc>(
+    () => ProfileBloc(
+      createUseCase: sl<CreateProfileUseCase>(),
+      updateUseCase: sl<UpdateProfileUseCase>(),
+      getUseCase: sl<GetProfileUseCase>(),
+    ),
   );
 }

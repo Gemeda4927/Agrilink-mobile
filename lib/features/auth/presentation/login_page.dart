@@ -72,19 +72,15 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const Icon(Icons.agriculture, size: 80, color: Colors.green),
                   const SizedBox(height: 16),
-
                   const Text(
                     "Welcome Back!",
                     style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 8),
-
                   const Text(
                     "Login using email or phone",
                     style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
-
                   const SizedBox(height: 32),
 
                   Form(
@@ -204,7 +200,8 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               );
 
-                              context.goNamed(RouteName.home);
+                              /// ✅ Navigate to Profile screen instead of Home
+                              context.goNamed(RouteName.profile);
                             }
 
                             if (state is AuthFailure) {
@@ -304,7 +301,6 @@ class _LoginPageState extends State<LoginPage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Text("Don't have an account?"),
-
                                       TextButton(
                                         onPressed: () {
                                           context.goNamed(RouteName.signup);

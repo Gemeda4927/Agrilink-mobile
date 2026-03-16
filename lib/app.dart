@@ -6,6 +6,7 @@ import 'package:agrilink/features/registration/presentation/bloc/registration_bl
 import 'package:agrilink/features/registration/presentation/bloc/registration_event.dart';
 import 'package:agrilink/features/role_request/domain/usecases/create_role_request_usecase.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
+import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:agrilink/injector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,6 +34,15 @@ class MyApp extends StatelessWidget {
         // ROLE REQUEST
         BlocProvider<RoleRequestBloc>(
           create: (_) => RoleRequestBloc(sl<RoleRequestUseCases>()),
+        ),
+
+        // PROFILE
+        BlocProvider<ProfileBloc>(
+          create: (_) => ProfileBloc(
+            createUseCase: sl(),
+            updateUseCase: sl(),
+            getUseCase: sl(),
+          ),
         ),
       ],
       child: MaterialApp.router(
