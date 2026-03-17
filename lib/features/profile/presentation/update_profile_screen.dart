@@ -111,7 +111,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     context.read<ProfileBloc>().add(
       UpdateProfile(
         fullName: _nameController.text.trim(),
-        kebeleld: selectedKebele!,
+        kebeleId: selectedKebele!,
         image: _selectedImage,
       ),
     );
