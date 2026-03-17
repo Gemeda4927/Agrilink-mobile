@@ -21,11 +21,18 @@ class ApiConstants {
   static const String woredasByZone = "$baseUrl/woredas/by-zone";
   static const String kebeles = "$baseUrl/kebeles";
   static const String kebelesByWoreda = "$baseUrl/kebeles/by-woreda";
+
+  // ================= ROLE & REGISTRATION =================
   static const String register = "$baseUrl/auth/signup";
-  static const String roleRequest = "/role-request";
+  static const String roleRequest = "$baseUrl/role-request";
 
   // ================= PROFILE =================
-  static const String profileCreate = "$baseUrl/profile"; 
-  static const String profileUpdate = "$baseUrl/profile"; 
-  static const String profileGetByUser = "$baseUrl/user"; 
+  static const String profileCreate = "$baseUrl/profile";
+  static const String profileUpdate = "$baseUrl/profile";
+  static const String profileGetByUser = "$baseUrl/user";
+
+  // ================= CHAT =================
+  static const String chatConversations = "$baseUrl/chat/conversations";
+  static const String chatSendMessage = "$baseUrl/chat/send"; 
+  static const String chatSocketUrl = "wss://agrilink-1-x6ph.onrender.com/socket"; 
 }
