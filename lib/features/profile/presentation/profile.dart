@@ -114,7 +114,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     context.read<ProfileBloc>().add(
       CreateProfile(
         fullName: _nameController.text.trim(),
-        kebeleld: selectedKebele!,
+        kebeleId: selectedKebele!,
         image: _selectedImage,
       ),
     );

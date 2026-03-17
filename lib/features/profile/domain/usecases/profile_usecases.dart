@@ -2,116 +2,97 @@ import 'dart:io';
 import 'package:agrilink/features/profile/data/model/ProfileModel.dart';
 import 'package:agrilink/features/profile/domain/repository/profile_repository.dart';
 
-/// ================= CREATE PROFILE USE CASE =================
 class CreateProfileUseCase {
   final ProfileRepository repository;
 
   CreateProfileUseCase(this.repository);
 
   Future<CreateProfileModel> execute(CreateProfileParams params) async {
-    print('🎯 [CreateProfileUseCase] ===== EXECUTING =====');
-    print('🎯 [CreateProfileUseCase] Creating profile with:');
-    print('🎯 [CreateProfileUseCase]   - fullName: ${params.fullName}');
-    print('🎯 [CreateProfileUseCase]   - kebeleld: ${params.kebeleld}'); // ✅ Updated
-    print('🎯 [CreateProfileUseCase]   - image: ${params.image != null ? params.image!.path : 'No image'}');
+    print('🎯 ===== CREATE PROFILE USECASE =====');
 
     try {
       final result = await repository.createProfile(
-        fullName: params.fullName,
-        kebeleld: params.kebeleld, // ✅ Updated parameter name
+        fullName: params.fullName.trim(),
+        kebeleId: params.kebeleId,
         image: params.image,
       );
-      
-      print('✅ [CreateProfileUseCase] Profile created successfully');
-      print('🎯 [CreateProfileUseCase] ===== COMPLETED =====');
+
+      print('✅ Profile created');
       return result;
     } catch (e, stackTrace) {
-      print('❌ [CreateProfileUseCase] Failed to create profile: $e');
-      print('❌ [CreateProfileUseCase] Stack trace: $stackTrace');
-      print('🎯 [CreateProfileUseCase] ===== FAILED =====');
+      print('❌ Error: $e');
+      print(stackTrace);
       rethrow;
     }
   }
 }
 
-/// ================= UPDATE PROFILE USE CASE =================
 class UpdateProfileUseCase {
   final ProfileRepository repository;
 
   UpdateProfileUseCase(this.repository);
 
   Future<UpdateProfileModel> execute(UpdateProfileParams params) async {
-    print('🎯 [UpdateProfileUseCase] ===== EXECUTING =====');
-    print('🎯 [UpdateProfileUseCase] Updating profile with:');
-    print('🎯 [UpdateProfileUseCase]   - fullName: ${params.fullName}');
-    print('🎯 [UpdateProfileUseCase]   - kebeleld: ${params.kebeleld}'); // ✅ Updated
-    print('🎯 [UpdateProfileUseCase]   - image: ${params.image != null ? params.image!.path : 'No image'}');
+    print('🎯 ===== UPDATE PROFILE USECASE =====');
 
     try {
       final result = await repository.updateProfile(
-        fullName: params.fullName,
-        kebeleld: params.kebeleld, // ✅ Updated parameter name
+        fullName: params.fullName.trim(),
+        kebeleId: params.kebeleId,
         image: params.image,
       );
-      
-      print('✅ [UpdateProfileUseCase] Profile updated successfully');
-      print('🎯 [UpdateProfileUseCase] ===== COMPLETED =====');
+
+      print('✅ Profile updated');
       return result;
     } catch (e, stackTrace) {
-      print('❌ [UpdateProfileUseCase] Failed to update profile: $e');
-      print('❌ [UpdateProfileUseCase] Stack trace: $stackTrace');
-      print('🎯 [UpdateProfileUseCase] ===== FAILED =====');
+      print('❌ Error: $e');
+      print(stackTrace);
       rethrow;
     }
   }
 }
 
-/// ================= GET PROFILE USE CASE =================
 class GetProfileUseCase {
   final ProfileRepository repository;
 
   GetProfileUseCase(this.repository);
 
   Future<GetProfileModel> execute(String userId) async {
-    print('🎯 [GetProfileUseCase] ===== EXECUTING =====');
-    print('🎯 [GetProfileUseCase] Fetching profile for userId: $userId');
+    print('🎯 ===== GET PROFILE USECASE =====');
 
     try {
       final result = await repository.getProfile(userId);
-      
-      print('✅ [GetProfileUseCase] Profile fetched successfully');
-      print('🎯 [GetProfileUseCase] ===== COMPLETED =====');
+
+      print('✅ Profile fetched');
       return result;
     } catch (e, stackTrace) {
-      print('❌ [GetProfileUseCase] Failed to fetch profile: $e');
-      print('❌ [GetProfileUseCase] Stack trace: $stackTrace');
-      print('🎯 [GetProfileUseCase] ===== FAILED =====');
+      print('❌ Error: $e');
+      print(stackTrace);
       rethrow;
     }
   }
 }
 
-/// ================= PARAMS CLASSES =================
 class CreateProfileParams {
   final String fullName;
-  final String kebeleld; // ✅ Renamed from kebeleId to kebeleld
-  final File? image; // nullable
+  final String kebeleId;
+  final File? image;
 
   CreateProfileParams({
     required this.fullName,
-    required this.kebeleld, // ✅ Updated
+    required this.kebeleId,
     this.image,
   });
 }
 
 class UpdateProfileParams {
   final String fullName;
-  final String kebeleld; // ✅ Renamed from kebeleId to kebeleld
-  final File? image; // nullable
+  final String kebeleId;
+  final File? image;
 
   UpdateProfileParams({
     required this.fullName,
-    required this.kebeleld, // ✅ Updated
+    required this.kebeleId,
     this.image,
   });
 }

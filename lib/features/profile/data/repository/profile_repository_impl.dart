@@ -13,29 +13,23 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<CreateProfileModel> createProfile({
     required String fullName,
-    required String kebeleld, // ✅ Fixed parameter name to match API
-    File? image, // nullable
+    required String kebeleId,
+    File? image,
   }) async {
-    print('📦 [ProfileRepository] ===== CREATE PROFILE REPOSITORY =====');
-    print('📦 [ProfileRepository] Creating profile with:');
-    print('📦 [ProfileRepository]   - fullName: $fullName');
-    print('📦 [ProfileRepository]   - kebeleld: $kebeleld');
-    print('📦 [ProfileRepository]   - image: ${image != null ? image.path : 'No image'}');
+    print('📦 ===== CREATE PROFILE REPOSITORY =====');
 
     try {
       final result = await profileService.createProfile(
-        fullName: fullName,
-        kebeleld: kebeleld, // ✅ Passing corrected parameter
+        fullName: fullName.trim(),
+        kebeleId: kebeleId,
         image: image,
       );
-      
-      print('✅ [ProfileRepository] Profile created successfully');
-      print('📦 [ProfileRepository] ===== CREATE PROFILE COMPLETED =====');
+
+      print('✅ Profile created');
       return result;
     } catch (e, stackTrace) {
-      print('❌ [ProfileRepository] Failed to create profile: $e');
-      print('❌ [ProfileRepository] Stack trace: $stackTrace');
-      print('📦 [ProfileRepository] ===== CREATE PROFILE FAILED =====');
+      print('❌ Error: $e');
+      print(stackTrace);
       throw Exception('Failed to create profile: $e');
     }
   }
@@ -44,29 +38,23 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<UpdateProfileModel> updateProfile({
     required String fullName,
-    required String kebeleld, // ✅ Fixed parameter name to match API
-    File? image, // nullable
+    required String kebeleId,
+    File? image,
   }) async {
-    print('📦 [ProfileRepository] ===== UPDATE PROFILE REPOSITORY =====');
-    print('📦 [ProfileRepository] Updating profile with:');
-    print('📦 [ProfileRepository]   - fullName: $fullName');
-    print('📦 [ProfileRepository]   - kebeleld: $kebeleld');
-    print('📦 [ProfileRepository]   - image: ${image != null ? image.path : 'No image'}');
+    print('📦 ===== UPDATE PROFILE REPOSITORY =====');
 
     try {
       final result = await profileService.updateProfile(
-        fullName: fullName,
-        kebeleld: kebeleld, // ✅ Passing corrected parameter
+        fullName: fullName.trim(),
+        kebeleId: kebeleId,
         image: image,
       );
-      
-      print('✅ [ProfileRepository] Profile updated successfully');
-      print('📦 [ProfileRepository] ===== UPDATE PROFILE COMPLETED =====');
+
+      print('✅ Profile updated');
       return result;
     } catch (e, stackTrace) {
-      print('❌ [ProfileRepository] Failed to update profile: $e');
-      print('❌ [ProfileRepository] Stack trace: $stackTrace');
-      print('📦 [ProfileRepository] ===== UPDATE PROFILE FAILED =====');
+      print('❌ Error: $e');
+      print(stackTrace);
       throw Exception('Failed to update profile: $e');
     }
   }
@@ -74,19 +62,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
   /// Get profile by userId
   @override
   Future<GetProfileModel> getProfile(String userId) async {
-    print('📦 [ProfileRepository] ===== GET PROFILE REPOSITORY =====');
-    print('📦 [ProfileRepository] Fetching profile for userId: $userId');
+    print('📦 ===== GET PROFILE REPOSITORY =====');
 
     try {
       final result = await profileService.getProfile(userId);
-      
-      print('✅ [ProfileRepository] Profile fetched successfully');
-      print('📦 [ProfileRepository] ===== GET PROFILE COMPLETED =====');
+
+      print('✅ Profile fetched');
       return result;
     } catch (e, stackTrace) {
-      print('❌ [ProfileRepository] Failed to fetch profile: $e');
-      print('❌ [ProfileRepository] Stack trace: $stackTrace');
-      print('📦 [ProfileRepository] ===== GET PROFILE FAILED =====');
+      print('❌ Error: $e');
+      print(stackTrace);
       throw Exception('Failed to fetch profile: $e');
     }
   }

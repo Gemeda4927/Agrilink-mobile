@@ -12,24 +12,24 @@ class LoadProfile extends ProfileEvent {
 
 class CreateProfile extends ProfileEvent {
   final String fullName;
-  final String kebeleld;
+  final String kebeleId;
   final File? image;
 
   const CreateProfile({
     required this.fullName,
-    required this.kebeleld,
+    required this.kebeleId,
     this.image,
   });
 }
 
 class UpdateProfile extends ProfileEvent {
   final String fullName;
-  final String kebeleld;
+  final String kebeleId;
   final File? image;
 
   const UpdateProfile({
     required this.fullName,
-    required this.kebeleld,
+    required this.kebeleId,
     this.image,
   });
 }

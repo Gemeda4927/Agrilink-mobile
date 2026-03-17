@@ -1,11 +1,10 @@
-
 /// ================= CREATE PROFILE MODEL =================
 class CreateProfileModel {
   final String id;
   final String userId;
   final String fullName;
   final String kebeleId;
-  final String? imageUrl; // optional
+  final String? imageUrl;
 
   CreateProfileModel({
     required this.id,
@@ -17,17 +16,17 @@ class CreateProfileModel {
 
   factory CreateProfileModel.fromJson(Map<String, dynamic> json) {
     return CreateProfileModel(
-      id: json['id'] ?? '',
-      userId: json['userId'] ?? '',
-      fullName: json['fullName'] ?? '',
-      kebeleId: json['kebeleId'] ?? '',
-      imageUrl: json['imageUrl'], // nullable
+      id: (json['id'] ?? '').toString(),
+      userId: (json['userId'] ?? '').toString(),
+      fullName: (json['fullName'] ?? '').toString().trim(),
+      kebeleId: (json['kebeleId'] ?? '').toString(),
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      "fullName": fullName,
+      "fullName": fullName.trim(),
       "kebeleId": kebeleId,
       "imageUrl": imageUrl,
     };
@@ -40,7 +39,7 @@ class UpdateProfileModel {
   final String userId;
   final String fullName;
   final String kebeleId;
-  final String? imageUrl; // optional
+  final String? imageUrl;
 
   UpdateProfileModel({
     required this.id,
@@ -52,17 +51,17 @@ class UpdateProfileModel {
 
   factory UpdateProfileModel.fromJson(Map<String, dynamic> json) {
     return UpdateProfileModel(
-      id: json['id'] ?? '',
-      userId: json['userId'] ?? '',
-      fullName: json['fullName'] ?? '',
-      kebeleId: json['kebeleId'] ?? '',
-      imageUrl: json['imageUrl'], // nullable
+      id: (json['id'] ?? '').toString(),
+      userId: (json['userId'] ?? '').toString(),
+      fullName: (json['fullName'] ?? '').toString().trim(),
+      kebeleId: (json['kebeleId'] ?? '').toString(),
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      "fullName": fullName,
+      "fullName": fullName.trim(),
       "kebeleId": kebeleId,
       "imageUrl": imageUrl,
     };
@@ -77,7 +76,7 @@ class GetProfileModel {
   final String role;
   final String status;
   final String createdAt;
-  final ProfileData? profile; // Made nullable
+  final ProfileData? profile;
 
   GetProfileModel({
     required this.id,
@@ -86,20 +85,20 @@ class GetProfileModel {
     required this.role,
     required this.status,
     required this.createdAt,
-    this.profile, // Now optional
+    this.profile,
   });
 
   factory GetProfileModel.fromJson(Map<String, dynamic> json) {
     return GetProfileModel(
-      id: json['id'] ?? '',
-      phone: json['phone'] ?? '',
-      email: json['email'] ?? '',
-      role: json['role'] ?? '',
-      status: json['status'] ?? '',
-      createdAt: json['createdAt'] ?? '',
-      profile: json['profile'] != null 
-          ? ProfileData.fromJson(json['profile']) 
-          : null, // Handle null profile
+      id: (json['id'] ?? '').toString(),
+      phone: (json['phone'] ?? '').toString().trim(),
+      email: (json['email'] ?? '').toString().trim(),
+      role: (json['role'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      createdAt: (json['createdAt'] ?? '').toString(),
+      profile: json['profile'] != null
+          ? ProfileData.fromJson(json['profile'])
+          : null,
     );
   }
 }
@@ -111,7 +110,7 @@ class ProfileData {
   final String fullName;
   final String kebeleId;
   final String? imageUrl;
-  final KebeleData? kebele; // Changed to more specific type
+  final KebeleData? kebele;
 
   ProfileData({
     required this.id,
@@ -124,11 +123,11 @@ class ProfileData {
 
   factory ProfileData.fromJson(Map<String, dynamic> json) {
     return ProfileData(
-      id: json['id'] ?? '',
-      userId: json['userId'] ?? '',
-      fullName: json['fullName'] ?? '',
-      kebeleId: json['kebeleId'] ?? '',
-      imageUrl: json['imageUrl'],
+      id: (json['id'] ?? '').toString(),
+      userId: (json['userId'] ?? '').toString(),
+      fullName: (json['fullName'] ?? '').toString().trim(),
+      kebeleId: (json['kebeleId'] ?? '').toString(),
+      imageUrl: json['imageUrl'] as String?,
       kebele: json['kebele'] != null
           ? KebeleData.fromJson(json['kebele'])
           : null,
@@ -152,9 +151,9 @@ class KebeleData {
 
   factory KebeleData.fromJson(Map<String, dynamic> json) {
     return KebeleData(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      woredaId: json['woredaId'] ?? '',
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString().trim(),
+      woredaId: (json['woredaId'] ?? '').toString(),
       woreda: json['woreda'] != null
           ? WoredaData.fromJson(json['woreda'])
           : null,
@@ -178,9 +177,9 @@ class WoredaData {
 
   factory WoredaData.fromJson(Map<String, dynamic> json) {
     return WoredaData(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      zoneId: json['zoneId'] ?? '',
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString().trim(),
+      zoneId: (json['zoneId'] ?? '').toString(),
       zone: json['zone'] != null
           ? ZoneData.fromJson(json['zone'])
           : null,
@@ -204,9 +203,9 @@ class ZoneData {
 
   factory ZoneData.fromJson(Map<String, dynamic> json) {
     return ZoneData(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      regionId: json['regionId'] ?? '',
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString().trim(),
+      regionId: (json['regionId'] ?? '').toString(),
       region: json['region'] != null
           ? RegionData.fromJson(json['region'])
           : null,
@@ -226,46 +225,8 @@ class RegionData {
 
   factory RegionData.fromJson(Map<String, dynamic> json) {
     return RegionData(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString().trim(),
     );
   }
-}
-
-/// ================= HELPER EXTENSIONS =================
-extension ProfileDataX on ProfileData {
-  /// Get full location string
-  String get fullLocation {
-    final parts = <String>[];
-    
-    if (kebele != null) {
-      parts.add(kebele!.name);
-      
-      if (kebele!.woreda != null) {
-        parts.add(kebele!.woreda!.name);
-        
-        if (kebele!.woreda!.zone != null) {
-          parts.add(kebele!.woreda!.zone!.name);
-          
-          if (kebele!.woreda!.zone!.region != null) {
-            parts.add(kebele!.woreda!.zone!.region!.name);
-          }
-        }
-      }
-    }
-    
-    return parts.isNotEmpty ? parts.join(' > ') : 'Location not specified';
-  }
-
-  /// Get region name
-  String? get regionName => kebele?.woreda?.zone?.region?.name;
-
-  /// Get zone name
-  String? get zoneName => kebele?.woreda?.zone?.name;
-
-  /// Get woreda name
-  String? get woredaName => kebele?.woreda?.name;
-
-  /// Get kebele name
-  String? get kebeleName => kebele?.name;
 }
