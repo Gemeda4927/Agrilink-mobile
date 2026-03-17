@@ -1,3 +1,8 @@
+import 'package:agrilink/features/chat/data/repository/chat_repository_impl.dart';
+import 'package:agrilink/features/chat/data/services/chat_service.dart';
+import 'package:agrilink/features/chat/domain/repositories/chat_repository.dart';
+import 'package:agrilink/features/chat/domain/usecases/chat_usecases.dart';
+import 'package:agrilink/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:agrilink/features/profile/data/repository/profile_repository_impl.dart';
 import 'package:agrilink/features/profile/data/services/profile_service.dart';
 import 'package:agrilink/features/profile/domain/repository/profile_repository.dart';
@@ -188,6 +193,36 @@ Future<void> initInjector() async {
       createUseCase: sl<CreateProfileUseCase>(),
       updateUseCase: sl<UpdateProfileUseCase>(),
       getUseCase: sl<GetProfileUseCase>(),
+    ),
+  );
+
+  // ================= CHAT FEATURE =================
+
+  sl.registerSingleton<ChatService>(ChatService(dioClient: sl<DioClient>()));
+
+  sl.registerSingleton<ChatRepository>(
+    ChatRepositoryImpl(chatService: sl<ChatService>()),
+  );
+
+  // UseCases
+  sl.registerSingleton<FetchConversations>(
+    FetchConversations(sl<ChatRepository>()),
+  );
+  sl.registerSingleton<FetchMessages>(FetchMessages(sl<ChatRepository>()));
+  sl.registerSingleton<SendMessage>(SendMessage(sl<ChatRepository>()));
+  sl.registerSingleton<ConnectSocket>(ConnectSocket(sl<ChatRepository>()));
+  sl.registerSingleton<DisconnectSocket>(
+    DisconnectSocket(sl<ChatRepository>()),
+  );
+
+  // Bloc
+  sl.registerFactory<ChatBloc>(
+    () => ChatBloc(
+      fetchConversations: sl<FetchConversations>(),
+      fetchMessages: sl<FetchMessages>(),
+      sendMessage: sl<SendMessage>(),
+      connectSocket: sl<ConnectSocket>(),
+      disconnectSocket: sl<DisconnectSocket>(),
     ),
   );
 }
