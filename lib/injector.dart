@@ -1,5 +1,14 @@
-import 'package:agrilink/features/product/data/repository/product_repo_imp.dart';
-import 'package:agrilink/features/product/data/services/product_service.dart';
+import 'package:agrilink/features/chat/data/repository/chat_repository_impl.dart';
+import 'package:agrilink/features/chat/data/services/chat_service.dart';
+import 'package:agrilink/features/chat/domain/repositories/chat_repository.dart';
+import 'package:agrilink/features/chat/domain/usecases/chat_usecases.dart';
+import 'package:agrilink/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:agrilink/features/profile/data/repository/profile_repository_impl.dart';
+import 'package:agrilink/features/profile/data/services/profile_service.dart';
+import 'package:agrilink/features/profile/domain/repository/profile_repository.dart';
+import 'package:agrilink/features/profile/domain/usecases/profile_usecases.dart';
+import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:agrilink/features/role_request/domain/usecases/create_role_request_usecase.dart';
 import 'package:get_it/get_it.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -28,23 +37,23 @@ import 'package:agrilink/features/registration/domain/repositories/registration_
 import 'package:agrilink/features/registration/domain/usecases/registration_usecases.dart';
 import 'package:agrilink/features/registration/presentation/bloc/registration_bloc.dart';
 
-// ================= PRODUCT =================
-import 'package:agrilink/features/product/domain/usecases/get_products.dart';
-import 'package:agrilink/features/product/presentation/bloc/product_bloc.dart';
+// ================= ROLE REQUEST =================
+import 'package:agrilink/features/role_request/data/repositories/role_request_repository_impl.dart';
+import 'package:agrilink/features/role_request/data/service/role_request_service.dart';
+import 'package:agrilink/features/role_request/domain/repositories/role_request_repository.dart';
+import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
 
 final sl = GetIt.instance;
 
 Future<void> initInjector() async {
   // ================= FIREBASE =================
   await Firebase.initializeApp();
-
   sl.registerSingleton<FirebaseAuth>(FirebaseAuth.instance);
   sl.registerSingleton<GoogleSignIn>(GoogleSignIn());
 
   // ================= CORE =================
   final tokenManager = await TokenManager.getInstance();
   sl.registerSingleton<TokenManager>(tokenManager);
-
   sl.registerSingleton<DioClient>(DioClient(tokenManager: sl<TokenManager>()));
 
   // ==================================================
@@ -105,7 +114,6 @@ Future<void> initInjector() async {
   sl.registerSingleton<GetCategories>(
     GetCategories(sl<CategoryRepositoryImpl>()),
   );
-
   sl.registerSingleton<GetSubCategories>(
     GetSubCategories(sl<CategoryRepositoryImpl>()),
   );
@@ -117,6 +125,7 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= REGISTRATION FEATURE ===========
   // ==================================================
+
   sl.registerSingleton<RegistrationService>(
     RegistrationService(dioClient: sl<DioClient>()),
   );
@@ -134,17 +143,80 @@ Future<void> initInjector() async {
   );
 
   // ==================================================
-  // ================= PRODUCT FEATURE ===============
+  // ================= ROLE REQUEST FEATURE ==========
   // ==================================================
-  sl.registerSingleton<ProductService>(
-    ProductService(dioClient: sl<DioClient>()),
+
+  // Role Request Service
+  sl.registerSingleton<RoleRequestService>(RoleRequestService(sl<DioClient>()));
+
+  // Role Request Repository
+  sl.registerSingleton<RoleRequestRepository>(
+    RoleRequestRepositoryImpl(sl<RoleRequestService>()),
   );
 
-  sl.registerSingleton<ProductRepositoryImpl>(
-    ProductRepositoryImpl(sl<ProductService>()),
+  // Role Request UseCases
+  sl.registerSingleton<RoleRequestUseCases>(
+    RoleRequestUseCases(sl<RoleRequestRepository>()),
   );
 
-  sl.registerSingleton<GetProducts>(GetProducts(sl<ProductRepositoryImpl>()));
+  // Role Request Bloc
+  sl.registerFactory<RoleRequestBloc>(
+    () => RoleRequestBloc(sl<RoleRequestUseCases>()),
+  );
 
-  sl.registerFactory<ProductBloc>(() => ProductBloc(sl<GetProducts>()));
+  // ================= PROFILE FEATURE =================
+  sl.registerSingleton<ProfileService>(
+    ProfileService(dioClient: sl<DioClient>()),
+  );
+
+  sl.registerSingleton<ProfileRepository>(
+    ProfileRepositoryImpl(profileService: sl<ProfileService>()),
+  );
+  sl.registerSingleton<CreateProfileUseCase>(
+    CreateProfileUseCase(sl<ProfileRepository>()),
+  );
+  sl.registerSingleton<UpdateProfileUseCase>(
+    UpdateProfileUseCase(sl<ProfileRepository>()),
+  );
+  sl.registerSingleton<GetProfileUseCase>(
+    GetProfileUseCase(sl<ProfileRepository>()),
+  );
+
+  sl.registerFactory<ProfileBloc>(
+    () => ProfileBloc(
+      createUseCase: sl<CreateProfileUseCase>(),
+      updateUseCase: sl<UpdateProfileUseCase>(),
+      getUseCase: sl<GetProfileUseCase>(),
+    ),
+  );
+
+  // ================= CHAT FEATURE =================
+
+  sl.registerSingleton<ChatService>(ChatService(dioClient: sl<DioClient>()));
+
+  sl.registerSingleton<ChatRepository>(
+    ChatRepositoryImpl(chatService: sl<ChatService>()),
+  );
+
+  // UseCases
+  sl.registerSingleton<FetchConversations>(
+    FetchConversations(sl<ChatRepository>()),
+  );
+  sl.registerSingleton<FetchMessages>(FetchMessages(sl<ChatRepository>()));
+  sl.registerSingleton<SendMessage>(SendMessage(sl<ChatRepository>()));
+  sl.registerSingleton<ConnectSocket>(ConnectSocket(sl<ChatRepository>()));
+  sl.registerSingleton<DisconnectSocket>(
+    DisconnectSocket(sl<ChatRepository>()),
+  );
+
+  // Bloc
+  sl.registerFactory<ChatBloc>(
+    () => ChatBloc(
+      fetchConversations: sl<FetchConversations>(),
+      fetchMessages: sl<FetchMessages>(),
+      sendMessage: sl<SendMessage>(),
+      connectSocket: sl<ConnectSocket>(),
+      disconnectSocket: sl<DisconnectSocket>(),
+    ),
+  );
 }

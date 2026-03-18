@@ -14,6 +14,7 @@ class BasePage extends StatefulWidget {
 }
 
 class _BasePageState extends State<BasePage> {
+  // Build bottom navigation items dynamically based on user role
   List<BottomNavigationBarItem> _buildNavItems() {
     final items = <BottomNavigationBarItem>[
       const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -23,6 +24,7 @@ class _BasePageState extends State<BasePage> {
       ),
     ];
 
+    // Agent-only tab
     if (widget.user.role == "AGENT") {
       items.add(
         const BottomNavigationBarItem(
@@ -32,13 +34,20 @@ class _BasePageState extends State<BasePage> {
       );
     }
 
-    items.addAll([
+    items.add(
       const BottomNavigationBarItem(
         icon: Icon(Icons.auto_awesome),
         label: 'Recommendation',
       ),
-      const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-    ]);
+    );
+
+    // ===== PROFILE TAB UNCOMMENTED =====
+    items.add(
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.person),
+        label: 'Profile',
+      ),
+    );
 
     return items;
   }
@@ -51,7 +60,7 @@ class _BasePageState extends State<BasePage> {
       bottomNavigationBar: BottomNavigationBar(
         items: _buildNavItems(),
         currentIndex: _getCurrentIndex(context),
-        selectedItemColor: Colors.red,
+        selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         onTap: (index) {
           final routeName = _convertIndexToRouteName(index);
@@ -68,12 +77,18 @@ class _BasePageState extends State<BasePage> {
     if (route.startsWith(RouteName.product)) return 1;
 
     if (widget.user.role == "AGENT") {
+      // Agent role indices
       if (route.startsWith(RouteName.dashboard)) return 2;
       if (route.startsWith(RouteName.aiRecommendation)) return 3;
-      if (route.startsWith(RouteName.profile)) return 4;
+      // Profile tab at index 4
+      if (route.startsWith(RouteName.viewProfile) || 
+          route.startsWith(RouteName.profile)) return 4;
     } else {
+      // Regular user indices
       if (route.startsWith(RouteName.aiRecommendation)) return 2;
-      if (route.startsWith(RouteName.profile)) return 3;
+      // Profile tab at index 3
+      if (route.startsWith(RouteName.viewProfile) || 
+          route.startsWith(RouteName.profile)) return 3;
     }
 
     return 0;
@@ -91,7 +106,8 @@ class _BasePageState extends State<BasePage> {
         case 3:
           return RouteName.aiRecommendation;
         case 4:
-          return RouteName.profile;
+          // Navigate to viewProfile instead of profile creation
+          return RouteName.viewProfile;
         default:
           return RouteName.home;
       }
@@ -104,7 +120,8 @@ class _BasePageState extends State<BasePage> {
         case 2:
           return RouteName.aiRecommendation;
         case 3:
-          return RouteName.profile;
+          // Navigate to viewProfile instead of profile creation
+          return RouteName.viewProfile;
         default:
           return RouteName.home;
       }

@@ -9,10 +9,11 @@ import 'package:agrilink/features/auth/presentation/forgot_password_page.dart';
 import 'package:agrilink/features/auth/presentation/resetPassword.dart';
 import 'package:agrilink/features/auth/presentation/otp_verify_page.dart';
 import 'package:agrilink/features/home/homescreen.dart';
-import 'package:agrilink/features/product/domain/entities/product_entities.dart'
-    show ProductEntity;
-import 'package:agrilink/features/product/presentation/product_details_page.dart';
-import 'package:agrilink/features/product/product.dart';
+import 'package:agrilink/features/marketplace/marketplace.dart';
+import 'package:agrilink/features/profile/presentation/profile.dart';
+import 'package:agrilink/features/profile/presentation/view_profile.dart';
+import 'package:agrilink/features/profile/presentation/update_profile_screen.dart'; // Add this import
+import 'package:agrilink/features/profile/data/model/ProfileModel.dart'; // Add this import
 import 'package:agrilink/features/recommendation/aiRecommendation.dart';
 import 'package:agrilink/features/registration/presentation/screen/register_page.dart';
 import 'package:agrilink/injector.dart';
@@ -42,30 +43,27 @@ final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: RouteName.splash,
   routes: [
+    // Public Routes (Outside Shell)
     GoRoute(
       path: RouteName.splash,
       name: RouteName.splash,
-      builder: (context, state) => SplashScreen(),
+      builder: (context, state) => const SplashScreen(),
     ),
-
     GoRoute(
       path: RouteName.login,
       name: RouteName.login,
       builder: (context, state) => const LoginPage(),
     ),
-
     GoRoute(
       path: RouteName.signup,
       name: RouteName.signup,
       builder: (context, state) => const SignUpPage(),
     ),
-
     GoRoute(
       path: RouteName.forgotPassword,
       name: RouteName.forgotPassword,
       builder: (context, state) => const ForgotPasswordPage(),
     ),
-
     GoRoute(
       path: RouteName.verifyOtp,
       name: RouteName.verifyOtp,
@@ -73,11 +71,9 @@ final GoRouter appRouter = GoRouter(
         final extra = state.extra as Map<String, dynamic>? ?? {};
         final identifier = extra['identifier'] ?? '';
         final purpose = extra['purpose'] ?? 'SIGNUP';
-
         return VerifyOtpPage(identifier: identifier, purpose: purpose);
       },
     ),
-
     GoRoute(
       path: RouteName.resetPassword,
       name: RouteName.resetPassword,
@@ -87,7 +83,7 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    /// MAIN APP SHELL
+    /// MAIN APP SHELL (Authenticated Routes)
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) {
@@ -103,71 +99,74 @@ final GoRouter appRouter = GoRouter(
             final user = snapshot.data;
 
             /// if user not logged in redirect to login
-            if (user == null) {
-              return const LoginPage();
-            }
+            if (user == null) return const LoginPage();
 
+            /// Return BasePage with the child
             return BasePage(child: child, user: user);
           },
         );
       },
       routes: [
+        // Home Route - Main landing page after authentication
         GoRoute(
           path: RouteName.home,
           name: RouteName.home,
           builder: (context, state) => const HomeScreen(),
         ),
 
+        // Marketplace Route
         GoRoute(
-          path: RouteName.product,
-          name: RouteName.product,
-          builder: (context, state) => ProductPage(),
+          path: RouteName.marketplace,
+          name: RouteName.marketplace,
+          builder: (context, state) => const MarketplaceScreen(),
         ),
 
-        // GoRoute(
-        //   path: RouteName.productDetails,
-        //   name: RouteName.productDetails,
-        //   builder: (context, state) {
-        //     final product = state.extra as ProductEntity;
-
-        //     return ProductDetailsPage(product: product);
-        //   },
-        // ),
-        GoRoute(
-          path: '/productDetails',
-          name: RouteName.productDetails,
-          builder: (context, state) {
-            final product = state.extra as ProductEntity;
-
-            return ProductDetailsPage(product: product);
-          },
-        ),
-
+        // Dashboard/Registration Route
         GoRoute(
           path: RouteName.dashboard,
           name: RouteName.dashboard,
           builder: (context, state) => const RegisterPage(),
         ),
 
+        // AI Recommendation Route
         GoRoute(
           path: RouteName.aiRecommendation,
           name: RouteName.aiRecommendation,
-          builder: (context, state) => AIRecommendationScreen(),
+          builder: (context, state) => const AIRecommendationScreen(),
         ),
 
+        // Profile Creation Route
         GoRoute(
           path: RouteName.profile,
           name: RouteName.profile,
-          builder: (context, state) =>
-              const PlaceholderScreen(title: "Profile"),
+          builder: (context, state) => const CreateProfileScreen(),
         ),
 
+        // View Profile Route
+        GoRoute(
+          path: RouteName.viewProfile,
+          name: RouteName.viewProfile,
+          builder: (context, state) => const ViewProfileScreen(),
+        ),
+
+        // Update Profile Route - NEW
+        GoRoute(
+          path: RouteName.updateProfile,
+          name: RouteName.updateProfile,
+          builder: (context, state) {
+            final profile = state.extra as GetProfileModel;
+            return UpdateProfileScreen(existingProfile: profile);
+          },
+        ),
+
+        // Cart Route
         GoRoute(
           path: RouteName.cart,
           name: RouteName.cart,
           builder: (context, state) => const PlaceholderScreen(title: "Cart"),
         ),
 
+        // Item Details Route
         GoRoute(
           path: RouteName.itemDetails,
           name: RouteName.itemDetails,
@@ -175,6 +174,7 @@ final GoRouter appRouter = GoRouter(
               const PlaceholderScreen(title: "Item Details"),
         ),
 
+        // Category Details Route
         GoRoute(
           path: RouteName.categoryDetails,
           name: RouteName.categoryDetails,

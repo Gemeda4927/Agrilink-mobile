@@ -15,6 +15,8 @@ class RouteName {
   static const String product = '/product';
   static const String aiRecommendation = '/recommendation';
   static const String profile = '/profile';
+  static const String viewProfile = '/view-profile';
+  static const String updateProfile = '/update-profile';
 
   static const String productDetails = '/productDetails';
 
@@ -22,4 +24,7 @@ class RouteName {
   static const String todo = '/todo';
   static const String itemDetails = '/itemDetails';
   static const String categoryDetails = '/categoryDetails';
+
+  // ROLE REQUEST
+  static const String roleRequest = "/role-request";
 }
