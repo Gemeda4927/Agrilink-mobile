@@ -115,8 +115,8 @@ class HomeScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.store),
-            title: const Text('Marketplace'),
-            onTap: () => context.goNamed(RouteName.marketplace),
+            title: const Text('Product'),
+            onTap: () => context.goNamed(RouteName.product),
           ),
           // ListTile(
           //   leading: const Icon(Icons.person),

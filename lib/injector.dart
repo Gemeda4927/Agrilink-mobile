@@ -59,8 +59,6 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= AUTH FEATURE ===================
   // ==================================================
-
-  // Auth Service
   sl.registerSingleton<AuthService>(
     AuthService(
       dioClient: sl<DioClient>(),
@@ -69,7 +67,6 @@ Future<void> initInjector() async {
     ),
   );
 
-  // Auth Repository
   sl.registerSingleton<AuthRepositoryImpl>(
     AuthRepositoryImpl(
       authService: sl<AuthService>(),
@@ -77,7 +74,6 @@ Future<void> initInjector() async {
     ),
   );
 
-  // Auth UseCases
   sl.registerSingleton<SignInUseCase>(SignInUseCase(sl<AuthRepositoryImpl>()));
   sl.registerSingleton<SignUpUseCase>(SignUpUseCase(sl<AuthRepositoryImpl>()));
   sl.registerSingleton<VerifyOtpUseCase>(
@@ -93,7 +89,6 @@ Future<void> initInjector() async {
     ResetPasswordUseCase(sl<AuthRepositoryImpl>()),
   );
 
-  // Auth Bloc
   sl.registerFactory<AuthBloc>(
     () => AuthBloc(
       signInUseCase: sl<SignInUseCase>(),
@@ -108,7 +103,6 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= CATEGORY FEATURE ===============
   // ==================================================
-
   sl.registerSingleton<CategoryService>(
     CategoryService(dioClient: sl<DioClient>()),
   );

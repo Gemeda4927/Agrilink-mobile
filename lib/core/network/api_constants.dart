@@ -13,6 +13,9 @@ class ApiConstants {
   static const String category = "$baseUrl/category";
   static const String subcategory = "$baseUrl/subcategory";
 
+  // ================= PRODUCT =================
+  static const String product = "$baseUrl/product";
+
   // ================= LOCATION (ETHIOPIA) =================
   static const String regions = "$baseUrl/regions";
   static const String zones = "$baseUrl/zones";

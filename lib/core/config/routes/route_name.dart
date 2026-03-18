@@ -12,11 +12,13 @@ class RouteName {
 
   // Main tabs
   static const String home = '/home';
-  static const String marketplace = '/marketplace';
+  static const String product = '/product';
   static const String aiRecommendation = '/recommendation';
   static const String profile = '/profile';
   static const String viewProfile = '/view-profile';
   static const String updateProfile = '/update-profile';
+
+  static const String productDetails = '/productDetails';
 
   // Other screens
   static const String todo = '/todo';
