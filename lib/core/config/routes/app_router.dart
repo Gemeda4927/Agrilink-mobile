@@ -9,7 +9,10 @@ import 'package:agrilink/features/auth/presentation/forgot_password_page.dart';
 import 'package:agrilink/features/auth/presentation/resetPassword.dart';
 import 'package:agrilink/features/auth/presentation/otp_verify_page.dart';
 import 'package:agrilink/features/home/homescreen.dart';
-import 'package:agrilink/features/marketplace/marketplace.dart';
+import 'package:agrilink/features/product/domain/entities/product_entities.dart'
+    show ProductEntity;
+import 'package:agrilink/features/product/presentation/product_details_page.dart';
+import 'package:agrilink/features/product/product.dart';
 import 'package:agrilink/features/recommendation/aiRecommendation.dart';
 import 'package:agrilink/features/registration/presentation/screen/register_page.dart';
 import 'package:agrilink/injector.dart';
@@ -116,9 +119,28 @@ final GoRouter appRouter = GoRouter(
         ),
 
         GoRoute(
-          path: RouteName.marketplace,
-          name: RouteName.marketplace,
-          builder: (context, state) => MarketplaceScreen(),
+          path: RouteName.product,
+          name: RouteName.product,
+          builder: (context, state) => ProductPage(),
+        ),
+
+        // GoRoute(
+        //   path: RouteName.productDetails,
+        //   name: RouteName.productDetails,
+        //   builder: (context, state) {
+        //     final product = state.extra as ProductEntity;
+
+        //     return ProductDetailsPage(product: product);
+        //   },
+        // ),
+        GoRoute(
+          path: '/productDetails',
+          name: RouteName.productDetails,
+          builder: (context, state) {
+            final product = state.extra as ProductEntity;
+
+            return ProductDetailsPage(product: product);
+          },
         ),
 
         GoRoute(

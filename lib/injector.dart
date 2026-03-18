@@ -1,3 +1,5 @@
+import 'package:agrilink/features/product/data/repository/product_repo_imp.dart';
+import 'package:agrilink/features/product/data/services/product_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -26,6 +28,10 @@ import 'package:agrilink/features/registration/domain/repositories/registration_
 import 'package:agrilink/features/registration/domain/usecases/registration_usecases.dart';
 import 'package:agrilink/features/registration/presentation/bloc/registration_bloc.dart';
 
+// ================= PRODUCT =================
+import 'package:agrilink/features/product/domain/usecases/get_products.dart';
+import 'package:agrilink/features/product/presentation/bloc/product_bloc.dart';
+
 final sl = GetIt.instance;
 
 Future<void> initInjector() async {
@@ -37,7 +43,6 @@ Future<void> initInjector() async {
 
   // ================= CORE =================
   final tokenManager = await TokenManager.getInstance();
-
   sl.registerSingleton<TokenManager>(tokenManager);
 
   sl.registerSingleton<DioClient>(DioClient(tokenManager: sl<TokenManager>()));
@@ -45,8 +50,6 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= AUTH FEATURE ===================
   // ==================================================
-
-  // -------- Auth Service --------
   sl.registerSingleton<AuthService>(
     AuthService(
       dioClient: sl<DioClient>(),
@@ -55,7 +58,6 @@ Future<void> initInjector() async {
     ),
   );
 
-  // -------- Auth Repository --------
   sl.registerSingleton<AuthRepositoryImpl>(
     AuthRepositoryImpl(
       authService: sl<AuthService>(),
@@ -63,28 +65,21 @@ Future<void> initInjector() async {
     ),
   );
 
-  // -------- Auth UseCases --------
   sl.registerSingleton<SignInUseCase>(SignInUseCase(sl<AuthRepositoryImpl>()));
-
   sl.registerSingleton<SignUpUseCase>(SignUpUseCase(sl<AuthRepositoryImpl>()));
-
   sl.registerSingleton<VerifyOtpUseCase>(
     VerifyOtpUseCase(sl<AuthRepositoryImpl>()),
   );
-
   sl.registerSingleton<GoogleSignInUseCase>(
     GoogleSignInUseCase(sl<AuthRepositoryImpl>()),
   );
-
   sl.registerSingleton<ForgotPasswordUseCase>(
     ForgotPasswordUseCase(sl<AuthRepositoryImpl>()),
   );
-
   sl.registerSingleton<ResetPasswordUseCase>(
     ResetPasswordUseCase(sl<AuthRepositoryImpl>()),
   );
 
-  // -------- Auth Bloc --------
   sl.registerFactory<AuthBloc>(
     () => AuthBloc(
       signInUseCase: sl<SignInUseCase>(),
@@ -99,18 +94,14 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= CATEGORY FEATURE ===============
   // ==================================================
-
-  // -------- Category Service --------
   sl.registerSingleton<CategoryService>(
     CategoryService(dioClient: sl<DioClient>()),
   );
 
-  // -------- Category Repository --------
   sl.registerSingleton<CategoryRepositoryImpl>(
     CategoryRepositoryImpl(service: sl<CategoryService>()),
   );
 
-  // -------- Category UseCases --------
   sl.registerSingleton<GetCategories>(
     GetCategories(sl<CategoryRepositoryImpl>()),
   );
@@ -119,7 +110,6 @@ Future<void> initInjector() async {
     GetSubCategories(sl<CategoryRepositoryImpl>()),
   );
 
-  // -------- Category Bloc --------
   sl.registerFactory<CategoryBloc>(
     () => CategoryBloc(sl<GetCategories>(), sl<GetSubCategories>()),
   );
@@ -127,24 +117,34 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= REGISTRATION FEATURE ===========
   // ==================================================
-
-  // -------- Registration Service --------
   sl.registerSingleton<RegistrationService>(
     RegistrationService(dioClient: sl<DioClient>()),
   );
 
-  // -------- Registration Repository --------
   sl.registerSingleton<RegistrationRepository>(
     RegistrationRepositoryImpl(sl<RegistrationService>()),
   );
 
-  // -------- Registration UseCases --------
   sl.registerSingleton<RegistrationUseCases>(
     RegistrationUseCases(sl<RegistrationRepository>()),
   );
 
-  // -------- Registration Bloc --------
   sl.registerFactory<RegistrationBloc>(
     () => RegistrationBloc(sl<RegistrationUseCases>()),
   );
+
+  // ==================================================
+  // ================= PRODUCT FEATURE ===============
+  // ==================================================
+  sl.registerSingleton<ProductService>(
+    ProductService(dioClient: sl<DioClient>()),
+  );
+
+  sl.registerSingleton<ProductRepositoryImpl>(
+    ProductRepositoryImpl(sl<ProductService>()),
+  );
+
+  sl.registerSingleton<GetProducts>(GetProducts(sl<ProductRepositoryImpl>()));
+
+  sl.registerFactory<ProductBloc>(() => ProductBloc(sl<GetProducts>()));
 }

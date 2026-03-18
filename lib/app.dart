@@ -4,6 +4,9 @@ import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_bloc.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_event.dart';
 
+import 'package:agrilink/features/product/presentation/bloc/product_bloc.dart';
+import 'package:agrilink/features/product/presentation/bloc/product_event.dart';
+
 import 'package:agrilink/features/registration/presentation/bloc/registration_bloc.dart';
 import 'package:agrilink/features/registration/presentation/bloc/registration_event.dart';
 
@@ -19,15 +22,20 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        // AUTH
+        // ================= AUTH =================
         BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>()),
 
-        // CATEGORY
+        // ================= CATEGORY =================
         BlocProvider<CategoryBloc>(
           create: (_) => sl<CategoryBloc>()..add(LoadCategories()),
         ),
 
-        // REGISTRATION
+        // ================= PRODUCT =================
+        BlocProvider<ProductBloc>(
+          create: (_) => sl<ProductBloc>()..add(LoadProducts()),
+        ),
+
+        // ================= REGISTRATION =================
         BlocProvider<RegistrationBloc>(
           create: (_) => sl<RegistrationBloc>()..add(LoadRegions()),
         ),

@@ -7,14 +7,16 @@ class RouteName {
   static const String verifyOtp = '/verifyOtp';
   static const String forgotPassword = '/forgotpassword';
   static const String resetPassword = '/resetPassword';
-  static const String cart = '/cart'; 
-  static const String dashboard ='/dashboard';
+  static const String cart = '/cart';
+  static const String dashboard = '/dashboard';
 
   // Main tabs
   static const String home = '/home';
-  static const String marketplace = '/marketplace';
+  static const String product = '/product';
   static const String aiRecommendation = '/recommendation';
   static const String profile = '/profile';
+
+  static const String productDetails = '/productDetails';
 
   // Other screens
   static const String todo = '/todo';

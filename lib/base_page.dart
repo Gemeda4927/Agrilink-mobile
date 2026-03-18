@@ -19,7 +19,7 @@ class _BasePageState extends State<BasePage> {
       const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
       const BottomNavigationBarItem(
         icon: Icon(Icons.store),
-        label: 'Marketplace',
+        label: 'Product', // Changed from 'Marketplace' to 'Product'
       ),
     ];
 
@@ -55,7 +55,7 @@ class _BasePageState extends State<BasePage> {
         unselectedItemColor: Colors.grey,
         onTap: (index) {
           final routeName = _convertIndexToRouteName(index);
-          context.goNamed(routeName);
+          context.go(routeName);
         },
       ),
     );
@@ -65,7 +65,7 @@ class _BasePageState extends State<BasePage> {
     final route = GoRouterState.of(context).uri.toString();
 
     if (route.startsWith(RouteName.home)) return 0;
-    if (route.startsWith(RouteName.marketplace)) return 1;
+    if (route.startsWith(RouteName.product)) return 1;
 
     if (widget.user.role == "AGENT") {
       if (route.startsWith(RouteName.dashboard)) return 2;
@@ -85,7 +85,7 @@ class _BasePageState extends State<BasePage> {
         case 0:
           return RouteName.home;
         case 1:
-          return RouteName.marketplace;
+          return RouteName.product; // Updated here as well
         case 2:
           return RouteName.dashboard;
         case 3:
@@ -100,7 +100,7 @@ class _BasePageState extends State<BasePage> {
         case 0:
           return RouteName.home;
         case 1:
-          return RouteName.marketplace;
+          return RouteName.product; // Updated here
         case 2:
           return RouteName.aiRecommendation;
         case 3:

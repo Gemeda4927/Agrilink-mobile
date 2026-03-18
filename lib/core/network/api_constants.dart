@@ -1,5 +1,4 @@
 class ApiConstants {
-
   static const String baseUrl = "https://agrilink-1-x6ph.onrender.com";
 
   // ================= AUTH =================
@@ -14,6 +13,9 @@ class ApiConstants {
   static const String category = "$baseUrl/category";
   static const String subcategory = "$baseUrl/subcategory";
 
+  // ================= PRODUCT =================
+  static const String product = "$baseUrl/product";
+
   // ================= LOCATION (ETHIOPIA) =================
   static const String regions = "$baseUrl/regions";
   static const String zones = "$baseUrl/zones";
@@ -22,6 +24,7 @@ class ApiConstants {
   static const String woredasByZone = "$baseUrl/woredas/by-zone";
   static const String kebeles = "$baseUrl/kebeles";
   static const String kebelesByWoreda = "$baseUrl/kebeles/by-woreda";
-  static const String register = "$baseUrl/auth/signup";
 
+  // ================= REGISTRATION =================
+  static const String register = "$baseUrl/auth/signup";
 }
