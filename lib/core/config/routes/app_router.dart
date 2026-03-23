@@ -8,18 +8,24 @@ import 'package:agrilink/features/auth/presentation/signup_page.dart';
 import 'package:agrilink/features/auth/presentation/forgot_password_page.dart';
 import 'package:agrilink/features/auth/presentation/resetPassword.dart';
 import 'package:agrilink/features/auth/presentation/otp_verify_page.dart';
+import 'package:agrilink/features/cart/presentation/cart.dart';
+import 'package:agrilink/features/cart/presentation/checkout_screen.dart';
+import 'package:agrilink/features/cart/presentation/order_confirmation_screen.dart';
+import 'package:agrilink/features/chat/presentation/chat.dart';
 import 'package:agrilink/features/home/homescreen.dart';
-import 'package:agrilink/features/marketplace/marketplace.dart';
+import 'package:agrilink/features/product/FarmerProfilePage.dart';
+import 'package:agrilink/features/product/product.dart';
 import 'package:agrilink/features/profile/presentation/profile.dart';
 import 'package:agrilink/features/profile/presentation/view_profile.dart';
-import 'package:agrilink/features/profile/presentation/update_profile_screen.dart'; // Add this import
-import 'package:agrilink/features/profile/data/model/ProfileModel.dart'; // Add this import
+import 'package:agrilink/features/profile/presentation/update_profile_screen.dart';
+import 'package:agrilink/features/profile/data/model/ProfileModel.dart';
 import 'package:agrilink/features/recommendation/aiRecommendation.dart';
 import 'package:agrilink/features/registration/presentation/screen/register_page.dart';
 import 'package:agrilink/injector.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+// ================= PLACEHOLDER SCREEN =================
 class PlaceholderScreen extends StatelessWidget {
   final String title;
 
@@ -34,36 +40,45 @@ class PlaceholderScreen extends StatelessWidget {
   }
 }
 
+// ================= NAVIGATION KEYS =================
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey =
     GlobalKey<NavigatorState>();
 
+// ================= ROUTER CONFIGURATION =================
 final GoRouter appRouter = GoRouter(
   debugLogDiagnostics: true,
   navigatorKey: _rootNavigatorKey,
   initialLocation: RouteName.splash,
   routes: [
-    // Public Routes (Outside Shell)
+    // ================= PUBLIC ROUTES (Outside Shell) =================
+
+    // Splash Screen
     GoRoute(
       path: RouteName.splash,
       name: RouteName.splash,
       builder: (context, state) => const SplashScreen(),
     ),
+
+    // Authentication Routes
     GoRoute(
       path: RouteName.login,
       name: RouteName.login,
       builder: (context, state) => const LoginPage(),
     ),
+
     GoRoute(
       path: RouteName.signup,
       name: RouteName.signup,
       builder: (context, state) => const SignUpPage(),
     ),
+
     GoRoute(
       path: RouteName.forgotPassword,
       name: RouteName.forgotPassword,
       builder: (context, state) => const ForgotPasswordPage(),
     ),
+
     GoRoute(
       path: RouteName.verifyOtp,
       name: RouteName.verifyOtp,
@@ -71,9 +86,11 @@ final GoRouter appRouter = GoRouter(
         final extra = state.extra as Map<String, dynamic>? ?? {};
         final identifier = extra['identifier'] ?? '';
         final purpose = extra['purpose'] ?? 'SIGNUP';
+
         return VerifyOtpPage(identifier: identifier, purpose: purpose);
       },
     ),
+
     GoRoute(
       path: RouteName.resetPassword,
       name: RouteName.resetPassword,
@@ -83,7 +100,49 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    /// MAIN APP SHELL (Authenticated Routes)
+    // Chat Route
+    GoRoute(
+      path: RouteName.chat,
+      name: RouteName.chat,
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+
+        if (extra == null || extra['receiverId'] == null) {
+          return const Scaffold(
+            body: Center(child: Text("Receiver (farmer) ID not provided")),
+          );
+        }
+
+        final receiverId = extra['receiverId'].toString();
+        final receiverName = extra['receiverName']?.toString();
+        final receiverAvatar = extra['receiverAvatar']?.toString();
+
+        return ChatScreen(
+          receiverId: receiverId,
+          receiverName: receiverName,
+          receiverAvatar: receiverAvatar,
+        );
+      },
+    ),
+
+    // Farmer Profile Route
+    GoRoute(
+      path: RouteName.farmerProfile,
+      name: RouteName.farmerProfile,
+      builder: (context, state) {
+        final farmerId = state.extra as String?;
+
+        if (farmerId == null || farmerId.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text("Farmer ID not provided")),
+          );
+        }
+
+        return FarmerProfilePage(farmerId: farmerId);
+      },
+    ),
+
+    // ================= MAIN APP SHELL (Authenticated Routes) =================
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) {
@@ -98,16 +157,18 @@ final GoRouter appRouter = GoRouter(
 
             final user = snapshot.data;
 
-            /// if user not logged in redirect to login
-            if (user == null) return const LoginPage();
+            // Redirect to login if not authenticated
+            if (user == null) {
+              return const LoginPage();
+            }
 
-            /// Return BasePage with the child
-            return BasePage(child: child, user: user);
+            // Return BasePage with authenticated child
+            return BasePage(user: user, child: child);
           },
         );
       },
       routes: [
-        // Home Route - Main landing page after authentication
+        // Home Route
         GoRoute(
           path: RouteName.home,
           name: RouteName.home,
@@ -116,9 +177,9 @@ final GoRouter appRouter = GoRouter(
 
         // Marketplace Route
         GoRoute(
-          path: RouteName.marketplace,
-          name: RouteName.marketplace,
-          builder: (context, state) => const MarketplaceScreen(),
+          path: RouteName.product,
+          name: RouteName.product,
+          builder: (context, state) => const ProductPage(),
         ),
 
         // Dashboard/Registration Route
@@ -149,7 +210,7 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const ViewProfileScreen(),
         ),
 
-        // Update Profile Route - NEW
+        // Update Profile Route
         GoRoute(
           path: RouteName.updateProfile,
           name: RouteName.updateProfile,
@@ -163,7 +224,37 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: RouteName.cart,
           name: RouteName.cart,
-          builder: (context, state) => const PlaceholderScreen(title: "Cart"),
+          builder: (context, state) => const CartScreen(),
+        ),
+
+        // ================= CHECKOUT ROUTE - ADD THIS =================
+        // Checkout Route
+        GoRoute(
+          path: RouteName.checkout,
+          name: RouteName.checkout,
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return CheckoutScreen(
+              cartItems: extra?['cartItems'] ?? [],
+              totalPrice: extra?['totalPrice'] ?? 0.0,
+              totalItems: extra?['totalItems'] ?? 0,
+            );
+          },
+        ),
+
+
+        // Order Confirmation Route
+        GoRoute(
+          path: RouteName.orderConfirmation,
+          name: RouteName.orderConfirmation,
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return OrderConfirmationScreen(
+              orderId: extra?['orderId'] ?? '',
+              amount: extra?['amount'] ?? 0.0,
+              paymentMethod: extra?['paymentMethod'] ?? '',
+            );
+          },
         ),
 
         // Item Details Route

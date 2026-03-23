@@ -1,24 +1,30 @@
+
 import '../entities/chat_conversation.dart';
 import '../entities/chat_message.dart';
 
 abstract class ChatRepository {
-  /// Fetch all conversations for the current user
+  // REST Methods
   Future<List<ChatConversation>> fetchConversations();
-
-  /// Fetch all messages for a given conversation
   Future<List<ChatMessage>> fetchMessages(String conversationId);
-
-  /// Send a message via socket or REST fallback
+  
+  // Conversation Management
+  Future<ChatConversation> getOrCreateConversation({
+    required String userOneId,
+    required String userTwoId,
+    String? receiverName, // Add this
+  });
+  
+  // Socket Methods
+  void connectSocket(String token);
+  void disconnectSocket();
+  bool get isSocketConnected;
+  void joinConversation(String conversationId);
+  void listenForMessages(Function(ChatMessage) onMessage);
+  
+  // Send Message
   Future<bool> sendMessage({
     required String conversationId,
     required String senderId,
     required String message,
   });
-
-  /// Socket connection functions
-  void connectSocket(String token);
-  void disconnectSocket();
-
-  /// Check if socket is connected
-  bool get isSocketConnected;
 }

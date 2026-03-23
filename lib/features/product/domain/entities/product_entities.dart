@@ -9,6 +9,13 @@ class ProductEntity {
   final String image;
   final DateTime createdAt;
 
+  final String? subCategoryName;
+  final String? categoryId;
+
+  final String? farmerEmail;
+  final String? farmerPhone;
+  final String? farmerRole;
+
   ProductEntity({
     required this.id,
     required this.farmerId,
@@ -19,5 +26,11 @@ class ProductEntity {
     required this.description,
     required this.image,
     required this.createdAt,
+
+    this.subCategoryName,
+    this.categoryId,
+    this.farmerEmail,
+    this.farmerPhone,
+    this.farmerRole,
   });
 }

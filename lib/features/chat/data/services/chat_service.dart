@@ -1,6 +1,6 @@
-import 'package:socket_io_client/socket_io_client.dart'
-    as IO
-    show Socket, OptionBuilder, io, DartySocket;
+// lib/features/chat/data/services/chat_service.dart
+
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../../../../core/network/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 
@@ -8,129 +8,204 @@ class ChatService {
   final DioClient dioClient;
   late IO.Socket socket;
   bool _isConnected = false;
+  String? _socketId;
 
   ChatService({required this.dioClient});
 
-  // ================= SOCKET.IO REAL-TIME =================
+  // ================= SOCKET CONNECTION =================
   void connectSocket(String token) {
+    print('🔌 Connecting socket...');
+
     socket = IO.io(
       ApiConstants.baseUrl,
       IO.OptionBuilder()
           .setTransports(['websocket'])
+          .setPath('/socket.io')
+          .setAuth({'token': token})
           .enableForceNew()
-          .setExtraHeaders({'Authorization': 'Bearer $token'})
+          .enableReconnection()
+          .setReconnectionAttempts(5)
+          .setReconnectionDelay(1000)
           .build(),
     );
 
+    // Listen to ALL events for debugging
+    socket.onAny((event, data) {
+      print('🎯 SOCKET EVENT: $event');
+      print('  Data: $data');
+    });
+
     socket.onConnect((_) {
       _isConnected = true;
-      print('✅ Socket connected');
+      _socketId = socket.id;
+      print('✅ Socket connected: ${socket.id}');
+      
+      // Test ping to verify connection
+      socket.emit('ping', {'test': 'connection'});
+    });
+
+    socket.onConnectError((err) {
+      print('⚠️ Connect error: $err');
+    });
+
+    socket.onError((err) {
+      print('❌ Socket error: $err');
     });
 
     socket.onDisconnect((_) {
       _isConnected = false;
+      _socketId = null;
       print('❌ Socket disconnected');
     });
 
-    socket.onConnectError((err) {
-      print('⚠️ Socket connection error: $err');
-    });
-
-    socket.onError((err) {
-      print('⚠️ Socket error: $err');
+    socket.onReconnect((attempt) {
+      print('🔄 Reconnecting... Attempt: $attempt');
     });
   }
 
-  /// Send message through socket
+  // ================= JOIN CONVERSATION =================
+  void joinConversation(String conversationId) {
+    if (!_isConnected) {
+      print('⚠️ Cannot join conversation: Socket not connected');
+      return;
+    }
+
+    print('🔗 Joining conversation: $conversationId');
+    socket.emit('join_conversation', {'conversationId': conversationId});
+  }
+
+  // ================= SEND MESSAGE =================
   void sendMessageSocket({
     required String conversationId,
     required String senderId,
     required String message,
   }) {
     if (!_isConnected) {
-      print('❌ Socket not connected');
+      print('⚠️ Cannot send message: Socket not connected');
       return;
     }
 
-    socket.emit('send_message', {
+    final messageData = {
       'conversationId': conversationId,
       'senderId': senderId,
       'message': message,
-    });
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
+    print('📤 EMITTING: send_message');
+    print('  Socket ID: $_socketId');
+    print('  Conversation ID: $conversationId');
+    print('  Sender ID: $senderId');
+    print('  Message: $message');
+    
+    socket.emit('send_message', messageData);
+    print('📤 Message sent');
   }
 
-  /// Listen for incoming messages
+  // ================= LISTEN FOR MESSAGES =================
   void listenMessagesSocket(Function(Map<String, dynamic>) onMessage) {
     socket.on('new_message', (data) {
-      if (data is Map<String, dynamic>) {
-        onMessage(data);
-      } else {
-        print('⚠️ Invalid message format received from socket: $data');
+      print('📩 INCOMING MESSAGE EVENT');
+      print('  Raw data: $data');
+
+      try {
+        final parsed = Map<String, dynamic>.from(data);
+        print('  Parsed message: ${parsed['message']}');
+        print('  From: ${parsed['senderId']}');
+        onMessage(parsed);
+      } catch (e) {
+        print('❌ Parse error: $e');
       }
     });
   }
 
-  /// Disconnect socket manually
+  // ================= LISTEN FOR CONVERSATION CREATED =================
+  void listenForConversationCreated(Function(Map<String, dynamic>) onConversationCreated) {
+    socket.on('conversation_created', (data) {
+      print('✨ CONVERSATION CREATED EVENT');
+      print('  Data: $data');
+      
+      try {
+        final parsed = Map<String, dynamic>.from(data);
+        onConversationCreated(parsed);
+      } catch (e) {
+        print('❌ Parse error: $e');
+      }
+    });
+  }
+
+  // ================= DISCONNECT =================
   void disconnectSocket() {
     if (_isConnected) {
+      print('🔌 Disconnecting socket...');
       socket.dispose();
       _isConnected = false;
-      print('✅ Socket disconnected manually');
+      _socketId = null;
+      print('✅ Socket disconnected');
     }
   }
 
-  // ================= REST API =================
-
-  /// Fetch all conversations for the current user
+  // ================= REST API METHODS =================
   Future<List<Map<String, dynamic>>> fetchConversations() async {
     try {
-      final response = await dioClient.get(ApiConstants.chatConversations);
-      final data = response.data as List<dynamic>;
-      return data.map((e) => e as Map<String, dynamic>).toList();
+      print('📡 Fetching conversations...');
+      final res = await dioClient.get(ApiConstants.chatConversations);
+      
+      if (res.data is List) {
+        print('✅ Found ${res.data.length} conversations');
+        return List<Map<String, dynamic>>.from(res.data);
+      }
+      return [];
     } catch (e) {
       print('❌ Error fetching conversations: $e');
       return [];
     }
   }
 
-  /// Fetch messages for a specific conversation
-  Future<List<Map<String, dynamic>>> fetchMessages(
+  Future<List<Map<String, dynamic>>> getMessagesFromConversation(
     String conversationId,
   ) async {
     try {
-      final response = await dioClient.get(
-        '/chat/conversations/$conversationId/messages',
+      if (conversationId.startsWith('temp_')) {
+        return [];
+      }
+      
+      final conversations = await fetchConversations();
+      final convo = conversations.firstWhere(
+        (c) => c['id'] == conversationId,
+        orElse: () => {},
       );
-      final data = response.data as List<dynamic>;
-      return data.map((e) => e as Map<String, dynamic>).toList();
+      
+      return List<Map<String, dynamic>>.from(convo['messages'] ?? []);
     } catch (e) {
-      print('❌ Error fetching messages: $e');
+      print('❌ Error getting messages: $e');
       return [];
     }
   }
 
-  /// Send message via REST API (fallback if socket not available)
-  Future<bool> sendMessageRest({
-    required String conversationId,
-    required String senderId,
-    required String message,
+  Future<Map<String, dynamic>?> findConversationBetweenUsers({
+    required String userOneId,
+    required String userTwoId,
   }) async {
     try {
-      await dioClient.post(
-        '/chat/messages',
-        data: {
-          'conversationId': conversationId,
-          'senderId': senderId,
-          'message': message,
-        },
-      );
-      return true;
+      final conversations = await fetchConversations();
+      
+      for (final convo in conversations) {
+        if ((convo['userOneId'] == userOneId && convo['userTwoId'] == userTwoId) ||
+            (convo['userOneId'] == userTwoId && convo['userTwoId'] == userOneId)) {
+          print('✅ Found existing conversation: ${convo['id']}');
+          return convo;
+        }
+      }
+      
+      print('⚠️ No conversation found');
+      return null;
     } catch (e) {
-      print('❌ Error sending message via REST: $e');
-      return false;
+      print('❌ Error: $e');
+      return null;
     }
   }
 
-  /// Check if socket is connected
   bool get isConnected => _isConnected;
+  String? get socketId => _socketId;
 }
