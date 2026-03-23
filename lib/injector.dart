@@ -1,8 +1,18 @@
+import 'package:agrilink/features/cart/data/repository/cartRemoteDataSourceImpl.dart';
 import 'package:agrilink/features/chat/data/repository/chat_repository_impl.dart';
 import 'package:agrilink/features/chat/data/services/chat_service.dart';
 import 'package:agrilink/features/chat/domain/repositories/chat_repository.dart';
 import 'package:agrilink/features/chat/domain/usecases/chat_usecases.dart';
 import 'package:agrilink/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:agrilink/features/payment/data/repository/checkout_repository_impl.dart';
+import 'package:agrilink/features/payment/data/service/checkout_service.dart';
+import 'package:agrilink/features/payment/domain/repositories/checkout_repository.dart';
+import 'package:agrilink/features/payment/domain/usecases/checkout_usecase.dart';
+import 'package:agrilink/features/product/data/repository/product_repo_imp.dart';
+import 'package:agrilink/features/product/data/services/product_service.dart';
+import 'package:agrilink/features/product/domain/repository/product_repository.dart';
+import 'package:agrilink/features/product/domain/usecases/get_products.dart';
+import 'package:agrilink/features/product/presentation/bloc/product_bloc.dart';
 import 'package:agrilink/features/profile/data/repository/profile_repository_impl.dart';
 import 'package:agrilink/features/profile/data/services/profile_service.dart';
 import 'package:agrilink/features/profile/domain/repository/profile_repository.dart';
@@ -42,6 +52,12 @@ import 'package:agrilink/features/role_request/data/repositories/role_request_re
 import 'package:agrilink/features/role_request/data/service/role_request_service.dart';
 import 'package:agrilink/features/role_request/domain/repositories/role_request_repository.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
+
+// ================= CART =================
+import 'package:agrilink/features/cart/data/service/cart_service.dart';
+import 'package:agrilink/features/cart/domain/repositories/cart_repository.dart';
+import 'package:agrilink/features/cart/domain/usecases/cart_usecases.dart';
+import 'package:agrilink/features/cart/presentation/bloc/cart_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -125,7 +141,6 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= REGISTRATION FEATURE ===========
   // ==================================================
-
   sl.registerSingleton<RegistrationService>(
     RegistrationService(dioClient: sl<DioClient>()),
   );
@@ -145,26 +160,23 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= ROLE REQUEST FEATURE ==========
   // ==================================================
-
-  // Role Request Service
   sl.registerSingleton<RoleRequestService>(RoleRequestService(sl<DioClient>()));
 
-  // Role Request Repository
   sl.registerSingleton<RoleRequestRepository>(
     RoleRequestRepositoryImpl(sl<RoleRequestService>()),
   );
 
-  // Role Request UseCases
   sl.registerSingleton<RoleRequestUseCases>(
     RoleRequestUseCases(sl<RoleRequestRepository>()),
   );
 
-  // Role Request Bloc
   sl.registerFactory<RoleRequestBloc>(
     () => RoleRequestBloc(sl<RoleRequestUseCases>()),
   );
 
-  // ================= PROFILE FEATURE =================
+  // ==================================================
+  // ================= PROFILE FEATURE ================
+  // ==================================================
   sl.registerSingleton<ProfileService>(
     ProfileService(dioClient: sl<DioClient>()),
   );
@@ -172,6 +184,7 @@ Future<void> initInjector() async {
   sl.registerSingleton<ProfileRepository>(
     ProfileRepositoryImpl(profileService: sl<ProfileService>()),
   );
+
   sl.registerSingleton<CreateProfileUseCase>(
     CreateProfileUseCase(sl<ProfileRepository>()),
   );
@@ -190,15 +203,19 @@ Future<void> initInjector() async {
     ),
   );
 
-  // ================= CHAT FEATURE =================
+  // ==================================================
+  // ================= CHAT FEATURE ===================
+  // ==================================================
 
+  // Chat Service
   sl.registerSingleton<ChatService>(ChatService(dioClient: sl<DioClient>()));
 
+  // Chat Repository
   sl.registerSingleton<ChatRepository>(
     ChatRepositoryImpl(chatService: sl<ChatService>()),
   );
 
-  // UseCases
+  // Chat Use Cases
   sl.registerSingleton<FetchConversations>(
     FetchConversations(sl<ChatRepository>()),
   );
@@ -208,8 +225,17 @@ Future<void> initInjector() async {
   sl.registerSingleton<DisconnectSocket>(
     DisconnectSocket(sl<ChatRepository>()),
   );
+  sl.registerSingleton<JoinConversation>(
+    JoinConversation(sl<ChatRepository>()),
+  );
+  sl.registerSingleton<ListenForMessages>(
+    ListenForMessages(sl<ChatRepository>()),
+  );
+  sl.registerSingleton<GetOrCreateConversation>(
+    GetOrCreateConversation(sl<ChatRepository>()),
+  );
 
-  // Bloc
+  // Chat Bloc
   sl.registerFactory<ChatBloc>(
     () => ChatBloc(
       fetchConversations: sl<FetchConversations>(),
@@ -217,6 +243,86 @@ Future<void> initInjector() async {
       sendMessage: sl<SendMessage>(),
       connectSocket: sl<ConnectSocket>(),
       disconnectSocket: sl<DisconnectSocket>(),
+      joinConversation: sl<JoinConversation>(),
+      listenForMessages: sl<ListenForMessages>(),
+      getOrCreateConversation: sl<GetOrCreateConversation>(),
+    ),
+  );
+
+  // ==================================================
+  // ================= PRODUCT FEATURE ================
+  // ==================================================
+
+  // Product Service
+  sl.registerSingleton<ProductService>(
+    ProductService(dioClient: sl<DioClient>()),
+  );
+
+  // Product Repository
+  sl.registerSingleton<ProductRepository>(
+    ProductRepositoryImpl(sl<ProductService>()),
+  );
+
+  // Product Use Cases
+  sl.registerSingleton<GetProducts>(GetProducts(sl<ProductRepository>()));
+
+  // Product Bloc
+  sl.registerFactory<ProductBloc>(() => ProductBloc(sl<GetProducts>()));
+
+  // ==================================================
+  // ================= CART FEATURE ===================
+  // ==================================================
+
+  // Cart Service
+  sl.registerSingleton<CartService>(CartService(sl<DioClient>()));
+
+  // Cart Repository
+  sl.registerSingleton<CartRepository>(CartRepositoryImpl(sl<CartService>()));
+
+  // Cart Use Cases
+  sl.registerSingleton<GetCartUseCase>(GetCartUseCase(sl<CartRepository>()));
+
+  sl.registerSingleton<AddToCartUseCase>(
+    AddToCartUseCase(sl<CartRepository>()),
+  );
+
+  sl.registerSingleton<UpdateCartUseCase>(
+    UpdateCartUseCase(sl<CartRepository>()),
+  );
+
+  sl.registerSingleton<RemoveFromCartUseCase>(
+    RemoveFromCartUseCase(sl<CartRepository>()),
+  );
+
+  // ==================================================
+  // ================= CHECKOUT FEATURE ===============
+  // ==================================================
+
+  // Checkout Service
+  sl.registerSingleton<CheckoutService>(CheckoutService(sl<DioClient>()));
+
+  // Checkout Repository
+  sl.registerSingleton<CheckoutRepository>(
+    CheckoutRepositoryImpl(sl<CheckoutService>()),
+  );
+
+  // Checkout Use Cases
+  sl.registerSingleton<ProcessCheckoutUseCase>(
+    ProcessCheckoutUseCase(sl<CheckoutRepository>()),
+  );
+
+  // ==================================================
+  // ================= CART BLOC (Updated) ============
+  // ==================================================
+
+  // Cart Bloc with checkout dependencies
+  sl.registerFactory<CartBloc>(
+    () => CartBloc(
+      getCartUseCase: sl<GetCartUseCase>(),
+      addToCartUseCase: sl<AddToCartUseCase>(),
+      updateCartUseCase: sl<UpdateCartUseCase>(),
+      removeFromCartUseCase: sl<RemoveFromCartUseCase>(),
+      processCheckoutUseCase: sl<ProcessCheckoutUseCase>(),
     ),
   );
 }

@@ -36,6 +36,11 @@ class ApiConstants {
 
   // ================= CHAT =================
   static const String chatConversations = "$baseUrl/chat/conversations";
-  static const String chatSendMessage = "$baseUrl/chat/send"; 
-  static const String chatSocketUrl = "wss://agrilink-1-x6ph.onrender.com/socket"; 
+  static const String chatSendMessage = "$baseUrl/chat/send";
+  static const String chatSocketUrl =
+      "wss://agrilink-1-x6ph.onrender.com/socket";
+
+  // ================= CART =================
+  static const String cart = "$baseUrl/cart";
+  static String deleteCartItem(String productId) => "$baseUrl/cart/$productId";
 }

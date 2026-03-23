@@ -1,3 +1,5 @@
+// core/config/routes/route_name.dart
+
 class RouteName {
   // Auth & Onboarding
   static const String splash = '/splash';
@@ -10,6 +12,11 @@ class RouteName {
   static const String cart = '/cart';
   static const String dashboard = '/dashboard';
 
+  // Checkout & Payment
+  static const String checkout = '/checkout';
+  static const String payment = '/payment';
+  static const String orderConfirmation = '/order-confirmation';
+
   // Main tabs
   static const String home = '/home';
   static const String product = '/product';
@@ -17,6 +24,7 @@ class RouteName {
   static const String profile = '/profile';
   static const String viewProfile = '/view-profile';
   static const String updateProfile = '/update-profile';
+  static const String farmerProfile = '/farmerProfile';
 
   static const String productDetails = '/productDetails';
 
@@ -24,6 +32,7 @@ class RouteName {
   static const String todo = '/todo';
   static const String itemDetails = '/itemDetails';
   static const String categoryDetails = '/categoryDetails';
+  static const String chat = '/chat';
 
   // ROLE REQUEST
   static const String roleRequest = "/role-request";

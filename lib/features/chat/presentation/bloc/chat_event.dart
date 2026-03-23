@@ -1,7 +1,12 @@
+// lib/features/chat/presentation/bloc/chat_event.dart
+
+import '../../domain/entities/chat_message.dart';
+
 abstract class ChatEvent {
   const ChatEvent();
 }
 
+/// ================= LOAD =================
 class LoadConversations extends ChatEvent {}
 
 class LoadMessages extends ChatEvent {
@@ -10,6 +15,7 @@ class LoadMessages extends ChatEvent {
   const LoadMessages(this.conversationId);
 }
 
+/// ================= SEND =================
 class SendMessageEvent extends ChatEvent {
   final String conversationId;
   final String senderId;
@@ -22,12 +28,20 @@ class SendMessageEvent extends ChatEvent {
   });
 }
 
-class ReceiveMessageEvent extends ChatEvent {
-  final Map<String, dynamic> messageData;
+/// ================= CONVERSATION =================
+class GetOrCreateConversationEvent extends ChatEvent {
+  final String userOneId;
+  final String userTwoId;
+  final String? receiverName; // Add this
 
-  const ReceiveMessageEvent(this.messageData);
+  const GetOrCreateConversationEvent({
+    required this.userOneId,
+    required this.userTwoId,
+    this.receiverName,
+  });
 }
 
+/// ================= SOCKET =================
 class ConnectSocketEvent extends ChatEvent {
   final String token;
 
@@ -35,3 +49,17 @@ class ConnectSocketEvent extends ChatEvent {
 }
 
 class DisconnectSocketEvent extends ChatEvent {}
+
+/// ================= REAL-TIME =================
+class MessageReceivedEvent extends ChatEvent {
+  final ChatMessage message;
+
+  const MessageReceivedEvent(this.message);
+}
+
+/// ================= JOIN ROOM =================
+class JoinConversationEvent extends ChatEvent {
+  final String conversationId;
+
+  const JoinConversationEvent(this.conversationId);
+}

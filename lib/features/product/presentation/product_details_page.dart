@@ -1,5 +1,5 @@
-import 'package:agrilink/features/product/presentation/widgets/product_action_buttons.dart';
-import 'package:agrilink/features/product/presentation/widgets/product_info_section.dart';
+// import 'package:agrilink/features/product/presentation/widgets/product_action_buttons.dart';
+// import 'package:agrilink/features/product/presentation/widgets/product_info_section.dart';
 import 'package:flutter/material.dart';
 import 'package:agrilink/features/product/domain/entities/product_entities.dart';
 
@@ -24,12 +24,12 @@ class ProductDetailsPage extends StatelessWidget {
           /// PRODUCT INFO
           Expanded(
             child: SingleChildScrollView(
-              child: ProductInfoSection(product: product),
+              // child: ProductInfoSection(product: product),
             ),
           ),
 
           /// BUTTONS
-          ProductActionButtons(product: product),
+          // ProductActionButtons(product: product),
         ],
       ),
     );

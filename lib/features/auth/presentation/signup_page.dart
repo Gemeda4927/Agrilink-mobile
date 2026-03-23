@@ -31,7 +31,6 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
 
   // Color scheme matching Login page
   static const Color primaryGreen = Color(0xFF2E7D32);
-  static const Color lightGreen = Color(0xFFE8F5E9);
   static const Color softGrey = Color(0xFFF5F5F5);
   static const Color textGrey = Color(0xFF757575);
 
