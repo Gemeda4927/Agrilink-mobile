@@ -1,4 +1,4 @@
-import 'package:agrilink/features/cart/presentation/bloc/cart_event.dart';
+// my_app.dart - Make sure ChatBloc2 is REMOVED from MultiBlocProvider
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,7 +13,9 @@ import 'package:agrilink/features/registration/presentation/bloc/registration_ev
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
 import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:agrilink/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:agrilink/features/chat/presentation/bloc/chat_event.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:agrilink/features/cart/presentation/bloc/cart_event.dart';
 import 'package:agrilink/injector.dart';
 
 class MyApp extends StatelessWidget {
@@ -24,31 +26,67 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         // ================= AUTH =================
-        BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>()),
+        BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>(), lazy: false),
 
         // ================= CATEGORY =================
         BlocProvider<CategoryBloc>(
-          create: (_) => sl<CategoryBloc>()..add(LoadCategories()),
+          create: (_) {
+            final bloc = sl<CategoryBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.add(LoadCategories());
+            });
+            return bloc;
+          },
+          lazy: false,
         ),
 
         // ================= PRODUCT =================
         BlocProvider<ProductBloc>(
-          create: (_) => sl<ProductBloc>()..add(LoadProducts()),
+          create: (_) {
+            final bloc = sl<ProductBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.add(LoadProducts());
+            });
+            return bloc;
+          },
+          lazy: false,
         ),
 
         // ================= REGISTRATION =================
         BlocProvider<RegistrationBloc>(
-          create: (_) => sl<RegistrationBloc>()..add(LoadRegions()),
+          create: (_) {
+            final bloc = sl<RegistrationBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.add(LoadRegions());
+            });
+            return bloc;
+          },
+          lazy: false,
         ),
 
         // ================= ROLE REQUEST =================
-        BlocProvider<RoleRequestBloc>(create: (_) => sl<RoleRequestBloc>()),
+        BlocProvider<RoleRequestBloc>(
+          create: (_) => sl<RoleRequestBloc>(),
+          lazy: false,
+        ),
 
         // ================= PROFILE =================
-        BlocProvider<ProfileBloc>(create: (_) => sl<ProfileBloc>()),
+        BlocProvider<ProfileBloc>(
+          create: (_) => sl<ProfileBloc>(),
+          lazy: false,
+        ),
 
-        // ================= CHAT =================
-        BlocProvider<ChatBloc>(lazy: false, create: (_) => sl<ChatBloc>()),
+        // ================= CHAT (OLD SYSTEM) =================
+        BlocProvider<ChatBloc>(
+          create: (_) {
+            final chatBloc = sl<ChatBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              chatBloc.add(LoadConversationsEvent());
+            });
+            return chatBloc;
+          },
+          lazy: false,
+        ),
 
         // ================= CART =================
         BlocProvider<CartBloc>(
@@ -59,6 +97,7 @@ class MyApp extends StatelessWidget {
             });
             return cartBloc;
           },
+          lazy: false,
         ),
       ],
       child: MaterialApp.router(

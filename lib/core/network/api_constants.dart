@@ -1,5 +1,7 @@
 class ApiConstants {
   static const String baseUrl = "https://agrilink-1-x6ph.onrender.com";
+  static const String cropAdvisorBaseUrl =
+      "https://senakebede-crop-advisor-backend.hf.space";
 
   // ================= AUTH =================
   static const String signup = "$baseUrl/auth/signup";
@@ -43,4 +45,6 @@ class ApiConstants {
   // ================= CART =================
   static const String cart = "$baseUrl/cart";
   static String deleteCartItem(String productId) => "$baseUrl/cart/$productId";
+
+  static const String cropAdvisorChat = "$cropAdvisorBaseUrl/api/v1/chat";
 }

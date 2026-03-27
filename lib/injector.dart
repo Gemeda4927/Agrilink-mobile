@@ -1,3 +1,4 @@
+// Updated injector with fixed registration
 import 'package:agrilink/features/cart/data/repository/cartRemoteDataSourceImpl.dart';
 import 'package:agrilink/features/chat/data/repository/chat_repository_impl.dart';
 import 'package:agrilink/features/chat/data/services/chat_service.dart';
@@ -18,6 +19,12 @@ import 'package:agrilink/features/profile/data/services/profile_service.dart';
 import 'package:agrilink/features/profile/domain/repository/profile_repository.dart';
 import 'package:agrilink/features/profile/domain/usecases/profile_usecases.dart';
 import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:agrilink/features/recommendation/data/repository/chat_repository_impl.dart';
+import 'package:agrilink/features/recommendation/data/service/chat_service.dart';
+import 'package:agrilink/features/recommendation/domain/repository/chat_repository.dart';
+import 'package:agrilink/features/recommendation/domain/usecase/send_chat_message_usecase.dart';
+import 'package:agrilink/features/recommendation/presentation/bloc/chat_bloc.dart';
+
 import 'package:agrilink/features/role_request/domain/usecases/create_role_request_usecase.dart';
 import 'package:get_it/get_it.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -58,6 +65,7 @@ import 'package:agrilink/features/cart/data/service/cart_service.dart';
 import 'package:agrilink/features/cart/domain/repositories/cart_repository.dart';
 import 'package:agrilink/features/cart/domain/usecases/cart_usecases.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:logger/logger.dart';
 
 final sl = GetIt.instance;
 
@@ -66,6 +74,20 @@ Future<void> initInjector() async {
   await Firebase.initializeApp();
   sl.registerSingleton<FirebaseAuth>(FirebaseAuth.instance);
   sl.registerSingleton<GoogleSignIn>(GoogleSignIn());
+
+  // ================= CORE LOGGER =================
+  sl.registerLazySingleton<Logger>(
+    () => Logger(
+      printer: PrettyPrinter(
+        methodCount: 0,
+        errorMethodCount: 5,
+        lineLength: 80,
+        colors: true,
+        printEmojis: true,
+        printTime: true,
+      ),
+    ),
+  );
 
   // ================= CORE =================
   final tokenManager = await TokenManager.getInstance();
@@ -204,82 +226,27 @@ Future<void> initInjector() async {
   );
 
   // ==================================================
-  // ================= CHAT FEATURE ===================
-  // ==================================================
-
-  // Chat Service
-  sl.registerSingleton<ChatService>(ChatService(dioClient: sl<DioClient>()));
-
-  // Chat Repository
-  sl.registerSingleton<ChatRepository>(
-    ChatRepositoryImpl(chatService: sl<ChatService>()),
-  );
-
-  // Chat Use Cases
-  sl.registerSingleton<FetchConversations>(
-    FetchConversations(sl<ChatRepository>()),
-  );
-  sl.registerSingleton<FetchMessages>(FetchMessages(sl<ChatRepository>()));
-  sl.registerSingleton<SendMessage>(SendMessage(sl<ChatRepository>()));
-  sl.registerSingleton<ConnectSocket>(ConnectSocket(sl<ChatRepository>()));
-  sl.registerSingleton<DisconnectSocket>(
-    DisconnectSocket(sl<ChatRepository>()),
-  );
-  sl.registerSingleton<JoinConversation>(
-    JoinConversation(sl<ChatRepository>()),
-  );
-  sl.registerSingleton<ListenForMessages>(
-    ListenForMessages(sl<ChatRepository>()),
-  );
-  sl.registerSingleton<GetOrCreateConversation>(
-    GetOrCreateConversation(sl<ChatRepository>()),
-  );
-
-  // Chat Bloc
-  sl.registerFactory<ChatBloc>(
-    () => ChatBloc(
-      fetchConversations: sl<FetchConversations>(),
-      fetchMessages: sl<FetchMessages>(),
-      sendMessage: sl<SendMessage>(),
-      connectSocket: sl<ConnectSocket>(),
-      disconnectSocket: sl<DisconnectSocket>(),
-      joinConversation: sl<JoinConversation>(),
-      listenForMessages: sl<ListenForMessages>(),
-      getOrCreateConversation: sl<GetOrCreateConversation>(),
-    ),
-  );
-
-  // ==================================================
   // ================= PRODUCT FEATURE ================
   // ==================================================
-
-  // Product Service
   sl.registerSingleton<ProductService>(
     ProductService(dioClient: sl<DioClient>()),
   );
 
-  // Product Repository
   sl.registerSingleton<ProductRepository>(
     ProductRepositoryImpl(sl<ProductService>()),
   );
 
-  // Product Use Cases
   sl.registerSingleton<GetProducts>(GetProducts(sl<ProductRepository>()));
 
-  // Product Bloc
   sl.registerFactory<ProductBloc>(() => ProductBloc(sl<GetProducts>()));
 
   // ==================================================
   // ================= CART FEATURE ===================
   // ==================================================
-
-  // Cart Service
   sl.registerSingleton<CartService>(CartService(sl<DioClient>()));
 
-  // Cart Repository
   sl.registerSingleton<CartRepository>(CartRepositoryImpl(sl<CartService>()));
 
-  // Cart Use Cases
   sl.registerSingleton<GetCartUseCase>(GetCartUseCase(sl<CartRepository>()));
 
   sl.registerSingleton<AddToCartUseCase>(
@@ -297,25 +264,19 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= CHECKOUT FEATURE ===============
   // ==================================================
-
-  // Checkout Service
   sl.registerSingleton<CheckoutService>(CheckoutService(sl<DioClient>()));
 
-  // Checkout Repository
   sl.registerSingleton<CheckoutRepository>(
     CheckoutRepositoryImpl(sl<CheckoutService>()),
   );
 
-  // Checkout Use Cases
   sl.registerSingleton<ProcessCheckoutUseCase>(
     ProcessCheckoutUseCase(sl<CheckoutRepository>()),
   );
 
   // ==================================================
-  // ================= CART BLOC (Updated) ============
+  // ================= CART BLOC ======================
   // ==================================================
-
-  // Cart Bloc with checkout dependencies
   sl.registerFactory<CartBloc>(
     () => CartBloc(
       getCartUseCase: sl<GetCartUseCase>(),
@@ -324,5 +285,65 @@ Future<void> initInjector() async {
       removeFromCartUseCase: sl<RemoveFromCartUseCase>(),
       processCheckoutUseCase: sl<ProcessCheckoutUseCase>(),
     ),
+  );
+
+  // ==================================================
+  // ================= CHAT FEATURE ===================
+  // ==================================================
+
+  // Chat Service
+  sl.registerLazySingleton<ChatService>(
+    () => ChatService(dioClient: sl(), logger: sl()),
+  );
+
+  sl.registerLazySingleton<ChatRepository>(
+    () => ChatRepositoryImpl(service: sl<ChatService>()),
+  );
+
+  // ================= USECASES =================
+
+  // Get Conversations
+  sl.registerLazySingleton<GetConversationsUseCase>(
+    () => GetConversationsUseCase(sl()),
+  );
+
+  // Send Message
+  sl.registerLazySingleton<SendMessageUseCase>(() => SendMessageUseCase(sl()));
+
+  // Listen Messages (Socket)
+  sl.registerLazySingleton<ListenMessagesUseCase>(
+    () => ListenMessagesUseCase(sl()),
+  );
+
+  // ================= BLOC =================
+
+  sl.registerFactory<ChatBloc>(
+    () => ChatBloc(repository: sl<ChatRepository>()),
+  );
+
+  // ==================================================
+  // ========== RECOMMENDATION CHAT V2 FEATURE ========
+  // ==================================================
+
+  // ================= SERVICE =================
+
+  sl.registerLazySingleton<ChatService2>(
+    () => ChatService2(dioClient: sl<DioClient>()),
+  );
+
+  // =================
+
+  // ================= REPOSITORY =================
+  sl.registerLazySingleton<ChatRepository2>(
+    () => ChatRepositoryImpl2(service: sl<ChatService2>()),
+  );
+
+  // ================= USE CASE =================
+  sl.registerLazySingleton<SendChatMessageUseCase2>(
+    () => SendChatMessageUseCase2(sl<ChatRepository2>()),
+  );
+
+  sl.registerFactory<ChatBloc2>(
+    () => ChatBloc2(sendMessageUseCase: sl<SendChatMessageUseCase2>()),
   );
 }

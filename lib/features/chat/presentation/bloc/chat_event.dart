@@ -1,65 +1,36 @@
-// lib/features/chat/presentation/bloc/chat_event.dart
+// chat_event.dart
+import 'package:agrilink/features/chat/data/models/chat_model.dart';
 
-import '../../domain/entities/chat_message.dart';
+abstract class ChatEvent {}
 
-abstract class ChatEvent {
-  const ChatEvent();
-}
+class LoadConversationsEvent extends ChatEvent {}
 
-/// ================= LOAD =================
-class LoadConversations extends ChatEvent {}
-
-class LoadMessages extends ChatEvent {
-  final String conversationId;
-
-  const LoadMessages(this.conversationId);
-}
-
-/// ================= SEND =================
 class SendMessageEvent extends ChatEvent {
   final String conversationId;
   final String senderId;
   final String message;
 
-  const SendMessageEvent({
+  SendMessageEvent({
     required this.conversationId,
     required this.senderId,
     required this.message,
   });
 }
 
-/// ================= CONVERSATION =================
-class GetOrCreateConversationEvent extends ChatEvent {
+class ListenMessagesEvent extends ChatEvent {}
+
+class CreateConversationEvent extends ChatEvent {
   final String userOneId;
   final String userTwoId;
-  final String? receiverName; // Add this
 
-  const GetOrCreateConversationEvent({
+  CreateConversationEvent({
     required this.userOneId,
     required this.userTwoId,
-    this.receiverName,
   });
 }
 
-/// ================= SOCKET =================
-class ConnectSocketEvent extends ChatEvent {
-  final String token;
+class NewMessageEvent extends ChatEvent {
+  final MessageModel message;
 
-  const ConnectSocketEvent(this.token);
-}
-
-class DisconnectSocketEvent extends ChatEvent {}
-
-/// ================= REAL-TIME =================
-class MessageReceivedEvent extends ChatEvent {
-  final ChatMessage message;
-
-  const MessageReceivedEvent(this.message);
-}
-
-/// ================= JOIN ROOM =================
-class JoinConversationEvent extends ChatEvent {
-  final String conversationId;
-
-  const JoinConversationEvent(this.conversationId);
+  NewMessageEvent(this.message);
 }
