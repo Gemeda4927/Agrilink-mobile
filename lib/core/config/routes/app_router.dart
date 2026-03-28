@@ -14,6 +14,7 @@ import 'package:agrilink/features/cart/presentation/order_confirmation_screen.da
 import 'package:agrilink/features/chat/presentation/chat.dart';
 import 'package:agrilink/features/home/homescreen.dart';
 import 'package:agrilink/features/product/FarmerProfilePage.dart';
+import 'package:agrilink/features/product/presentation/create_product_page.dart';
 import 'package:agrilink/features/product/product.dart';
 import 'package:agrilink/features/profile/presentation/profile.dart';
 import 'package:agrilink/features/profile/presentation/view_profile.dart';
@@ -100,6 +101,11 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
+    GoRoute(
+      path: RouteName.createProduct,
+      name: RouteName.createProduct,
+      builder: (context, state) => const CreateProductPage(),
+    ),
     // Chat Route
     GoRoute(
       path: RouteName.chat,
@@ -241,7 +247,6 @@ final GoRouter appRouter = GoRouter(
             );
           },
         ),
-
 
         // Order Confirmation Route
         GoRoute(

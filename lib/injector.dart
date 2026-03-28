@@ -11,6 +11,7 @@ import 'package:agrilink/features/payment/domain/usecases/checkout_usecase.dart'
 import 'package:agrilink/features/product/data/repository/product_repo_imp.dart';
 import 'package:agrilink/features/product/data/services/product_service.dart';
 import 'package:agrilink/features/product/domain/repository/product_repository.dart';
+import 'package:agrilink/features/product/domain/usecases/create_product.dart';
 import 'package:agrilink/features/product/domain/usecases/get_products.dart';
 import 'package:agrilink/features/product/presentation/bloc/product_bloc.dart';
 import 'package:agrilink/features/profile/data/repository/profile_repository_impl.dart';
@@ -249,26 +250,30 @@ Future<void> initInjector() async {
     ),
   );
 
-  // ==================================================
-  // ================= PRODUCT FEATURE ================
-  // ==================================================
+  // ================= PRODUCT FEATURE =================
 
-  // Product Service
+  // ================= PRODUCT FEATURE =================
+
+  // Service
   sl.registerSingleton<ProductService>(
     ProductService(dioClient: sl<DioClient>()),
   );
 
-  // Product Repository
+  // Repository
   sl.registerSingleton<ProductRepository>(
     ProductRepositoryImpl(sl<ProductService>()),
   );
 
-  // Product Use Cases
+  // UseCases
   sl.registerSingleton<GetProducts>(GetProducts(sl<ProductRepository>()));
 
-  // Product Bloc
-  sl.registerFactory<ProductBloc>(() => ProductBloc(sl<GetProducts>()));
+  // ❗ THIS IS THE MAIN FIX (MUST EXIST)
+  sl.registerSingleton<CreateProduct>(CreateProduct(sl<ProductRepository>()));
 
+  // Bloc
+  sl.registerFactory<ProductBloc>(
+    () => ProductBloc(sl<GetProducts>(), sl<CreateProduct>()),
+  );
   // ==================================================
   // ================= CART FEATURE ===================
   // ==================================================
