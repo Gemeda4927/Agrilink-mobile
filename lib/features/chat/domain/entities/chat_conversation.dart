@@ -1,59 +1,49 @@
-/// ================= PROFILE =================
-class Profile {
-  final String? fullName;
-
-  Profile({this.fullName});
-}
-
-/// ================= USER =================
-class User {
+class MessageEntity {
   final String id;
-  final String? phone;
-  final String? email;
-  final Profile? profile;
-
-  User({
-    required this.id,
-    this.phone,
-    this.email,
-    this.profile,
-  });
-}
-
-/// ================= MESSAGE =================
-class Message {
-  final String id;
-  final String conversationId;
   final String senderId;
-  final String message;
-  final DateTime createdAt;
+  final String receiverId;
+  final String content;
+  final DateTime timestamp;
+  final bool isDelivered;
+  final bool isSeen;
+  final String conversationId;
 
-  Message({
+  MessageEntity({
     required this.id,
-    required this.conversationId,
     required this.senderId,
-    required this.message,
-    required this.createdAt,
+    required this.receiverId,
+    required this.content,
+    required this.timestamp,
+    required this.isDelivered,
+    required this.isSeen,
+    required this.conversationId,
   });
-}
 
-/// ================= CONVERSATION =================
-class Conversation {
-  final String id;
-  final String userOneId;
-  final String userTwoId;
-  final DateTime createdAt;
-  final User userOne;
-  final User userTwo;
-  final List<Message> messages;
+  // ================= TO JSON =================
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'senderId': senderId,
+      'receiverId': receiverId,
+      'content': content,
+      'timestamp': timestamp.toIso8601String(),
+      'isDelivered': isDelivered,
+      'isSeen': isSeen,
+      'conversationId': conversationId,
+    };
+  }
 
-  Conversation({
-    required this.id,
-    required this.userOneId,
-    required this.userTwoId,
-    required this.createdAt,
-    required this.userOne,
-    required this.userTwo,
-    required this.messages,
-  });
+  // ================= FROM JSON =================
+  factory MessageEntity.fromJson(Map<String, dynamic> json) {
+    return MessageEntity(
+      id: json['id'],
+      senderId: json['senderId'],
+      receiverId: json['receiverId'],
+      content: json['content'],
+      timestamp: DateTime.parse(json['timestamp']),
+      isDelivered: json['isDelivered'] ?? false,
+      isSeen: json['isSeen'] ?? false,
+      conversationId: json['conversationId'] ?? '',
+    );
+  }
 }

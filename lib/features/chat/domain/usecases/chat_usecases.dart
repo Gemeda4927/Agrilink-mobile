@@ -1,48 +1,85 @@
+import '../repositories/chat_repository.dart';
 
-
-import 'package:agrilink/features/chat/data/models/chat_model.dart';
-import 'package:agrilink/features/chat/domain/repositories/chat_repository.dart';
-
-/// ================= GET CONVERSATIONS USE CASE =================
-class GetConversationsUseCase {
+class ChatUseCases {
   final ChatRepository repository;
 
-  GetConversationsUseCase(this.repository);
+  ChatUseCases(this.repository);
 
-  /// Call this to fetch all conversations
-  Future<List<ConversationModel>> call() async {
-    return repository.getConversations();
+  // ================= SOCKET CONNECTION =================
+  void connect(String userId) {
+    repository.connect(userId);
   }
-}
 
-/// ================= SEND MESSAGE USE CASE =================
-/// Optional: UseCase if you want to wrap sending message logic
-class SendMessageUseCase {
-  final ChatRepository repository;
+  void disconnect() {
+    repository.disconnect();
+  }
 
-  SendMessageUseCase(this.repository);
-
-  void call({
-    required String conversationId,
+  // ================= MESSAGE SENDING =================
+  void sendMessage({
     required String senderId,
-    required String message,
+    required String receiverId,
+    required String content,
+    String? tempId,
   }) {
     repository.sendMessage(
-      conversationId: conversationId,
       senderId: senderId,
-      message: message,
+      receiverId: receiverId,
+      content: content,
+      tempId: tempId,
     );
   }
-}
 
-/// ================= LISTEN MESSAGES USE CASE =================
-/// Optional: UseCase for real-time messages
-class ListenMessagesUseCase {
-  final ChatRepository repository;
-
-  ListenMessagesUseCase(this.repository);
-
-  void call(Function(dynamic data) callback) {
-    repository.listenMessages(callback);
+  // ================= CONVERSATION MANAGEMENT =================
+  void setCurrentConversation(String conversationId) {
+    repository.setCurrentConversation(conversationId);
   }
+
+  void clearCurrentConversation() {
+    repository.clearCurrentConversation();
+  }
+
+  void markConversationAsRead(String conversationId) {
+    repository.markConversationAsRead(conversationId);
+  }
+
+  void markMessageAsRead(String messageId, String conversationId) {
+    repository.markMessageAsRead(messageId, conversationId);
+  }
+
+  void markMessageAsDelivered(String messageId, String receiverId) {
+    repository.markMessageAsDelivered(messageId, receiverId);
+  }
+
+  // ================= TYPING INDICATOR =================
+  void sendTyping(String receiverId, bool isTyping) {
+    repository.sendTyping(receiverId, isTyping);
+  }
+
+  // ================= MESSAGE TRACKING =================
+  void trackMessage(String messageId) {
+    repository.trackMessage(messageId);
+  }
+
+  // ================= STREAMS =================
+  Stream<Map<String, dynamic>> get messages => repository.messages;
+  Stream<Map<String, dynamic>> get messageSent => repository.messageSent;
+  Stream<Map<String, dynamic>> get messageDelivered =>
+      repository.messageDelivered;
+  Stream<Map<String, dynamic>> get messageRead => repository.messageRead;
+  Stream<Map<String, dynamic>> get errors => repository.errors;
+  Stream<Map<String, dynamic>> get typing => repository.typing;
+  Stream<bool> get connectionStatus => repository.connectionStatus;
+
+  // ================= DATA FETCHING =================
+  Future<List<dynamic>> getConversations() {
+    return repository.getConversations();
+  }
+
+  Future<List<dynamic>> getMessages(String conversationId) {
+    return repository.getMessages(conversationId);
+  }
+
+  // ================= STATUS GETTERS =================
+  bool get isConnected => repository.isConnected;
+  String? get socketId => repository.socketId;
 }

@@ -108,6 +108,8 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const CreateProductPage(),
     ),
     // Chat Route
+
+    // Chat Route
     GoRoute(
       path: RouteName.chat,
       name: RouteName.chat,
@@ -116,18 +118,18 @@ final GoRouter appRouter = GoRouter(
 
         if (extra == null || extra['receiverId'] == null) {
           return const Scaffold(
-            body: Center(child: Text("Receiver (farmer) ID not provided")),
+            body: Center(child: Text("Receiver ID not provided")),
           );
         }
 
         final receiverId = extra['receiverId'].toString();
         final receiverName = extra['receiverName']?.toString();
-        final receiverAvatar = extra['receiverAvatar']?.toString();
+        final conversationId = extra['conversationId']?.toString();
 
         return ChatScreen(
           receiverId: receiverId,
           receiverName: receiverName,
-          receiverAvatar: receiverAvatar,
+          conversationId: conversationId,
         );
       },
     ),

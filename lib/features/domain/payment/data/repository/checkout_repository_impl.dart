@@ -1,5 +1,5 @@
-import 'package:agrilink/features/payment/data/service/checkout_service.dart';
-import 'package:agrilink/features/payment/domain/repositories/checkout_repository.dart';
+import 'package:agrilink/features/domain/payment/data/service/checkout_service.dart';
+import 'package:agrilink/features/domain/payment/domain/repositories/checkout_repository.dart';
 
 class CheckoutRepositoryImpl implements CheckoutRepository {
   final CheckoutService checkoutService;
