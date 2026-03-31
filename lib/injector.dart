@@ -11,6 +11,7 @@ import 'package:agrilink/features/domain/payment/domain/usecases/checkout_usecas
 import 'package:agrilink/features/product/data/repository/product_repo_imp.dart';
 import 'package:agrilink/features/product/data/services/product_service.dart';
 import 'package:agrilink/features/product/domain/repository/product_repository.dart';
+import 'package:agrilink/features/product/domain/usecases/create_product.dart';
 import 'package:agrilink/features/product/domain/usecases/get_products.dart';
 import 'package:agrilink/features/product/presentation/bloc/product_bloc.dart';
 import 'package:agrilink/features/profile/data/repository/profile_repository_impl.dart';
@@ -235,8 +236,11 @@ Future<void> initInjector() async {
   );
 
   sl.registerSingleton<GetProducts>(GetProducts(sl<ProductRepository>()));
+  sl.registerSingleton<CreateProduct>(CreateProduct(sl<ProductRepository>()));
 
-  sl.registerFactory<ProductBloc>(() => ProductBloc(sl<GetProducts>()));
+ sl.registerFactory<ProductBloc>(
+    () => ProductBloc(sl<GetProducts>(), sl<CreateProduct>()),
+  );
 
   // ==================================================
   // ================= CART FEATURE ===================
