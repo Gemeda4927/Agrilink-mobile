@@ -1,3 +1,4 @@
+import 'package:agrilink/features/chat/data/services/chat_service.dart';
 import 'package:flutter/material.dart';
 import 'package:agrilink/app.dart';
 import 'package:agrilink/injector.dart';

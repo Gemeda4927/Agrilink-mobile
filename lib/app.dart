@@ -77,16 +77,16 @@ class MyApp extends StatelessWidget {
         ),
 
         // ================= CHAT (OLD SYSTEM) =================
-        // BlocProvider<ChatBloc>(
-        //   create: (_) {
-        //     final chatBloc = sl<ChatBloc>();
-        //     WidgetsBinding.instance.addPostFrameCallback((_) {
-        //       chatBloc.add(LoadConversationsEvent());
-        //     });
-        //     return chatBloc;
-        //   },
-        //   lazy: false,
-        // ),
+        BlocProvider<ChatBloc>(
+          create: (_) {
+            final chatBloc = sl<ChatBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              chatBloc.add(LoadConversationsEvent());
+            });
+            return chatBloc;
+          },
+          lazy: false,
+        ),
 
         // ================= CART =================
         BlocProvider<CartBloc>(
