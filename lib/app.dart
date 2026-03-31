@@ -1,4 +1,3 @@
-// my_app.dart - Make sure ChatBloc2 is REMOVED from MultiBlocProvider
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,7 +12,6 @@ import 'package:agrilink/features/registration/presentation/bloc/registration_ev
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
 import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:agrilink/features/chat/presentation/bloc/chat_bloc.dart';
-import 'package:agrilink/features/chat/presentation/bloc/chat_event.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_event.dart';
 import 'package:agrilink/injector.dart';
@@ -26,7 +24,10 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         // ================= AUTH =================
-        BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>(), lazy: false),
+        BlocProvider<AuthBloc>(
+          create: (_) => sl<AuthBloc>(),
+          lazy: false,
+        ),
 
         // ================= CATEGORY =================
         BlocProvider<CategoryBloc>(
@@ -76,14 +77,15 @@ class MyApp extends StatelessWidget {
           lazy: false,
         ),
 
-        // ================= CHAT (OLD SYSTEM) =================
+        // ================= CHAT =================
         BlocProvider<ChatBloc>(
           create: (_) {
-            final chatBloc = sl<ChatBloc>();
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              chatBloc.add(LoadConversationsEvent());
-            });
-            return chatBloc;
+            final bloc = sl<ChatBloc>();
+            // Optional: Add any initial events if needed
+            // WidgetsBinding.instance.addPostFrameCallback((_) {
+            //   bloc.add(SomeInitialEvent());
+            // });
+            return bloc;
           },
           lazy: false,
         ),
@@ -91,11 +93,11 @@ class MyApp extends StatelessWidget {
         // ================= CART =================
         BlocProvider<CartBloc>(
           create: (_) {
-            final cartBloc = sl<CartBloc>();
+            final bloc = sl<CartBloc>();
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              cartBloc.add(LoadCart());
+              bloc.add(LoadCart());
             });
-            return cartBloc;
+            return bloc;
           },
           lazy: false,
         ),
@@ -103,7 +105,23 @@ class MyApp extends StatelessWidget {
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
         title: 'Agrilink',
-        theme: ThemeData(primarySwatch: Colors.green, useMaterial3: true),
+        theme: ThemeData(
+          primarySwatch: Colors.green,
+          useMaterial3: true,
+          appBarTheme: const AppBarTheme(
+            elevation: 0,
+            centerTitle: true,
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
         routerConfig: appRouter,
       ),
     );

@@ -1,6 +1,6 @@
 // features/checkout/domain/usecases/checkout_usecase.dart
 
-import 'package:agrilink/features/payment/domain/repositories/checkout_repository.dart';
+import 'package:agrilink/features/domain/payment/domain/repositories/checkout_repository.dart';
 
 // ============================================================================
 // Process Checkout Use Case
