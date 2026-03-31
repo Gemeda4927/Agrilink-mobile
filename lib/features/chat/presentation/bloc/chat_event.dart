@@ -1,36 +1,142 @@
-// chat_event.dart
-import 'package:agrilink/features/chat/data/models/chat_model.dart';
+import 'package:equatable/equatable.dart';
 
-abstract class ChatEvent {}
+abstract class ChatEvent extends Equatable {
+  const ChatEvent();
 
-class LoadConversationsEvent extends ChatEvent {}
+  @override
+  List<Object?> get props => [];
+}
 
-class SendMessageEvent extends ChatEvent {
-  final String conversationId;
+// Connection Events
+class ConnectChat extends ChatEvent {
+  final String userId;
+
+  const ConnectChat({required this.userId});
+
+  @override
+  List<Object?> get props => [userId];
+}
+
+class DisconnectChat extends ChatEvent {}
+
+// Message Events
+class SendChatMessage extends ChatEvent {
   final String senderId;
-  final String message;
+  final String receiverId;
+  final String content;
+  final String? tempId;
+  final String? replyToId;
 
-  SendMessageEvent({
-    required this.conversationId,
+  const SendChatMessage({
     required this.senderId,
-    required this.message,
+    required this.receiverId,
+    required this.content,
+    this.tempId,
+    this.replyToId,
   });
+
+  @override
+  List<Object?> get props => [senderId, receiverId, content, tempId];
 }
 
-class ListenMessagesEvent extends ChatEvent {}
+class IncomingMessage extends ChatEvent {
+  final Map<String, dynamic> message;
 
-class CreateConversationEvent extends ChatEvent {
-  final String userOneId;
-  final String userTwoId;
+  const IncomingMessage(this.message);
 
-  CreateConversationEvent({
-    required this.userOneId,
-    required this.userTwoId,
-  });
+  @override
+  List<Object?> get props => [message];
 }
 
-class NewMessageEvent extends ChatEvent {
-  final MessageModel message;
+// Message Status Events
+class MessageSent extends ChatEvent {
+  final Map<String, dynamic> data;
 
-  NewMessageEvent(this.message);
+  const MessageSent(this.data);
+
+  @override
+  List<Object?> get props => [data];
+}
+
+class MessageDelivered extends ChatEvent {
+  final Map<String, dynamic> data;
+
+  const MessageDelivered(this.data);
+
+  @override
+  List<Object?> get props => [data];
+}
+
+class MessageRead extends ChatEvent {
+  final Map<String, dynamic> data;
+
+  const MessageRead(this.data);
+
+  @override
+  List<Object?> get props => [data];
+}
+
+// Typing Events
+class SendTyping extends ChatEvent {
+  final String receiverId;
+  final bool isTyping;
+
+  const SendTyping({required this.receiverId, required this.isTyping});
+
+  @override
+  List<Object?> get props => [receiverId, isTyping];
+}
+
+class UserTyping extends ChatEvent {
+  final String userId;
+  final bool isTyping;
+
+  const UserTyping({required this.userId, required this.isTyping});
+
+  @override
+  List<Object?> get props => [userId, isTyping];
+}
+
+// Conversation Management Events
+class SetCurrentConversation extends ChatEvent {
+  final String conversationId;
+
+  const SetCurrentConversation(this.conversationId);
+
+  @override
+  List<Object?> get props => [conversationId];
+}
+
+class ClearCurrentConversation extends ChatEvent {}
+
+class MarkConversationRead extends ChatEvent {
+  final String conversationId;
+
+  const MarkConversationRead(this.conversationId);
+
+  @override
+  List<Object?> get props => [conversationId];
+}
+
+// Data Loading Events
+class LoadChatHistory extends ChatEvent {
+  final String conversationId;
+
+  const LoadChatHistory(this.conversationId);
+
+  @override
+  List<Object?> get props => [conversationId];
+}
+
+class LoadConversations extends ChatEvent {}
+
+// Error Events
+class ChatErrorEvent extends ChatEvent {
+  final String error;
+  final String? type;
+
+  const ChatErrorEvent({required this.error, this.type});
+
+  @override
+  List<Object?> get props => [error, type];
 }

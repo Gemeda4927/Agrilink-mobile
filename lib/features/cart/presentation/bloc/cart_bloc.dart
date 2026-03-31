@@ -1,6 +1,6 @@
 import 'package:agrilink/features/cart/presentation/bloc/cart_event.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_state.dart';
-import 'package:agrilink/features/payment/domain/usecases/checkout_usecase.dart';
+import 'package:agrilink/features/domain/payment/domain/usecases/checkout_usecase.dart';
 import 'package:bloc/bloc.dart';
 import 'package:agrilink/features/cart/domain/entity/cart_item.dart';
 import 'package:agrilink/features/cart/domain/usecases/cart_usecases.dart';

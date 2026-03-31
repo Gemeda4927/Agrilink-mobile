@@ -1,14 +1,13 @@
-// Updated injector with fixed registration
 import 'package:agrilink/features/cart/data/repository/cartRemoteDataSourceImpl.dart';
 import 'package:agrilink/features/chat/data/repository/chat_repository_impl.dart';
 import 'package:agrilink/features/chat/data/services/chat_service.dart';
 import 'package:agrilink/features/chat/domain/repositories/chat_repository.dart';
 import 'package:agrilink/features/chat/domain/usecases/chat_usecases.dart';
 import 'package:agrilink/features/chat/presentation/bloc/chat_bloc.dart';
-import 'package:agrilink/features/payment/data/repository/checkout_repository_impl.dart';
-import 'package:agrilink/features/payment/data/service/checkout_service.dart';
-import 'package:agrilink/features/payment/domain/repositories/checkout_repository.dart';
-import 'package:agrilink/features/payment/domain/usecases/checkout_usecase.dart';
+import 'package:agrilink/features/domain/payment/data/repository/checkout_repository_impl.dart';
+import 'package:agrilink/features/domain/payment/data/service/checkout_service.dart';
+import 'package:agrilink/features/domain/payment/domain/repositories/checkout_repository.dart';
+import 'package:agrilink/features/domain/payment/domain/usecases/checkout_usecase.dart';
 import 'package:agrilink/features/product/data/repository/product_repo_imp.dart';
 import 'package:agrilink/features/product/data/services/product_service.dart';
 import 'package:agrilink/features/product/domain/repository/product_repository.dart';
@@ -24,7 +23,6 @@ import 'package:agrilink/features/recommendation/data/service/chat_service.dart'
 import 'package:agrilink/features/recommendation/domain/repository/chat_repository.dart';
 import 'package:agrilink/features/recommendation/domain/usecase/send_chat_message_usecase.dart';
 import 'package:agrilink/features/recommendation/presentation/bloc/chat_bloc.dart';
-
 import 'package:agrilink/features/role_request/domain/usecases/create_role_request_usecase.dart';
 import 'package:get_it/get_it.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -290,59 +288,50 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= CHAT FEATURE ===================
   // ==================================================
-
-  // Chat Service
+  
+  // SERVICE
   sl.registerLazySingleton<ChatService>(
-    () => ChatService(dioClient: sl(), logger: sl()),
+    () => ChatService(
+      logger: sl<Logger>(), 
+      dioClient: sl<DioClient>(),
+    ),
   );
 
+  // REPOSITORY
   sl.registerLazySingleton<ChatRepository>(
-    () => ChatRepositoryImpl(service: sl<ChatService>()),
+    () => ChatRepositoryImpl(chatService: sl<ChatService>()),
   );
 
-  // ================= USECASES =================
-
-  // Get Conversations
-  sl.registerLazySingleton<GetConversationsUseCase>(
-    () => GetConversationsUseCase(sl()),
+  // USE CASES
+  sl.registerLazySingleton<ChatUseCases>(
+    () => ChatUseCases(sl<ChatRepository>()),
   );
 
-  // Send Message
-  sl.registerLazySingleton<SendMessageUseCase>(() => SendMessageUseCase(sl()));
-
-  // Listen Messages (Socket)
-  sl.registerLazySingleton<ListenMessagesUseCase>(
-    () => ListenMessagesUseCase(sl()),
-  );
-
-  // ================= BLOC =================
-
+  // BLOC
   sl.registerFactory<ChatBloc>(
-    () => ChatBloc(repository: sl<ChatRepository>()),
+    () => ChatBloc(useCases: sl<ChatUseCases>()),
   );
 
   // ==================================================
   // ========== RECOMMENDATION CHAT V2 FEATURE ========
   // ==================================================
 
-  // ================= SERVICE =================
-
+  // SERVICE
   sl.registerLazySingleton<ChatService2>(
     () => ChatService2(dioClient: sl<DioClient>()),
   );
 
-  // =================
-
-  // ================= REPOSITORY =================
+  // REPOSITORY
   sl.registerLazySingleton<ChatRepository2>(
     () => ChatRepositoryImpl2(service: sl<ChatService2>()),
   );
 
-  // ================= USE CASE =================
+  // USE CASE
   sl.registerLazySingleton<SendChatMessageUseCase2>(
     () => SendChatMessageUseCase2(sl<ChatRepository2>()),
   );
 
+  // BLOC
   sl.registerFactory<ChatBloc2>(
     () => ChatBloc2(sendMessageUseCase: sl<SendChatMessageUseCase2>()),
   );
