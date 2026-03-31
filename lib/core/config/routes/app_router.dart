@@ -15,12 +15,13 @@ import 'package:agrilink/features/chat/presentation/chat.dart';
 import 'package:agrilink/features/home/homescreen.dart';
 import 'package:agrilink/features/product/FarmerProfilePage.dart';
 import 'package:agrilink/features/product/presentation/create_product_page.dart';
+import 'package:agrilink/features/product/presentation/product_details_page.dart';
 import 'package:agrilink/features/product/product.dart';
 import 'package:agrilink/features/profile/presentation/profile.dart';
 import 'package:agrilink/features/profile/presentation/view_profile.dart';
 import 'package:agrilink/features/profile/presentation/update_profile_screen.dart';
 import 'package:agrilink/features/profile/data/model/ProfileModel.dart';
-import 'package:agrilink/features/recommendation/aiRecommendation.dart';
+import 'package:agrilink/features/recommendation/presentation/ai_recommendation_screen.dart';
 import 'package:agrilink/features/registration/presentation/screen/register_page.dart';
 import 'package:agrilink/injector.dart';
 import 'package:flutter/material.dart';
@@ -188,6 +189,21 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const ProductPage(),
         ),
 
+        // ================= PRODUCT DETAILS ROUTE =================
+        GoRoute(
+          path: RouteName.productDetails,
+          name: RouteName.productDetails,
+          builder: (context, state) {
+            final product = state.extra;
+            if (product == null) {
+              return const Scaffold(
+                body: Center(child: Text("Product data not provided")),
+              );
+            }
+            return ProductDetailsPage(product: product);
+          },
+        ),
+
         // Dashboard/Registration Route
         GoRoute(
           path: RouteName.dashboard,
@@ -199,7 +215,7 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: RouteName.aiRecommendation,
           name: RouteName.aiRecommendation,
-          builder: (context, state) => const AIRecommendationScreen(),
+          builder: (context, state) => AIRecommendationScreen(),
         ),
 
         // Profile Creation Route

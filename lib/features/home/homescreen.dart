@@ -344,6 +344,25 @@ class HomeScreen extends StatelessWidget {
               route: RouteName.product,
               color: Colors.orange,
             ),
+
+
+            // Inside _buildDrawer method, add this after the 'Products' drawer item
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.inventory_2,
+              title: 'My Products',
+              route: RouteName.myProducts,
+              color: Colors.blue.shade700,
+            ),
+
+            // My Orders
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.shopping_cart,
+              title: 'My Orders',
+              route: RouteName.myOrders, // Make sure this route exists
+              color: Colors.deepOrange.shade700,
+            ),
             // Post Product Item
             _buildDrawerItem(
               context: context,

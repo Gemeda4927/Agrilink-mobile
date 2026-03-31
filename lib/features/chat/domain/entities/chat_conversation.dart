@@ -1,18 +1,53 @@
-import 'chat_message.dart';
-import 'chat_user.dart';
+/// ================= PROFILE =================
+class Profile {
+  final String? fullName;
 
-class ChatConversation {
+  Profile({this.fullName});
+}
+
+/// ================= USER =================
+class User {
+  final String id;
+  final String? phone;
+  final String? email;
+  final Profile? profile;
+
+  User({
+    required this.id,
+    this.phone,
+    this.email,
+    this.profile,
+  });
+}
+
+/// ================= MESSAGE =================
+class Message {
+  final String id;
+  final String conversationId;
+  final String senderId;
+  final String message;
+  final DateTime createdAt;
+
+  Message({
+    required this.id,
+    required this.conversationId,
+    required this.senderId,
+    required this.message,
+    required this.createdAt,
+  });
+}
+
+/// ================= CONVERSATION =================
+class Conversation {
   final String id;
   final String userOneId;
   final String userTwoId;
   final DateTime createdAt;
   final User userOne;
   final User userTwo;
-  final List<ChatMessage> messages;
-  final String? lastMessage;
-  final DateTime? lastMessageTime;
+  final List<Message> messages;
 
-  ChatConversation({
+  Conversation({
     required this.id,
     required this.userOneId,
     required this.userTwoId,
@@ -20,18 +55,5 @@ class ChatConversation {
     required this.userOne,
     required this.userTwo,
     required this.messages,
-    this.lastMessage,
-    this.lastMessageTime,
   });
-
-  /// Helper method to get the other participant
-  User getOtherParticipant(String currentUserId) {
-    return currentUserId == userOneId ? userTwo : userOne;
-  }
-
-  /// Helper method to get the participant name
-  String getParticipantName(String currentUserId) {
-    final otherUser = getOtherParticipant(currentUserId);
-    return otherUser.fullName ?? otherUser.email;
-  }
 }

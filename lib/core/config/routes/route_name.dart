@@ -20,6 +20,9 @@ class RouteName {
   // Main tabs
   static const String home = '/home';
   static const String product = '/product';
+  static const String myProducts = '/my-products';
+  static const String myOrders = '/myorders';
+
   static const String createProduct = '/createProduct';
   static const String aiRecommendation = '/recommendation';
   static const String profile = '/profile';

@@ -27,18 +27,19 @@ class _ProductPageState extends State<ProductPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        elevation: 0,
         title: const Text("Products"),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         actions: [
           BlocBuilder<CartBloc, CartState>(
             builder: (context, cartState) {
               int cartItemCount = 0;
-              if (cartState is CartLoaded) {
-                cartItemCount = cartState.totalItems;
-              }
+              if (cartState is CartLoaded) cartItemCount = cartState.totalItems;
 
               return Stack(
-                alignment: Alignment.center,
                 children: [
                   IconButton(
                     icon: const Icon(Icons.shopping_cart_outlined),
@@ -69,42 +70,22 @@ class _ProductPageState extends State<ProductPage> {
           ),
         ],
       ),
-
-      /// BODY
       body: BlocBuilder<ProductBloc, ProductState>(
         builder: (context, state) {
           if (state is ProductLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-
           if (state is ProductError) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error, size: 60, color: Colors.red),
-                  const SizedBox(height: 10),
-                  Text(state.message),
-                  const SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<ProductBloc>().add(LoadProducts());
-                    },
-                    child: const Text("Retry"),
-                  ),
-                ],
+              child: ElevatedButton(
+                onPressed: () =>
+                    context.read<ProductBloc>().add(LoadProducts()),
+                child: const Text("Retry"),
               ),
             );
           }
-
           if (state is ProductLoaded) {
             final products = state.products;
-
-            if (products.isEmpty) {
-              return const Center(child: Text("No products available"));
-            }
-
-            /// ✅ CLEAN GRID
             return GridView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: products.length,
@@ -112,128 +93,142 @@ class _ProductPageState extends State<ProductPage> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-
-                /// 🔥 IMPORTANT (FIX OVERFLOW)
-                childAspectRatio: 0.68,
+                childAspectRatio: 0.72,
               ),
               itemBuilder: (context, index) {
                 final product = products[index];
+                final price = double.tryParse(product.price) ?? 0.0;
+                final canAddToCart = price <= 10000;
 
-                return InkWell(
-                  borderRadius: BorderRadius.circular(12),
+                return GestureDetector(
                   onTap: () {
-                    context.goNamed(
-                      RouteName.productDetails,
-                      extra: product,
-                    );
+                    context.goNamed(RouteName.productDetails, extra: product);
                   },
-                  child: Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        /// IMAGE
-                        Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(12),
-                              ),
-                              child: Image.network(
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(18),
+                          ),
+                          child: Stack(
+                            children: [
+                              Image.network(
                                 product.image,
-                                height: 110,
+                                height: 120,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Container(
-                                  height: 110,
+                                  height: 120,
                                   color: Colors.grey[300],
                                   child: const Icon(Icons.image),
                                 ),
                               ),
-                            ),
-
-                            /// ADD BUTTON
-                            Positioned(
-                              bottom: 6,
-                              right: 6,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.add_shopping_cart,
-                                    size: 18,
-                                    color: Colors.green,
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
                                   ),
-                                  onPressed: () {
-                                    _showAddToCartDialog(context, product);
-                                  },
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    "${product.price} ETB",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-
-                        /// INFO
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                /// NAME
-                                Text(
-                                  product.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
+                        Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
                                 ),
-
-                                /// PRICE
-                                Text(
-                                  "ETB ${product.price}",
-                                  style: const TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                "${product.amount} kg available",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
                                 ),
-
-                                /// STOCK
-                                Text(
-                                  "Stock: ${product.amount}",
-                                  style: const TextStyle(fontSize: 11),
-                                ),
-
-                                /// FARMER
-                                if (product.farmerEmail != null)
-                                  GestureDetector(
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  if (product.farmerEmail != null)
+                                    Expanded(
+                                      child: Text(
+                                        product.farmerEmail!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.orange,
+                                        ),
+                                      ),
+                                    ),
+                                  const SizedBox(width: 6),
+                                  InkWell(
                                     onTap: () {
-                                      context.goNamed(
-                                        RouteName.farmerProfile,
-                                        extra: product.farmerId,
-                                      );
+                                      if (canAddToCart) {
+                                        _showModernCartSheet(context, product);
+                                      } else {
+                                        _openChat(context, product);
+                                      }
                                     },
-                                    child: Text(
-                                      product.farmerEmail!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: canAddToCart
+                                            ? Colors.green
+                                            : Colors.blue,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        canAddToCart
+                                            ? Icons.add_shopping_cart
+                                            : Icons.chat,
+                                        color: Colors.white,
+                                        size: 18,
                                       ),
                                     ),
                                   ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -243,94 +238,128 @@ class _ProductPageState extends State<ProductPage> {
               },
             );
           }
-
           return const SizedBox();
         },
       ),
     );
   }
 
-  /// ================= DIALOG =================
-  void _showAddToCartDialog(BuildContext context, dynamic product) {
+  /// 🔥 MODERN ADD TO CART (BOTTOM SHEET)
+  void _showModernCartSheet(BuildContext context, dynamic product) {
     int quantity = 1;
     final price = double.tryParse(product.price) ?? 0.0;
-    final maxStock = product.amount;
+    final maxAmount = product.amount;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Add to Cart'),
-            content: Column(
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(product.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                Text("Price: ETB ${product.price}"),
-
+                Container(
+                  height: 4,
+                  width: 40,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                Text(
+                  product.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text("${product.price} ETB"),
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      onPressed: () {
-                        if (quantity > 1) {
-                          setState(() => quantity--);
-                        }
-                      },
-                      icon: const Icon(Icons.remove),
+                    _circleBtn(Icons.remove, () {
+                      if (quantity > 1) setState(() => quantity--);
+                    }),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        "$quantity",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    Text(quantity.toString()),
-                    IconButton(
-                      onPressed: () {
-                        if (quantity < maxStock) {
-                          setState(() => quantity++);
-                        }
-                      },
-                      icon: const Icon(Icons.add),
-                    ),
+                    _circleBtn(Icons.add, () {
+                      if (quantity < maxAmount) setState(() => quantity++);
+                    }),
                   ],
                 ),
-
+                const SizedBox(height: 16),
                 Text(
-                  "Total: ETB ${(price * quantity).toStringAsFixed(2)}",
+                  "Total: ${(price * quantity).toStringAsFixed(2)} ETB",
                   style: const TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _addToCart(context, product.id, quantity);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text("Add to Cart"),
+                  ),
+                ),
+                const SizedBox(height: 10),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _addToCart(context, product.id, quantity);
-                },
-                child: const Text("Add"),
-              ),
-            ],
           );
         },
       ),
     );
   }
 
+  Widget _circleBtn(IconData icon, VoidCallback onTap) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(icon: Icon(icon), onPressed: onTap),
+    );
+  }
+
   void _addToCart(BuildContext context, String productId, int amount) {
     context.read<CartBloc>().add(
-          AddToCart(productId: productId, amount: amount),
-        );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Added $amount item(s)'),
-        backgroundColor: Colors.green,
-      ),
+      AddToCart(productId: productId, amount: amount),
     );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Added $amount item(s)')));
+  }
+
+  void _openChat(BuildContext context, dynamic product) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Chat about ${product.name}')));
   }
 }
