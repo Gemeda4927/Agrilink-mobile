@@ -5,6 +5,6 @@ import 'package:agrilink/injector.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initInjector();
-  // sl<ChatService>().connectSocket();
+
   runApp(const MyApp());
 }

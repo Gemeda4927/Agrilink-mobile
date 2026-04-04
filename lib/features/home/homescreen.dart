@@ -1,4 +1,5 @@
 import 'package:agrilink/core/config/routes/route_name.dart';
+import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_bloc.dart';
@@ -14,14 +15,16 @@ import 'package:go_router/go_router.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  String _getTimeBasedGreeting() {
+  String? _getTimeBasedGreeting(BuildContext context) {
     final hour = DateTime.now().hour;
+    final t = AppLocalizations.of(context);
+
     if (hour < 12) {
-      return 'Good Morning';
+      return t?.goodMorning;
     } else if (hour < 17) {
-      return 'Good Afternoon';
+      return t?.goodAfternoon;
     } else {
-      return 'Good Evening';
+      return t?.goodEvening;
     }
   }
 
@@ -38,12 +41,14 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+
     return Scaffold(
       drawer: _buildDrawer(context),
       appBar: AppBar(
-        title: const Text(
-          'AgriLink',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+        title: Text(
+          t!.appTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
         ),
         centerTitle: true,
         elevation: 0,
@@ -53,7 +58,7 @@ class HomeScreen extends StatelessWidget {
             child: IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () => context.goNamed(RouteName.login),
-              tooltip: 'Logout',
+              tooltip: t.logout,
             ),
           ),
         ],
@@ -69,15 +74,19 @@ class HomeScreen extends StatelessWidget {
                   colors: [Colors.green.shade50, Colors.green.shade100],
                 ),
               ),
-              child: const Center(
+              child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.agriculture, size: 80, color: Colors.green),
-                    SizedBox(height: 16),
+                    const Icon(
+                      Icons.agriculture,
+                      size: 80,
+                      color: Colors.green,
+                    ),
+                    const SizedBox(height: 16),
                     Text(
-                      'No user data found. Please login.',
-                      style: TextStyle(fontSize: 16),
+                      t!.noUserDataFound,
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
@@ -86,7 +95,7 @@ class HomeScreen extends StatelessWidget {
           }
 
           final user = authState.authResponse.user;
-          final greeting = _getTimeBasedGreeting();
+          final greeting = _getTimeBasedGreeting(context);
           final emoji = _getGreetingEmoji();
 
           return Container(
@@ -136,7 +145,7 @@ class HomeScreen extends StatelessWidget {
                               Text(emoji, style: const TextStyle(fontSize: 32)),
                               const SizedBox(width: 12),
                               Text(
-                                greeting,
+                                greeting!,
                                 style: const TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
@@ -147,7 +156,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            user.email,
+                            user.email, // Backend data - not translated
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.white.withOpacity(0.9),
@@ -164,7 +173,7 @@ class HomeScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              user.role,
+                              user.role, // Backend data - not translated
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -193,9 +202,9 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Explore Categories',
-                          style: TextStyle(
+                        Text(
+                          t.exploreCategories,
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
@@ -245,7 +254,7 @@ class HomeScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    state.message,
+                                    state.message, // Error message from backend
                                     style: TextStyle(
                                       color: Colors.grey.shade700,
                                       fontSize: 16,
@@ -256,9 +265,7 @@ class HomeScreen extends StatelessWidget {
                             );
                           }
 
-                          return const Center(
-                            child: Text('No categories available'),
-                          );
+                          return Center(child: Text(t.noCategoriesAvailable));
                         },
                       ),
                     ),
@@ -275,6 +282,8 @@ class HomeScreen extends StatelessWidget {
   /// Drawer
   Drawer _buildDrawer(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
+    final t = AppLocalizations.of(context);
+
     String role = "";
     if (authState is AuthSuccess) {
       role = authState.authResponse.user.role;
@@ -310,9 +319,9 @@ class HomeScreen extends StatelessWidget {
                       size: 40,
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'AgriLink',
-                      style: TextStyle(
+                    Text(
+                      t!.appTitle,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -320,7 +329,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Your Farming Companion',
+                      t.farmingCompanion,
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 14,
@@ -333,49 +342,42 @@ class HomeScreen extends StatelessWidget {
             _buildDrawerItem(
               context: context,
               icon: Icons.home,
-              title: 'Home',
+              title: t!.home,
               route: RouteName.home,
               color: Colors.green,
             ),
             _buildDrawerItem(
               context: context,
               icon: Icons.store,
-              title: 'Products',
+              title: t.products,
               route: RouteName.product,
               color: Colors.orange,
             ),
-
-
-            // Inside _buildDrawer method, add this after the 'Products' drawer item
             _buildDrawerItem(
               context: context,
               icon: Icons.inventory_2,
-              title: 'My Products',
+              title: t.myProducts,
               route: RouteName.myProducts,
               color: Colors.blue.shade700,
             ),
-
-            // My Orders
             _buildDrawerItem(
               context: context,
               icon: Icons.shopping_cart,
-              title: 'My Orders',
-              route: RouteName.myOrders, // Make sure this route exists
+              title: t.myOrders,
+              route: RouteName.myOrders,
               color: Colors.deepOrange.shade700,
             ),
-            // Post Product Item
             _buildDrawerItem(
               context: context,
               icon: Icons.add_box,
-              title: 'Post Product',
+              title: t.postProduct,
               route: RouteName.createProduct,
               color: Colors.green.shade700,
             ),
-            // AI Advisory Item
             _buildDrawerItem(
               context: context,
               icon: Icons.psychology,
-              title: 'AI Advisory',
+              title: t.aiAdvisory,
               route: RouteName.aiRecommendation,
               color: Colors.purple.shade700,
             ),
@@ -397,9 +399,9 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     const Icon(Icons.handshake, color: Colors.green),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Role: AGENT',
-                      style: TextStyle(
+                    Text(
+                      t.roleAgentActive,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -414,9 +416,9 @@ class HomeScreen extends StatelessWidget {
                         color: Colors.green,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text(
-                        'Active',
-                        style: TextStyle(
+                      child: Text(
+                        t.activeStatus,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -441,7 +443,7 @@ class HomeScreen extends StatelessWidget {
                   if (state is RoleRequestSuccess) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Request Status: ${state.status}'),
+                        content: Text('${t.requestStatus}: ${state.status}'),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -449,14 +451,14 @@ class HomeScreen extends StatelessWidget {
                   }
                 },
                 builder: (context, state) {
-                  String title = 'Join as Agent';
+                  String title = t.joinAsAgent;
                   bool isLoading = false;
 
                   if (state is RoleRequestLoading) {
-                    title = 'Sending request...';
+                    title = t.sendingRequest;
                     isLoading = true;
                   } else if (state is RoleRequestSuccess) {
-                    title = 'Status: ${state.status}';
+                    title = '${t.statusLabel}: ${state.status}';
                   }
 
                   return Container(
@@ -561,7 +563,7 @@ class HomeScreen extends StatelessWidget {
                   child: Icon(Icons.category, color: Colors.green.shade800),
                 ),
                 title: Text(
-                  category.name,
+                  category.name, // Backend data - not translated
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -594,6 +596,7 @@ class HomeScreen extends StatelessWidget {
 
   /// SubCategory List
   Widget _buildSubCategoryList(BuildContext context, SubCategoryLoaded state) {
+    final t = AppLocalizations.of(context);
     final subs = state.subCategories;
 
     if (subs.isEmpty) {
@@ -609,7 +612,7 @@ class HomeScreen extends StatelessWidget {
                   Icon(Icons.inbox, size: 80, color: Colors.grey.shade400),
                   const SizedBox(height: 16),
                   Text(
-                    "No subcategories found",
+                    t!.noSubcategories,
                     style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                   ),
                 ],
@@ -660,7 +663,7 @@ class HomeScreen extends StatelessWidget {
                         child: Icon(Icons.grass, color: Colors.green.shade800),
                       ),
                       title: Text(
-                        sub.name,
+                        sub.name, // Backend data - not translated
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -678,6 +681,8 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildBackButton(BuildContext context) {
+    final t = AppLocalizations.of(context);
+
     return ElevatedButton.icon(
       onPressed: () {
         context.read<CategoryBloc>().add(LoadCategories());
@@ -690,9 +695,9 @@ class HomeScreen extends StatelessWidget {
         elevation: 0,
       ),
       icon: const Icon(Icons.arrow_back, size: 20),
-      label: const Text(
-        'Back to Categories',
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      label: Text(
+        t!.backToCategories,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }
