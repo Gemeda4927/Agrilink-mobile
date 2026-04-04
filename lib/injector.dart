@@ -66,6 +66,10 @@ import 'package:agrilink/features/cart/domain/usecases/cart_usecases.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:logger/logger.dart';
 
+// ================= LOCALIZATION =================
+import 'package:agrilink/core/localization/language_bloc.dart';
+import 'package:agrilink/core/localization/locale_provider.dart';
+
 final sl = GetIt.instance;
 
 Future<void> initInjector() async {
@@ -92,6 +96,13 @@ Future<void> initInjector() async {
   final tokenManager = await TokenManager.getInstance();
   sl.registerSingleton<TokenManager>(tokenManager);
   sl.registerSingleton<DioClient>(DioClient(tokenManager: sl<TokenManager>()));
+
+  // ================= LOCALIZATION =================
+  // Register LocaleProvider as lazy singleton
+  sl.registerLazySingleton<LocaleProvider>(() => LocaleProvider());
+  
+  // Register LanguageBloc as lazy singleton (persists across app)
+  sl.registerLazySingleton<LanguageBloc>(() => LanguageBloc());
 
   // ==================================================
   // ================= AUTH FEATURE ===================
@@ -238,7 +249,7 @@ Future<void> initInjector() async {
   sl.registerSingleton<GetProducts>(GetProducts(sl<ProductRepository>()));
   sl.registerSingleton<CreateProduct>(CreateProduct(sl<ProductRepository>()));
 
- sl.registerFactory<ProductBloc>(
+  sl.registerFactory<ProductBloc>(
     () => ProductBloc(sl<GetProducts>(), sl<CreateProduct>()),
   );
 
