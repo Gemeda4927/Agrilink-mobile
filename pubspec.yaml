@@ -55,6 +55,7 @@ dependencies:
   # Functional / Utils
   dartz: ^0.10.1
   equatable: ^2.0.5
+  sms_autofill: ^2.4.1
 
 dev_dependencies:
   flutter_test:
