@@ -1,8 +1,6 @@
-import 'dart:async';
+// features/auth/presentation/forgot_password_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:sms_autofill/sms_autofill.dart';
-
 import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_event.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
@@ -16,111 +14,46 @@ class ForgotPasswordPage extends StatefulWidget {
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
-class _ForgotPasswordPageState extends State<ForgotPasswordPage>
-    with CodeAutoFill {
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
 
-  bool _isOtpSent = false;
-  String? _identifier;
-
-  /// OTP
-  String otpCode = "";
-
-  /// TIMER
-  int _seconds = 30;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    listenForCode(); // 📲 AUTO OTP LISTENER
-  }
-
   @override
   void dispose() {
-    cancel();
-    _timer?.cancel();
     emailController.dispose();
     super.dispose();
   }
 
-  /// 📲 AUTO OTP DETECT
-  @override
-  void codeUpdated() {
-    setState(() {
-      otpCode = code ?? "";
-    });
+  void _sendResetCode() {
+    if (_formKey.currentState!.validate()) {
+      final email = emailController.text.trim();
 
-    if (otpCode.length == 6) {
-      _verifyOtp();
-    }
-  }
-
-  /// ⏱️ TIMER
-  void _startTimer() {
-    _seconds = 30;
-    _timer?.cancel();
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_seconds == 0) {
-        timer.cancel();
-      } else {
-        setState(() => _seconds--);
-      }
-    });
-  }
-
-  /// 🔐 VERIFY OTP
-  void _verifyOtp() {
-    if (otpCode.length == 6) {
       context.read<AuthBloc>().add(
-        VerifyOtpEvent(
-          data: {
-            "identifier": _identifier,
-            "code": otpCode,
-            "purpose": "RESET",
-          },
-        ),
+        ForgotPasswordEvent(data: {"emailOrPhone": email}),
       );
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Enter full OTP")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authBloc = context.read<AuthBloc>();
-
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: BlocListener<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthMessage) {
+              // Navigate to OTP screen when code is sent
+              context.pushNamed(
+                RouteName.verifyOtp,
+                extra: {
+                  'identifier': emailController.text.trim(),
+                  'purpose': 'RESET',
+                },
+              );
+
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text(state.message)));
-
-              setState(() {
-                _isOtpSent = true;
-                _identifier = emailController.text.trim();
-              });
-
-              _startTimer();
-            }
-
-            if (state is AuthSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("OTP Verified Successfully")),
-              );
-
-              context.goNamed(
-                RouteName.resetPassword,
-                extra: {"identifier": _identifier},
-              );
             }
 
             if (state is AuthFailure) {
@@ -133,7 +66,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
-                /// 🔙 BACK BUTTON
+                /// Back Button
                 Align(
                   alignment: Alignment.centerLeft,
                   child: IconButton(
@@ -144,7 +77,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
 
                 const SizedBox(height: 20),
 
-                /// 🔐 ICON
+                /// Icon
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -160,29 +93,24 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
 
                 const SizedBox(height: 20),
 
-                /// TITLE
-                Text(
-                  _isOtpSent ? "Verify OTP" : "Forgot Password",
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
+                /// Title
+                const Text(
+                  "Forgot Password?",
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 10),
 
-                /// SUBTITLE
+                /// Subtitle
                 Text(
-                  _isOtpSent
-                      ? "Enter the 6-digit code sent to\n$_identifier"
-                      : "Enter your email to receive a reset code",
+                  "Enter your email address and we'll send\nyou a verification code",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey.shade600),
                 ),
 
                 const SizedBox(height: 40),
 
-                /// CARD
+                /// Form Card
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -199,74 +127,33 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
                     key: _formKey,
                     child: Column(
                       children: [
-                        /// EMAIL
-                        if (!_isOtpSent)
-                          TextFormField(
-                            controller: emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              labelText: "Email Address",
-                              prefixIcon: const Icon(Icons.email),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                        /// Email Field
+                        TextFormField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: "Email Address",
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? "Enter email" : null,
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
                           ),
-
-                        /// OTP FIELD
-                        if (_isOtpSent) ...[
-                          PinFieldAutoFill(
-                            codeLength: 6,
-                            currentCode: otpCode,
-                            onCodeChanged: (code) {
-                              setState(() => otpCode = code ?? "");
-                            },
-                            decoration: BoxLooseDecoration(
-                              strokeColorBuilder: const FixedColorBuilder(
-                                Colors.grey,
-                              ),
-                              bgColorBuilder: FixedColorBuilder(
-                                Colors.grey.shade50,
-                              ),
-                              textStyle: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          /// TIMER / RESEND
-                          _seconds == 0
-                              ? TextButton(
-                                  onPressed: () {
-                                    authBloc.add(
-                                      ForgotPasswordEvent(
-                                        data: {"emailOrPhone": _identifier},
-                                      ),
-                                    );
-                                    _startTimer();
-                                  },
-                                  child: const Text(
-                                    "Resend OTP",
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  "Resend in $_seconds s",
-                                  style: TextStyle(color: Colors.grey.shade600),
-                                ),
-                        ],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter your email";
+                            }
+                            if (!value.contains('@') || !value.contains('.')) {
+                              return "Please enter a valid email";
+                            }
+                            return null;
+                          },
+                        ),
 
                         const SizedBox(height: 25),
 
-                        /// BUTTON
+                        /// Send Code Button
                         BlocBuilder<AuthBloc, AuthState>(
                           builder: (context, state) {
                             final isLoading = state is AuthLoading;
@@ -275,27 +162,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
                               width: double.infinity,
                               height: 50,
                               child: ElevatedButton(
-                                onPressed: isLoading
-                                    ? null
-                                    : () {
-                                        if (_formKey.currentState!.validate()) {
-                                          if (!_isOtpSent) {
-                                            authBloc.add(
-                                              ForgotPasswordEvent(
-                                                data: {
-                                                  "emailOrPhone":
-                                                      emailController.text
-                                                          .trim(),
-                                                },
-                                              ),
-                                            );
-                                          } else {
-                                            _verifyOtp();
-                                          }
-                                        }
-                                      },
+                                onPressed: isLoading ? null : _sendResetCode,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green.shade600,
+                                  foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -304,9 +174,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
                                     ? const CircularProgressIndicator(
                                         color: Colors.white,
                                       )
-                                    : Text(
-                                        _isOtpSent ? "Verify OTP" : "Send Code",
-                                        style: const TextStyle(fontSize: 16),
+                                    : const Text(
+                                        "Send Reset Code",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                               ),
                             );
@@ -319,10 +192,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
 
                 const SizedBox(height: 20),
 
-                /// BACK TO LOGIN
+                /// Back to Login
                 TextButton(
                   onPressed: () => context.goNamed(RouteName.login),
-                  child: const Text("Back to Login"),
+                  child: Text(
+                    "Back to Login",
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
                 ),
               ],
             ),

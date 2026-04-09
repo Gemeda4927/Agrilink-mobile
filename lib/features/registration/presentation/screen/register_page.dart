@@ -302,6 +302,7 @@ class _RegisterPageState extends State<RegisterPage>
               BlocListener<AuthBloc, AuthState>(
                 listener: (context, state) {
                   if (state is AuthMessage) {
+                    // Show success message
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(state.message),
@@ -314,22 +315,23 @@ class _RegisterPageState extends State<RegisterPage>
                       ),
                     );
 
-                    // After successful signup, navigate to OTP verification
-                    // Then after OTP verified, go to update profile
-                    context.goNamed(
-                      RouteName.verifyOtp,
-                      extra: {
-                        "identifier": emailController.text.trim(),
-                        "purpose": "REGISTER",
-                        "fromRegistration":
-                            true, // Flag to know it's from registration
-                        "userData": {
-                          "name": nameController.text.trim(),
-                          "email": emailController.text.trim(),
-                          "phone": phoneController.text.trim(),
-                        },
-                      },
-                    );
+                    Future.delayed(const Duration(milliseconds: 500), () {
+                      if (mounted) {
+                        context.pushNamed(
+                          RouteName.verifyOtp,
+                          extra: {
+                            "identifier": emailController.text.trim(),
+                            "purpose": "REGISTER",
+                            "userData": {
+                              "name": nameController.text.trim(),
+                              "email": emailController.text.trim(),
+                              "phone": phoneController.text.trim(),
+                              "password": passwordController.text.trim(),
+                            },
+                          },
+                        );
+                      }
+                    });
                   }
 
                   if (state is AuthFailure) {
