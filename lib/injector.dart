@@ -98,10 +98,11 @@ Future<void> initInjector() async {
   sl.registerSingleton<DioClient>(DioClient(tokenManager: sl<TokenManager>()));
 
   // ================= LOCALIZATION =================
-  // Register LocaleProvider as lazy singleton
+  // Register LocaleProvider as a lazy singleton
   sl.registerLazySingleton<LocaleProvider>(() => LocaleProvider());
   
-  // Register LanguageBloc as lazy singleton (persists across app)
+  // Register LanguageBloc as a lazy singleton (persists across app lifecycle)
+  // Using registerLazySingleton ensures the same instance is used throughout the app
   sl.registerLazySingleton<LanguageBloc>(() => LanguageBloc());
 
   // ==================================================
@@ -350,4 +351,19 @@ Future<void> initInjector() async {
   sl.registerFactory<ChatBloc2>(
     () => ChatBloc2(sendMessageUseCase: sl<SendChatMessageUseCase2>()),
   );
+}
+
+// ================= HELPER GETTERS FOR LOCALIZATION =================
+// Optional: Add helper methods to easily access localization dependencies
+
+/// Get the LocaleProvider instance from GetIt
+LocaleProvider getLocaleProvider() => sl<LocaleProvider>();
+
+/// Get the LanguageBloc instance from GetIt
+LanguageBloc getLanguageBloc() => sl<LanguageBloc>();
+
+/// Alternative: Extension on GetIt for cleaner syntax
+extension GetItLocalization on GetIt {
+  LocaleProvider get localeProvider => get<LocaleProvider>();
+  LanguageBloc get languageBloc => get<LanguageBloc>();
 }

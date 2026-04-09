@@ -1,7 +1,7 @@
 import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/core/localization/language_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart'; // Added for Cupertino fallback
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:agrilink/core/config/routes/app_router.dart';
@@ -26,7 +26,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<LanguageBloc>(create: (_) => LanguageBloc()),
+        // Use injected LanguageBloc from GetIt (singleton instance)
+        BlocProvider<LanguageBloc>(create: (_) => sl<LanguageBloc>()),
         BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>()),
         BlocProvider<CategoryBloc>(
           create: (_) {
@@ -84,19 +85,25 @@ class MyApp extends StatelessWidget {
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
-
-              // --- ADDED FALLBACK DELEGATES FOR OROMO ---
+              // Fallback delegates for unsupported locales
               const OromoMaterialLocalizationsDelegate(),
               const OromoCupertinoLocalizationsDelegate(),
+              const AmharicMaterialLocalizationsDelegate(),
+              const AmharicCupertinoLocalizationsDelegate(),
             ],
             localeResolutionCallback: (locale, supportedLocales) {
-              if (locale == null) return const Locale('en', 'US');
-              for (final supportedLocale in supportedLocales) {
-                if (supportedLocale.languageCode == locale.languageCode) {
-                  return supportedLocale;
-                }
+              // Handle locale resolution with proper fallback
+              if (locale == null) {
+                return const Locale('en', 'US');
               }
-              return const Locale('en', 'US');
+
+              // Check if the language code is supported
+              final supportedLocale = supportedLocales.firstWhere(
+                (supported) => supported.languageCode == locale.languageCode,
+                orElse: () => const Locale('en', 'US'),
+              );
+
+              return supportedLocale;
             },
             theme: ThemeData(
               primarySwatch: Colors.green,
@@ -112,6 +119,15 @@ class MyApp extends StatelessWidget {
                   ),
                 ),
               ),
+              inputDecorationTheme: InputDecorationTheme(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.green, width: 2),
+                ),
+              ),
             ),
             routerConfig: appRouter,
           );
@@ -120,17 +136,20 @@ class MyApp extends StatelessWidget {
     );
   }
 
+  /// Get font family based on language code
   String _getFontFamily(String languageCode) {
     switch (languageCode) {
       case 'am':
         return 'NotoSansEthiopic';
+      case 'om':
+        return 'Roboto'; // Oromo uses standard font
       default:
         return 'Roboto';
     }
   }
 }
 
-// --- FALLBACK CLASSES ---
+// ================= FALLBACK LOCALIZATION DELEGATES =================
 
 /// Material fallback: Maps Oromo ('om') requests to English Material translations
 class OromoMaterialLocalizationsDelegate
@@ -168,4 +187,42 @@ class OromoCupertinoLocalizationsDelegate
 
   @override
   bool shouldReload(OromoCupertinoLocalizationsDelegate old) => false;
+}
+
+/// Material fallback: Maps Amharic ('am') requests to English Material translations
+class AmharicMaterialLocalizationsDelegate
+    extends LocalizationsDelegate<MaterialLocalizations> {
+  const AmharicMaterialLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'am';
+
+  @override
+  Future<MaterialLocalizations> load(Locale locale) async {
+    return await GlobalMaterialLocalizations.delegate.load(
+      const Locale('en', 'US'),
+    );
+  }
+
+  @override
+  bool shouldReload(AmharicMaterialLocalizationsDelegate old) => false;
+}
+
+/// Cupertino fallback: Maps Amharic ('am') requests to English Cupertino translations
+class AmharicCupertinoLocalizationsDelegate
+    extends LocalizationsDelegate<CupertinoLocalizations> {
+  const AmharicCupertinoLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'am';
+
+  @override
+  Future<CupertinoLocalizations> load(Locale locale) async {
+    return await GlobalCupertinoLocalizations.delegate.load(
+      const Locale('en', 'US'),
+    );
+  }
+
+  @override
+  bool shouldReload(AmharicCupertinoLocalizationsDelegate old) => false;
 }
