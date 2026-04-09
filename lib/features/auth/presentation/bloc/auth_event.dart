@@ -1,5 +1,3 @@
-
-
 abstract class AuthEvent {
   const AuthEvent();
 }
@@ -32,3 +30,8 @@ class ResetPasswordEvent extends AuthEvent {
 }
 
 class LogoutEvent extends AuthEvent {}
+
+class ResendOtpEvent extends AuthEvent {
+  final Map<String, dynamic> data;
+  const ResendOtpEvent({required this.data});
+}

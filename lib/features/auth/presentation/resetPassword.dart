@@ -51,12 +51,73 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     super.dispose();
   }
 
+  void _skipReset() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Skip Password Reset?"),
+        content: const Text(
+          "Skipping password reset means you'll continue with your current password. "
+          "You can always reset your password later from the profile settings.\n\n"
+          "Are you sure you want to skip?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _navigateToHome();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade600,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text("Skip Anyway"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToHome() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Password reset skipped. You can change it later from profile."),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+      ),
+    );
+    context.goNamed(RouteName.home);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Reset Password"),
         elevation: 0,
+        actions: [
+          TextButton(
+            onPressed: _skipReset,
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey.shade600,
+            ),
+            child: const Text(
+              "Skip",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -69,6 +130,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   SnackBar(
                     content: Text(state.message),
                     backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
                     duration: const Duration(seconds: 3),
                   ),
                 );
@@ -86,6 +148,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   SnackBar(
                     content: Text(state.error),
                     backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
@@ -153,7 +216,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             border: const OutlineInputBorder(),
                             hintText: "Enter new password",
                           ),
-                          // No validator
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter a password";
+                            }
+                            if (value.length < 6) {
+                              return "Password must be at least 6 characters";
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 20),
 
@@ -179,7 +250,88 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             border: const OutlineInputBorder(),
                             hintText: "Re-enter new password",
                           ),
-                          // No validator
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please confirm your password";
+                            }
+                            if (value != passwordController.text) {
+                              return "Passwords do not match";
+                            }
+                            return null;
+                          },
+                        ),
+                        
+                        const SizedBox(height: 24),
+
+                        // Password Requirements
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Password Requirements:",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline,
+                                    size: 14,
+                                    color: passwordController.text.length >= 6
+                                        ? Colors.green
+                                        : Colors.grey,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "At least 6 characters",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: passwordController.text.length >= 6
+                                          ? Colors.green
+                                          : Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline,
+                                    size: 14,
+                                    color: passwordController.text.isNotEmpty &&
+                                        confirmPasswordController.text.isNotEmpty &&
+                                        passwordController.text == confirmPasswordController.text
+                                        ? Colors.green
+                                        : Colors.grey,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "Passwords match",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: passwordController.text.isNotEmpty &&
+                                          confirmPasswordController.text.isNotEmpty &&
+                                          passwordController.text == confirmPasswordController.text
+                                          ? Colors.green
+                                          : Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                         
                         const SizedBox(height: 32),
@@ -196,7 +348,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 onPressed: isLoading
                                     ? null
                                     : () {
-                                        if (_identifier != null) {
+                                        if (_formKey.currentState!.validate() && _identifier != null) {
                                           // Prepare data in required format
                                           final resetData = {
                                             "emailOrPhone": _identifier,
@@ -210,6 +362,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                         }
                                       },
                                 style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green.shade600,
+                                  foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -237,17 +391,35 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         
                         const SizedBox(height: 16),
 
+                        // Skip Button Alternative
+                        Center(
+                          child: TextButton(
+                            onPressed: _skipReset,
+                            child: Text(
+                              "Skip for now",
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 14,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
                         // Back to Login
                         Center(
                           child: TextButton(
                             onPressed: () {
                               context.goNamed(RouteName.login);
                             },
-                            child: const Text(
+                            child: Text(
                               "Back to Login",
                               style: TextStyle(
-                                decoration: TextDecoration.underline,
+                                color: Colors.grey.shade600,
                                 fontSize: 14,
+                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),
