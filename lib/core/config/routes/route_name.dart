@@ -1,4 +1,3 @@
-// core/config/routes/route_name.dart
 
 class RouteName {
   // Auth & Onboarding
@@ -21,7 +20,7 @@ class RouteName {
   static const String home = '/home';
   static const String product = '/product';
   static const String myProducts = '/my-products';
-  static const String myOrders = '/myorders';
+  static const String myOrders = '/my-orders';  
 
   static const String createProduct = '/createProduct';
   static const String aiRecommendation = '/recommendation';
@@ -29,6 +28,8 @@ class RouteName {
   static const String viewProfile = '/view-profile';
   static const String updateProfile = '/update-profile';
   static const String farmerProfile = '/farmerProfile';
+  
+  // Removed duplicate 'order' - using 'myOrders' instead
 
   static const String productDetails = '/productDetails';
 

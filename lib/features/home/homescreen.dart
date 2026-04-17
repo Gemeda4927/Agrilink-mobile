@@ -53,6 +53,17 @@ class HomeScreen extends StatelessWidget {
         centerTitle: true,
         elevation: 0,
         actions: [
+          // Notification Icon
+          Container(
+            margin: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () {
+                // Navigate to notifications
+              },
+              tooltip: 'Notifications',
+            ),
+          ),
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: IconButton(
@@ -156,7 +167,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            user.email, // Backend data - not translated
+                            user.email,
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.white.withOpacity(0.9),
@@ -173,7 +184,7 @@ class HomeScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              user.role, // Backend data - not translated
+                              user.role,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -185,6 +196,11 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 30),
+
+                    // Quick Actions Section
+                    _buildQuickActions(context, t),
+
+                    const SizedBox(height: 24),
 
                     // Categories Section Header
                     Row(
@@ -254,7 +270,7 @@ class HomeScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    state.message, // Error message from backend
+                                    state.message,
                                     style: TextStyle(
                                       color: Colors.grey.shade700,
                                       fontSize: 16,
@@ -275,6 +291,126 @@ class HomeScreen extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// Quick Actions Section
+  Widget _buildQuickActions(BuildContext context, AppLocalizations t) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.flash_on,
+                color: Colors.orange.shade800,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Quick Actions',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 100,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _buildQuickActionCard(
+                context: context,
+                icon: Icons.shopping_bag_outlined,
+                label: 'My Orders',
+                color: Colors.deepOrange,
+                onTap: () => context.goNamed(RouteName.myOrders),
+              ),
+              const SizedBox(width: 12),
+              _buildQuickActionCard(
+                context: context,
+                icon: Icons.add_box_outlined,
+                label: 'Post Product',
+                color: Colors.green,
+                onTap: () => context.pushNamed(RouteName.createProduct),
+              ),
+              const SizedBox(width: 12),
+              _buildQuickActionCard(
+                context: context,
+                icon: Icons.psychology_outlined,
+                label: 'AI Advisor',
+                color: Colors.purple,
+                onTap: () => context.pushNamed(RouteName.aiRecommendation),
+              ),
+              const SizedBox(width: 12),
+              _buildQuickActionCard(
+                context: context,
+                icon: Icons.store_outlined,
+                label: 'Marketplace',
+                color: Colors.blue,
+                onTap: () => context.pushNamed(RouteName.product),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActionCard({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 80,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -363,7 +499,7 @@ class HomeScreen extends StatelessWidget {
             _buildDrawerItem(
               context: context,
               icon: Icons.shopping_cart,
-              title: t.myOrders,
+              title: 'My Orders',
               route: RouteName.myOrders,
               color: Colors.deepOrange.shade700,
             ),
@@ -563,7 +699,7 @@ class HomeScreen extends StatelessWidget {
                   child: Icon(Icons.category, color: Colors.green.shade800),
                 ),
                 title: Text(
-                  category.name, // Backend data - not translated
+                  category.name,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -663,7 +799,7 @@ class HomeScreen extends StatelessWidget {
                         child: Icon(Icons.grass, color: Colors.green.shade800),
                       ),
                       title: Text(
-                        sub.name, // Backend data - not translated
+                        sub.name,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,

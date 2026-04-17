@@ -163,7 +163,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         languageBloc.add(ChangeLanguage(Locale(languageCode)));
         Navigator.pop(context);
         
-        // Show confirmation snackbar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Language changed to $languageName'),
@@ -235,28 +234,54 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 opacity: _fadeAnimation,
                 child: Column(
                   children: [
-                    // Language Switcher Button - Top Right
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.shade200,
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                    // Top Row with Back Button and Language Switcher
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Back Button to Splash Screen
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade200,
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            onPressed: () {
+                              // Navigate back to splash screen
+                              context.go(RouteName.splash);
+                            },
+                            icon: Icon(Icons.arrow_back, color: Colors.green.shade700),
+                            tooltip: 'Back to Splash',
+                          ),
                         ),
-                        child: IconButton(
-                          onPressed: () => _showLanguageSelector(context),
-                          icon: Icon(Icons.language, color: Colors.green.shade700),
-                          tooltip: localizations.selectLanguage,
+                        // Language Switcher Button
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade200,
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            onPressed: () => _showLanguageSelector(context),
+                            icon: Icon(Icons.language, color: Colors.green.shade700),
+                            tooltip: localizations.selectLanguage,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
+                    const SizedBox(height: 20),
                     _buildHeader(localizations),
                     const SizedBox(height: 30),
                     _buildLoginForm(authBloc, localizations),
