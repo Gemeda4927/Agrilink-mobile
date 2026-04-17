@@ -1,133 +1,241 @@
 import 'package:agrilink/features/cart/presentation/bloc/cart_event.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_state.dart';
-import 'package:agrilink/features/domain/payment/domain/usecases/checkout_usecase.dart';
-import 'package:bloc/bloc.dart';
-import 'package:agrilink/features/cart/domain/entity/cart_item.dart';
-import 'package:agrilink/features/cart/domain/usecases/cart_usecases.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../domain/entity/cart_item.dart';
+import '../../domain/usecases/cart_usecases.dart';
 
 class CartBloc extends Bloc<CartEvent, CartState> {
+  // ================= CART USE CASES =================
   final GetCartUseCase getCartUseCase;
   final AddToCartUseCase addToCartUseCase;
   final UpdateCartUseCase updateCartUseCase;
   final RemoveFromCartUseCase removeFromCartUseCase;
-  final ProcessCheckoutUseCase processCheckoutUseCase;
+  final ClearCartUseCase clearCartUseCase;
+
+  // ================= PAYMENT USE CASES =================
+  final CheckoutUseCase checkoutUseCase;
+  final VerifyPaymentUseCase verifyPaymentUseCase;
 
   CartBloc({
     required this.getCartUseCase,
     required this.addToCartUseCase,
     required this.updateCartUseCase,
     required this.removeFromCartUseCase,
-    required this.processCheckoutUseCase,
+    required this.clearCartUseCase,
+    required this.checkoutUseCase,
+    required this.verifyPaymentUseCase,
   }) : super(CartInitial()) {
+    // ================= CART EVENT HANDLERS =================
     on<LoadCart>(_onLoadCart);
     on<AddToCart>(_onAddToCart);
     on<UpdateCartItem>(_onUpdateCartItem);
     on<RemoveFromCart>(_onRemoveFromCart);
     on<ClearCart>(_onClearCart);
-    on<ProcessCheckout>(_onProcessCheckout);
+
+    // ================= PAYMENT EVENT HANDLERS =================
+    on<CheckoutEvent>(_onCheckout);
+    on<VerifyPaymentEvent>(_onVerifyPayment);
   }
 
+  // ==================================================
+  // CART EVENT HANDLERS
+  // ==================================================
+
+  /// Load cart from repository
   Future<void> _onLoadCart(LoadCart event, Emitter<CartState> emit) async {
     try {
       emit(CartLoading());
+
       final cartItems = await getCartUseCase();
-      final totalPrice = _calculateTotalPrice(cartItems);
-      final totalItems = _calculateTotalItems(cartItems);
+
       emit(
         CartLoaded(
+          cartItems: cartItems,
+          totalPrice: _calculateTotalPrice(cartItems),
+          totalItems: _calculateTotalItems(cartItems),
+        ),
+      );
+    } catch (e) {
+      emit(CartError(message: 'Failed to load cart: ${e.toString()}'));
+    }
+  }
+
+  /// Add product to cart
+  Future<void> _onAddToCart(AddToCart event, Emitter<CartState> emit) async {
+    try {
+      emit(CartProcessing(message: 'Adding to cart...'));
+
+      await addToCartUseCase(productId: event.productId, amount: event.amount);
+
+      // Reload cart after adding
+      add(LoadCart());
+
+      emit(CartSuccess(message: 'Item added to cart'));
+    } catch (e) {
+      emit(CartError(message: 'Failed to add item: ${e.toString()}'));
+    }
+  }
+
+  /// Update cart item quantity
+  Future<void> _onUpdateCartItem(
+    UpdateCartItem event,
+    Emitter<CartState> emit,
+  ) async {
+    try {
+      emit(CartProcessing(message: 'Updating cart...'));
+
+      await updateCartUseCase(productId: event.productId, amount: event.amount);
+
+      // Reload cart after update
+      add(LoadCart());
+
+      emit(CartSuccess(message: 'Cart updated'));
+    } catch (e) {
+      emit(CartError(message: 'Failed to update cart: ${e.toString()}'));
+    }
+  }
+
+  /// Remove single item from cart
+  Future<void> _onRemoveFromCart(
+    RemoveFromCart event,
+    Emitter<CartState> emit,
+  ) async {
+    try {
+      emit(CartProcessing(message: 'Removing item...'));
+
+      await removeFromCartUseCase(event.productId);
+
+      // Reload cart after removal
+      add(LoadCart());
+
+      emit(CartSuccess(message: 'Item removed from cart'));
+    } catch (e) {
+      emit(CartError(message: 'Failed to remove item: ${e.toString()}'));
+    }
+  }
+
+  /// Clear entire cart
+  Future<void> _onClearCart(ClearCart event, Emitter<CartState> emit) async {
+    try {
+      emit(CartProcessing(message: 'Clearing cart...'));
+
+      // Get current cart items to get their IDs
+      final items = await getCartUseCase();
+      final ids = items.map((e) => e.productId).toList();
+
+      if (ids.isNotEmpty) {
+        await clearCartUseCase(ids);
+      }
+
+      // Reload cart after clearing
+      add(LoadCart());
+
+      emit(CartSuccess(message: 'Cart cleared successfully'));
+    } catch (e) {
+      emit(CartError(message: 'Failed to clear cart: ${e.toString()}'));
+    }
+  }
+
+  // ==================================================
+  // PAYMENT EVENT HANDLERS
+  // ==================================================
+
+  Future<void> _onCheckout(CheckoutEvent event, Emitter<CartState> emit) async {
+    try {
+      emit(CartProcessing(message: "Initializing payment..."));
+
+      final result = await checkoutUseCase(
+        address: event.address,
+        paymentMethod: event.paymentMethod,
+        phone: event.phone,
+      );
+
+      // Extract values with null safety
+      final orderId =
+          result['orderId']?.toString() ??
+          result['order_id']?.toString() ??
+          result['id']?.toString();
+
+      final paymentUrl =
+          result['checkout_url']?.toString() ??
+          result['paymentUrl']?.toString() ??
+          result['payment_url']?.toString();
+
+      if (orderId == null || orderId.isEmpty) {
+        throw Exception('Order ID is missing from response');
+      }
+
+      if (paymentUrl == null || paymentUrl.isEmpty) {
+        if (event.paymentMethod.toLowerCase() == 'cod') {
+          emit(PaymentSuccess(orderId: orderId));
+          return;
+        }
+        throw Exception('Payment URL is missing from response');
+      }
+
+      // Get current cart items for passing to next screen
+      final currentState = state;
+      List<CartItem> cartItems = [];
+      double totalPrice = 0;
+      int totalItems = 0;
+
+      if (currentState is CartLoaded) {
+        cartItems = currentState.cartItems;
+        totalPrice = currentState.totalPrice;
+        totalItems = currentState.totalItems;
+      }
+
+      emit(
+        CartCheckoutSuccess(
+          orderId: orderId,
+          paymentUrl: paymentUrl,
           cartItems: cartItems,
           totalPrice: totalPrice,
           totalItems: totalItems,
         ),
       );
     } catch (e) {
-      emit(CartError(message: 'Failed to load cart: $e'));
+      emit(CartError(message: "Checkout failed: ${e.toString()}"));
     }
   }
 
-  Future<void> _onAddToCart(AddToCart event, Emitter<CartState> emit) async {
-    try {
-      emit(CartLoading());
-      await addToCartUseCase(productId: event.productId, amount: event.amount);
-      add(LoadCart());
-    } catch (e) {
-      emit(CartError(message: 'Failed to add item: $e'));
-    }
-  }
-
-  Future<void> _onUpdateCartItem(
-    UpdateCartItem event,
+  /// Verify payment status after WebView returns
+  Future<void> _onVerifyPayment(
+    VerifyPaymentEvent event,
     Emitter<CartState> emit,
   ) async {
     try {
-      emit(CartLoading());
-      await updateCartUseCase(productId: event.productId, amount: event.amount);
-      add(LoadCart());
-    } catch (e) {
-      emit(CartError(message: 'Failed to update cart: $e'));
-    }
-  }
+      emit(CartProcessing(message: "Verifying payment..."));
 
-  Future<void> _onRemoveFromCart(
-    RemoveFromCart event,
-    Emitter<CartState> emit,
-  ) async {
-    try {
-      emit(CartLoading());
-      await removeFromCartUseCase(event.productId);
-      add(LoadCart());
-    } catch (e) {
-      emit(CartError(message: 'Failed to remove item: $e'));
-    }
-  }
+      final result = await verifyPaymentUseCase(event.orderId);
 
-  Future<void> _onClearCart(ClearCart event, Emitter<CartState> emit) async {
-    try {
-      emit(CartLoading());
-      final cartItems = await getCartUseCase();
-      for (final item in cartItems) {
-        await removeFromCartUseCase(item.productId);
+      final status = result['status']?.toString().toLowerCase() ?? 'pending';
+
+      if (status == 'success' || status == 'paid' || status == 'completed') {
+        // Clear cart after successful payment
+        final items = await getCartUseCase();
+        final ids = items.map((e) => e.productId).toList();
+        if (ids.isNotEmpty) {
+          await clearCartUseCase(ids);
+        }
+
+        emit(PaymentSuccess(orderId: event.orderId));
+      } else if (status == 'pending') {
+        emit(PaymentPending());
+      } else {
+        emit(PaymentFailed(message: "Payment ${status.toUpperCase()}"));
       }
-      add(LoadCart());
     } catch (e) {
-      emit(CartError(message: 'Failed to clear cart: $e'));
+      emit(PaymentFailed(message: "Verification failed: ${e.toString()}"));
     }
   }
 
-  Future<void> _onProcessCheckout(
-    ProcessCheckout event,
-    Emitter<CartState> emit,
-  ) async {
-    try {
-      emit(CartProcessing(message: 'Processing checkout...'));
+  // ==================================================
+  // HELPER METHODS
+  // ==================================================
 
-      final result = await processCheckoutUseCase.execute();
-
-      // Debug: Print the actual result
-      print('=====================================');
-      print('ORDER ID: ${result.orderId}');
-      print('PAYMENT URL: ${result.paymentUrl}');
-      print('PAYMENT URL LENGTH: ${result.paymentUrl.length}');
-      print('=====================================');
-
-      // Clear cart after successful checkout
-      final cartItems = await getCartUseCase();
-      for (final item in cartItems) {
-        await removeFromCartUseCase(item.productId);
-      }
-
-      emit(
-        CartCheckoutSuccess(
-          orderId: result.orderId,
-          paymentUrl: result.paymentUrl,
-        ),
-      );
-    } catch (e) {
-      print('ERROR DURING CHECKOUT: $e');
-      emit(CartError(message: 'Checkout failed: ${e.toString()}'));
-    }
-  }
-
+  /// Calculate total price from cart items
   double _calculateTotalPrice(List<CartItem> cartItems) {
     double total = 0.0;
     for (final item in cartItems) {
@@ -137,6 +245,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     return total;
   }
 
+  /// Calculate total number of items in cart
   int _calculateTotalItems(List<CartItem> cartItems) {
     int total = 0;
     for (final item in cartItems) {

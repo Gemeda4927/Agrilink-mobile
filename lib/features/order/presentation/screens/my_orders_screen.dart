@@ -20,6 +20,81 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   String _selectedFilter = 'All';
   String _selectedSort = 'Newest';
 
+  // Pagination variables
+  int _itemsPerPage = 5;
+  int _currentPage = 1;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMoreItems();
+    }
+  }
+
+  Future<void> _loadMoreItems() async {
+    if (_isLoadingMore || !_hasMore) return;
+    
+    setState(() {
+      _isLoadingMore = true;
+    });
+    
+    // Simulate network delay for smooth UX
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    setState(() {
+      _currentPage++;
+      _isLoadingMore = false;
+      
+      // Check if we have more items to load
+      final state = context.read<OrderBloc>().state;
+      if (state is OrdersLoaded) {
+        final allOrders = _getFilteredAndSortedOrders(state.orders);
+        final maxItems = _currentPage * _itemsPerPage;
+        _hasMore = maxItems < allOrders.length;
+      }
+    });
+  }
+
+  void _showAllItems() {
+    setState(() {
+      final state = context.read<OrderBloc>().state;
+      if (state is OrdersLoaded) {
+        final allOrders = _getFilteredAndSortedOrders(state.orders);
+        _currentPage = (allOrders.length / _itemsPerPage).ceil();
+        _hasMore = false;
+      }
+    });
+  }
+
+  void _resetPagination() {
+    setState(() {
+      _currentPage = 1;
+      _hasMore = true;
+      _isLoadingMore = false;
+    });
+  }
+
+  List<Order> _getVisibleOrders(List<Order> filteredOrders) {
+    final endIndex = _currentPage * _itemsPerPage;
+    return filteredOrders.take(endIndex).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,14 +119,24 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
           }
 
           if (state is OrdersLoaded) {
-            final filtered = _getFilteredAndSortedOrders(state.orders);
+            final allOrders = state.orders;
+            final filtered = _getFilteredAndSortedOrders(allOrders);
+            final visibleOrders = _getVisibleOrders(filtered);
+            final hasMore = visibleOrders.length < filtered.length;
+            
+            // Update _hasMore to match current state
+            if (_hasMore != hasMore) {
+              _hasMore = hasMore;
+            }
 
             return RefreshIndicator(
               onRefresh: () async {
+                _resetPagination();
                 context.read<OrderBloc>().add(RefreshOrdersEvent());
               },
               color: Colors.green,
               child: CustomScrollView(
+                controller: _scrollController,
                 slivers: [
                   SliverAppBar(
                     title: const Text(
@@ -75,6 +160,18 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                       },
                     ),
                     actions: [
+                      // See All button
+                      if (filtered.length > _itemsPerPage && hasMore)
+                        TextButton(
+                          onPressed: _showAllItems,
+                          child: const Text(
+                            'See All',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       IconButton(
                         icon: Badge(
                           isLabelVisible: _selectedFilter != 'All',
@@ -106,11 +203,46 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
-                          (context, index) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: OrderCard(order: filtered[index]),
+                          (context, index) {
+                            if (index < visibleOrders.length) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: OrderCard(order: visibleOrders[index]),
+                              );
+                            }
+                            return null;
+                          },
+                          childCount: visibleOrders.length,
+                        ),
+                      ),
+                    ),
+                  // Load more indicator
+                  if (hasMore && !_isLoadingMore)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: TextButton.icon(
+                            onPressed: _loadMoreItems,
+                            icon: const Icon(Icons.expand_more),
+                            label: const Text('Load More'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.green,
+                            ),
                           ),
-                          childCount: filtered.length,
+                        ),
+                      ),
+                    ),
+                  if (_isLoadingMore)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.green,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -175,12 +307,14 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   void _updateFilter(String filter) {
     setState(() {
       _selectedFilter = filter;
+      _resetPagination();
     });
   }
 
   void _updateSort(String sort) {
     setState(() {
       _selectedSort = sort;
+      _resetPagination();
     });
   }
 
@@ -625,7 +759,10 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => context.read<OrderBloc>().add(GetMyOrdersEvent()),
+            onPressed: () {
+              _resetPagination();
+              context.read<OrderBloc>().add(GetMyOrdersEvent());
+            },
             icon: const Icon(Icons.refresh_rounded),
             label: const Text('Try Again'),
             style: ElevatedButton.styleFrom(

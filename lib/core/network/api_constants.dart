@@ -1,4 +1,5 @@
 class ApiConstants {
+  // ================= BASE URLS =================
   static const String baseUrl = "https://agrilink-1-x6ph.onrender.com";
   static const String cropAdvisorBaseUrl =
       "https://senakebede-crop-advisor-backend.hf.space";
@@ -17,6 +18,10 @@ class ApiConstants {
 
   // ================= PRODUCT =================
   static const String product = "$baseUrl/product";
+  static const String myProducts = "$baseUrl/product/my-products";
+  static String getProductById(String id) => "$baseUrl/product/$id";
+  static String updateProduct(String id) => "$baseUrl/product/$id";
+  static String deleteProduct(String id) => "$baseUrl/product/$id";
 
   // ================= LOCATION (ETHIOPIA) =================
   static const String regions = "$baseUrl/regions";
@@ -48,14 +53,19 @@ class ApiConstants {
 
   // ================= ORDERS =================
   static const String myOrders = "$baseUrl/orders/my-orders";
-  
+
   // Farmer Orders
   static const String farmerOrders = "$baseUrl/orders/farmer-orders";
-  static const String farmerOrdersPending = "$baseUrl/orders/farmer-orders/pending";
-  
-  
+  static const String farmerOrdersPending =
+      "$baseUrl/orders/farmer-orders/pending";
+
   // Order Verification
-  static String verifyOrder(String orderId) => "$baseUrl/orders/verify/$orderId";
+  static String verifyOrder(String orderId) =>
+      "$baseUrl/orders/verify/$orderId";
+
+  // ================= PAYMENT =================
+  static const String checkout = "$baseUrl/orders/checkout";
+  static const String chapaWebhook = "$baseUrl/orders/webhook/chapa";
 
   // ================= CROP ADVISOR =================
   static const String cropAdvisorChat = "$cropAdvisorBaseUrl/api/v1/chat";

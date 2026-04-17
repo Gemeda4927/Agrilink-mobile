@@ -9,35 +9,43 @@ class CartRepositoryImpl implements CartRepository {
 
   CartRepositoryImpl(this.service);
 
+  // ================= MAPPER (REMOVE DUPLICATION) =================
+  CartItem _mapToEntity(CartItemModel model) {
+    return CartItem(
+      id: model.id,
+      productId: model.productId,
+      amount: model.amount,
+      product: ProductEntity(
+        id: model.product.id,
+        farmerId: model.product.farmerId,
+        name: model.product.name,
+        subCategoryId: model.product.subCategoryId,
+        amount: model.product.amount,
+        price: model.product.price,
+        description: model.product.description,
+        image: model.product.image,
+        createdAt: model.product.createdAt,
+        subCategoryName: model.product.subCategoryName,
+        categoryId: model.product.categoryId,
+        farmerEmail: model.product.farmerEmail,
+        farmerPhone: model.product.farmerPhone,
+        farmerRole: model.product.farmerRole,
+      ),
+    );
+  }
+
+  // ================= CART =================
+
   @override
   Future<List<CartItem>> getCart() async {
     final response = await service.getCart();
 
-    return (response.data as List).map((e) {
-      final model = CartItemModel.fromJson(e);
+    final data = response.data;
 
-      return CartItem(
-        id: model.id,
-        productId: model.productId,
-        amount: model.amount,
-        product: ProductEntity(
-          id: model.product.id,
-          farmerId: model.product.farmerId,
-          name: model.product.name,
-          subCategoryId: model.product.subCategoryId,
-          amount: model.product.amount,
-          price: model.product.price,
-          description: model.product.description,
-          image: model.product.image,
-          createdAt: model.product.createdAt,
-          subCategoryName: model.product.subCategoryName,
-          categoryId: model.product.categoryId,
-          farmerEmail: model.product.farmerEmail,
-          farmerPhone: model.product.farmerPhone,
-          farmerRole: model.product.farmerRole,
-        ),
-      );
-    }).toList();
+    // Handle both List and {items: []}
+    final List items = data is List ? data : data['items'];
+
+    return items.map((e) => _mapToEntity(CartItemModel.fromJson(e))).toList();
   }
 
   @override
@@ -47,29 +55,7 @@ class CartRepositoryImpl implements CartRepository {
       amount: amount,
     );
 
-    final model = CartItemModel.fromJson(response.data);
-
-    return CartItem(
-      id: model.id,
-      productId: model.productId,
-      amount: model.amount,
-      product: ProductEntity(
-        id: model.product.id,
-        farmerId: model.product.farmerId,
-        name: model.product.name,
-        subCategoryId: model.product.subCategoryId,
-        amount: model.product.amount,
-        price: model.product.price,
-        description: model.product.description,
-        image: model.product.image,
-        createdAt: model.product.createdAt,
-        subCategoryName: model.product.subCategoryName,
-        categoryId: model.product.categoryId,
-        farmerEmail: model.product.farmerEmail,
-        farmerPhone: model.product.farmerPhone,
-        farmerRole: model.product.farmerRole,
-      ),
-    );
+    return _mapToEntity(CartItemModel.fromJson(response.data));
   }
 
   @override
@@ -79,33 +65,69 @@ class CartRepositoryImpl implements CartRepository {
       amount: amount,
     );
 
-    final model = CartItemModel.fromJson(response.data);
-
-    return CartItem(
-      id: model.id,
-      productId: model.productId,
-      amount: model.amount,
-      product: ProductEntity(
-        id: model.product.id,
-        farmerId: model.product.farmerId,
-        name: model.product.name,
-        subCategoryId: model.product.subCategoryId,
-        amount: model.product.amount,
-        price: model.product.price,
-        description: model.product.description,
-        image: model.product.image,
-        createdAt: model.product.createdAt,
-        subCategoryName: model.product.subCategoryName,
-        categoryId: model.product.categoryId,
-        farmerEmail: model.product.farmerEmail,
-        farmerPhone: model.product.farmerPhone,
-        farmerRole: model.product.farmerRole,
-      ),
-    );
+    return _mapToEntity(CartItemModel.fromJson(response.data));
   }
 
   @override
   Future<void> removeItem(String productId) async {
     await service.removeItem(productId);
+  }
+
+  @override
+  Future<void> clearCart(List<String> productIds) async {
+    await service.clearCart(productIds);
+  }
+
+  // ================= PAYMENT =================
+
+  @override
+  @override
+  Future<Map<String, dynamic>> checkout({
+    required String address,
+    required String paymentMethod,
+    String? phone,
+  }) async {
+    final response = await service.checkout(
+      address: address,
+      paymentMethod: paymentMethod,
+      phone: phone,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyPayment(String orderId) async {
+    final response = await service.verifyPayment(orderId);
+    return response.data;
+  }
+
+  @override
+  Future<Map<String, dynamic>> checkPaymentStatus(String orderId) async {
+    final response = await service.checkPaymentStatus(orderId);
+    return response.data;
+  }
+
+  @override
+  Future<void> cancelOrder(String orderId) async {
+    await service.cancelOrder(orderId);
+  }
+
+  @override
+  Future<List<dynamic>> getMyOrders() async {
+    final response = await service.getMyOrders();
+    return response.data;
+  }
+
+  @override
+  Future<Map<String, dynamic>> getOrderDetails(String orderId) async {
+    final response = await service.getOrderDetails(orderId);
+    return response.data;
+  }
+
+  // ================= EXTRA =================
+
+  @override
+  Future<double> getCartTotal() async {
+    return await service.getCartTotal();
   }
 }
