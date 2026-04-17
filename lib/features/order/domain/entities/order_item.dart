@@ -1,3 +1,7 @@
+// lib/features/order/domain/entities/order_item.dart
+
+import 'product.dart';
+
 class OrderItem {
   final String id;
   final String orderId;
@@ -17,30 +21,10 @@ class OrderItem {
 
   double get subtotal => amount * priceAtOrder;
   String get formattedSubtotal => '${subtotal.toStringAsFixed(0)} ETB';
-}
 
-class Product {
-  final String id;
-  final String farmerId;
-  final String name;
-  final String subCategoryId;
-  final int amount;
-  final double price;
-  final String description;
-  final String image;
-  final DateTime createdAt;
+  // Helper to get product name safely
+  String get productName => product.displayName;
 
-  Product({
-    required this.id,
-    required this.farmerId,
-    required this.name,
-    required this.subCategoryId,
-    required this.amount,
-    required this.price,
-    required this.description,
-    required this.image,
-    required this.createdAt,
-  });
-  
-  String get formattedPrice => '${price.toStringAsFixed(0)} ETB';
+  // Helper to check if product has image
+  bool get productHasImage => product.hasImage;
 }

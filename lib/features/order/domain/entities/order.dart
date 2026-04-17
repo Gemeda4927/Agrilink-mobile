@@ -1,3 +1,7 @@
+// lib/features/order/domain/entities/order.dart
+
+import 'package:flutter/material.dart';
+
 import 'order_item.dart';
 
 class Order {
@@ -29,11 +33,50 @@ class Order {
   bool get isPending => status == 'PENDING';
   bool get isFailed => status == 'FAILED';
   bool get isCancelled => status == 'CANCELLED';
-  
-  String get formattedTotalAmount => '${totalAmount.toStringAsFixed(0)} $currency';
+
+  String get formattedTotalAmount =>
+      '${totalAmount.toStringAsFixed(0)} $currency';
   String get formattedDate => _formatDate(createdAt);
-  
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
+
+  // Get status color for UI
+  Color get statusColor {
+    switch (status) {
+      case 'PAID':
+        return Colors.green;
+      case 'PENDING':
+        return Colors.orange;
+      case 'FAILED':
+        return Colors.red;
+      case 'CANCELLED':
+        return Colors.grey;
+      default:
+        return Colors.blue;
+    }
   }
+
+  // Get status icon for UI
+  IconData get statusIcon {
+    switch (status) {
+      case 'PAID':
+        return Icons.check_circle;
+      case 'PENDING':
+        return Icons.pending;
+      case 'FAILED':
+        return Icons.error;
+      case 'CANCELLED':
+        return Icons.cancel;
+      default:
+        return Icons.info;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Get total items count
+  int get totalItems => items.fold(0, (sum, item) => sum + item.amount);
+
+  // Get unique products count
+  int get uniqueProductsCount => items.length;
 }

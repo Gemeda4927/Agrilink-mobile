@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/order.dart';
+import '../../domain/entities/product.dart';
 import '../screens/order_details_screen.dart';
 
 class OrderCard extends StatelessWidget {
@@ -52,7 +53,7 @@ class OrderCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Order #${order.id.substring(0, 8).toUpperCase()}',
+                              'Order #${order.id.substring(0, order.id.length > 8 ? 8 : order.id.length).toUpperCase()}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
@@ -106,27 +107,10 @@ class OrderCard extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Product Image
+                            // Product Image - Fixed null safety
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                item.product.image,
-                                width: 45,
-                                height: 45,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 45,
-                                    height: 45,
-                                    color: Colors.grey.shade200,
-                                    child: Icon(
-                                      Icons.image_not_supported_rounded,
-                                      size: 20,
-                                      color: Colors.grey.shade400,
-                                    ),
-                                  );
-                                },
-                              ),
+                              child: _buildProductImage(item.product),
                             ),
                             const SizedBox(width: 12),
                             // Product Details
@@ -232,6 +216,40 @@ class OrderCard extends StatelessWidget {
     );
   }
 
+  Widget _buildProductImage(Product product) {
+    if (product.hasImage) {
+      return Image.network(
+        product.imageUrl,
+        width: 45,
+        height: 45,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 45,
+            height: 45,
+            color: Colors.grey.shade200,
+            child: Icon(
+              Icons.image_not_supported_rounded,
+              size: 20,
+              color: Colors.grey.shade400,
+            ),
+          );
+        },
+      );
+    } else {
+      return Container(
+        width: 45,
+        height: 45,
+        color: Colors.grey.shade200,
+        child: Icon(
+          Icons.image_not_supported_rounded,
+          size: 20,
+          color: Colors.grey.shade400,
+        ),
+      );
+    }
+  }
+
   Widget _buildStatusBadge(String status) {
     Color color;
     String label;
@@ -280,7 +298,6 @@ class OrderCard extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Cancel Button
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -321,7 +338,6 @@ class OrderCard extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Cancel Button
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -357,11 +373,12 @@ class OrderCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // Pay Button
           Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () {},
+              onTap: () {
+                // Navigate to payment
+              },
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 padding: const EdgeInsets.symmetric(
