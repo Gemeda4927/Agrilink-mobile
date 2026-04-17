@@ -198,7 +198,7 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 30),
 
                     // Quick Actions Section
-                    _buildQuickActions(context, t),
+                    _buildQuickActions(context, t, user.role),
 
                     const SizedBox(height: 24),
 
@@ -295,8 +295,14 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Quick Actions Section
-  Widget _buildQuickActions(BuildContext context, AppLocalizations t) {
+  /// Quick Actions Section (Updated with Farmer Orders for Farmers)
+  Widget _buildQuickActions(
+    BuildContext context,
+    AppLocalizations t,
+    String role,
+  ) {
+    final isFarmer = role == 'FARMER' || role == 'AGENT' || role == 'ADMIN';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -331,6 +337,7 @@ class HomeScreen extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
+              // My Orders (Buyer)
               _buildQuickActionCard(
                 context: context,
                 icon: Icons.shopping_bag_outlined,
@@ -339,6 +346,19 @@ class HomeScreen extends StatelessWidget {
                 onTap: () => context.goNamed(RouteName.myOrders),
               ),
               const SizedBox(width: 12),
+
+              // Farmer Orders (For Farmers - Orders received)
+              if (isFarmer)
+                _buildQuickActionCard(
+                  context: context,
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Orders Received',
+                  color: Colors.teal,
+                  onTap: () => context.goNamed(RouteName.farmerOrders),
+                ),
+              if (isFarmer) const SizedBox(width: 12),
+
+              // Post Product
               _buildQuickActionCard(
                 context: context,
                 icon: Icons.add_box_outlined,
@@ -347,6 +367,8 @@ class HomeScreen extends StatelessWidget {
                 onTap: () => context.pushNamed(RouteName.createProduct),
               ),
               const SizedBox(width: 12),
+
+              // AI Advisor
               _buildQuickActionCard(
                 context: context,
                 icon: Icons.psychology_outlined,
@@ -355,6 +377,8 @@ class HomeScreen extends StatelessWidget {
                 onTap: () => context.pushNamed(RouteName.aiRecommendation),
               ),
               const SizedBox(width: 12),
+
+              // Marketplace
               _buildQuickActionCard(
                 context: context,
                 icon: Icons.store_outlined,
@@ -415,7 +439,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Drawer
+  /// Drawer (Updated with Farmer Orders)
   Drawer _buildDrawer(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
     final t = AppLocalizations.of(context);
@@ -424,6 +448,8 @@ class HomeScreen extends StatelessWidget {
     if (authState is AuthSuccess) {
       role = authState.authResponse.user.role;
     }
+
+    final isFarmer = role == 'FARMER' || role == 'AGENT' || role == 'ADMIN';
 
     return Drawer(
       child: Container(
@@ -503,6 +529,15 @@ class HomeScreen extends StatelessWidget {
               route: RouteName.myOrders,
               color: Colors.deepOrange.shade700,
             ),
+            // Farmer Orders - Only show for farmers/agents/admins
+            if (isFarmer)
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.receipt_long,
+                title: 'Orders Received',
+                route: RouteName.farmerOrders,
+                color: Colors.teal,
+              ),
             _buildDrawerItem(
               context: context,
               icon: Icons.add_box,
