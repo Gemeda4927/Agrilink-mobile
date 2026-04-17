@@ -1,24 +1,23 @@
+// lib/features/product/domain/usecases/get_my_products.dart
 import 'package:dartz/dartz.dart';
-import 'package:agrilink/features/product/data/model/product_model.dart';
+import '../../data/model/product_model.dart';
 import '../repository/product_repository.dart';
 
-class GetProducts {
+class GetMyProductsUseCase {
   final ProductRepository repository;
 
-  GetProducts(this.repository);
+  GetMyProductsUseCase(this.repository);
 
   Future<Either<String, List<ProductModel>>> call({
     int? page,
     int? limit,
-    String? category,
-    String? search,
+    String? status,
   }) async {
     try {
-      final products = await repository.getProducts(
+      final products = await repository.getMyProducts(
         page: page,
         limit: limit,
-        category: category,
-        search: search,
+        status: status,
       );
       return Right(products);
     } catch (e) {

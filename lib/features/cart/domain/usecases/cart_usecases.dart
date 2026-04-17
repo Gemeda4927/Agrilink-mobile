@@ -4,7 +4,7 @@ import 'package:agrilink/features/cart/domain/entity/cart_item.dart';
 import 'package:agrilink/features/cart/domain/repositories/cart_repository.dart';
 
 // ============================================================================
-// Get Cart Use Case
+// CART USE CASES
 // ============================================================================
 
 class GetCartUseCase {
@@ -17,9 +17,7 @@ class GetCartUseCase {
   }
 }
 
-// ============================================================================
-// Add to Cart Use Case
-// ============================================================================
+// ----------------------------------------------------------------------------
 
 class AddToCartUseCase {
   final CartRepository repository;
@@ -30,22 +28,19 @@ class AddToCartUseCase {
     required String productId,
     required int amount,
   }) async {
-    // Validation
-    if (amount <= 0) {
-      throw Exception('Amount must be greater than 0');
-    }
-
     if (productId.isEmpty) {
       throw Exception('Product ID cannot be empty');
+    }
+
+    if (amount <= 0) {
+      throw Exception('Amount must be greater than 0');
     }
 
     return await repository.addToCart(productId, amount);
   }
 }
 
-// ============================================================================
-// Update Cart Use Case
-// ============================================================================
+// ----------------------------------------------------------------------------
 
 class UpdateCartUseCase {
   final CartRepository repository;
@@ -56,26 +51,19 @@ class UpdateCartUseCase {
     required String productId,
     required int amount,
   }) async {
-    // Validation
-    if (amount < 0) {
-      throw Exception('Amount cannot be negative');
-    }
-
-    if (amount == 0) {
-      throw Exception('Use remove item to delete item from cart');
-    }
-
     if (productId.isEmpty) {
       throw Exception('Product ID cannot be empty');
+    }
+
+    if (amount <= 0) {
+      throw Exception('Amount must be greater than 0');
     }
 
     return await repository.updateCart(productId, amount);
   }
 }
 
-// ============================================================================
-// Remove from Cart Use Case
-// ============================================================================
+// ----------------------------------------------------------------------------
 
 class RemoveFromCartUseCase {
   final CartRepository repository;
@@ -88,5 +76,139 @@ class RemoveFromCartUseCase {
     }
 
     return await repository.removeItem(productId);
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+class ClearCartUseCase {
+  final CartRepository repository;
+
+  ClearCartUseCase(this.repository);
+
+  Future<void> call(List<String> productIds) async {
+    if (productIds.isEmpty) {
+      throw Exception('Cart is already empty');
+    }
+
+    return await repository.clearCart(productIds);
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+class GetCartTotalUseCase {
+  final CartRepository repository;
+
+  GetCartTotalUseCase(this.repository);
+
+  Future<double> call() async {
+    return await repository.getCartTotal();
+  }
+}
+
+// ============================================================================
+// PAYMENT USE CASES
+// ============================================================================
+
+// features/cart/domain/usecases/cart_usecases.dart
+
+class CheckoutUseCase {
+  final CartRepository repository;
+
+  CheckoutUseCase(this.repository);
+
+  Future<Map<String, dynamic>> call({
+    required String address,
+    required String paymentMethod,
+    String? phone,
+  }) async {
+    if (address.isEmpty) {
+      throw Exception('Address is required');
+    }
+
+    if (paymentMethod.isEmpty) {
+      throw Exception('Payment method is required');
+    }
+
+    return await repository.checkout(
+      address: address,
+      paymentMethod: paymentMethod,
+      phone: phone,
+    );
+  }
+}
+
+class VerifyPaymentUseCase {
+  final CartRepository repository;
+
+  VerifyPaymentUseCase(this.repository);
+
+  Future<Map<String, dynamic>> call(String orderId) async {
+    if (orderId.isEmpty) {
+      throw Exception('Order ID is required');
+    }
+
+    return await repository.verifyPayment(orderId);
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+class CheckPaymentStatusUseCase {
+  final CartRepository repository;
+
+  CheckPaymentStatusUseCase(this.repository);
+
+  Future<Map<String, dynamic>> call(String orderId) async {
+    if (orderId.isEmpty) {
+      throw Exception('Order ID is required');
+    }
+
+    return await repository.checkPaymentStatus(orderId);
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+class CancelOrderUseCase {
+  final CartRepository repository;
+
+  CancelOrderUseCase(this.repository);
+
+  Future<void> call(String orderId) async {
+    if (orderId.isEmpty) {
+      throw Exception('Order ID is required');
+    }
+
+    return await repository.cancelOrder(orderId);
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+class GetMyOrdersUseCases {
+  final CartRepository repository;
+
+  GetMyOrdersUseCases(this.repository);
+
+  Future<List<dynamic>> call() async {
+    return await repository.getMyOrders();
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+class GetOrderDetailsUseCase {
+  final CartRepository repository;
+
+  GetOrderDetailsUseCase(this.repository);
+
+  Future<Map<String, dynamic>> call(String orderId) async {
+    if (orderId.isEmpty) {
+      throw Exception('Order ID is required');
+    }
+
+    return await repository.getOrderDetails(orderId);
   }
 }

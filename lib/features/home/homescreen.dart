@@ -295,7 +295,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Quick Actions Section (Updated with Farmer Orders for Farmers)
+  /// Quick Actions Section with Product Management
   Widget _buildQuickActions(
     BuildContext context,
     AppLocalizations t,
@@ -337,13 +337,35 @@ class HomeScreen extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
+              // My Products (For Farmers - View their products)
+              if (isFarmer)
+                _buildQuickActionCard(
+                  context: context,
+                  icon: Icons.inventory_2_rounded,
+                  label: 'My Products',
+                  color: Colors.blue,
+                  onTap: () => context.pushNamed(RouteName.myProducts),
+                ),
+              if (isFarmer) const SizedBox(width: 12),
+
+              // Post Product (Create new product)
+              if (isFarmer)
+                _buildQuickActionCard(
+                  context: context,
+                  icon: Icons.add_box_outlined,
+                  label: 'Post Product',
+                  color: Colors.green,
+                  onTap: () => context.pushNamed(RouteName.createProduct),
+                ),
+              if (isFarmer) const SizedBox(width: 12),
+
               // My Orders (Buyer)
               _buildQuickActionCard(
                 context: context,
                 icon: Icons.shopping_bag_outlined,
                 label: 'My Orders',
                 color: Colors.deepOrange,
-                onTap: () => context.goNamed(RouteName.myOrders),
+                onTap: () => context.pushNamed(RouteName.myOrders),
               ),
               const SizedBox(width: 12),
 
@@ -354,17 +376,17 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.receipt_long_outlined,
                   label: 'Orders Received',
                   color: Colors.teal,
-                  onTap: () => context.goNamed(RouteName.farmerOrders),
+                  onTap: () => context.pushNamed(RouteName.farmerOrders),
                 ),
               if (isFarmer) const SizedBox(width: 12),
 
-              // Post Product
+              // Marketplace (Browse products)
               _buildQuickActionCard(
                 context: context,
-                icon: Icons.add_box_outlined,
-                label: 'Post Product',
-                color: Colors.green,
-                onTap: () => context.pushNamed(RouteName.createProduct),
+                icon: Icons.store_outlined,
+                label: 'Marketplace',
+                color: Colors.purple,
+                onTap: () => context.pushNamed(RouteName.product),
               ),
               const SizedBox(width: 12),
 
@@ -373,18 +395,8 @@ class HomeScreen extends StatelessWidget {
                 context: context,
                 icon: Icons.psychology_outlined,
                 label: 'AI Advisor',
-                color: Colors.purple,
+                color: Colors.orange,
                 onTap: () => context.pushNamed(RouteName.aiRecommendation),
-              ),
-              const SizedBox(width: 12),
-
-              // Marketplace
-              _buildQuickActionCard(
-                context: context,
-                icon: Icons.store_outlined,
-                label: 'Marketplace',
-                color: Colors.blue,
-                onTap: () => context.pushNamed(RouteName.product),
               ),
             ],
           ),
@@ -439,7 +451,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Drawer (Updated with Farmer Orders)
+  /// Drawer with Product Management
   Drawer _buildDrawer(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
     final t = AppLocalizations.of(context);
@@ -515,13 +527,24 @@ class HomeScreen extends StatelessWidget {
               route: RouteName.product,
               color: Colors.orange,
             ),
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.inventory_2,
-              title: t.myProducts,
-              route: RouteName.myProducts,
-              color: Colors.blue.shade700,
-            ),
+            // My Products - Only show for farmers/agents/admins
+            if (isFarmer)
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.inventory_2,
+                title: t.myProducts,
+                route: RouteName.myProducts,
+                color: Colors.blue.shade700,
+              ),
+            // Post Product - Only show for farmers/agents/admins
+            if (isFarmer)
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.add_box,
+                title: t.postProduct,
+                route: RouteName.createProduct,
+                color: Colors.green.shade700,
+              ),
             _buildDrawerItem(
               context: context,
               icon: Icons.shopping_cart,
@@ -538,13 +561,6 @@ class HomeScreen extends StatelessWidget {
                 route: RouteName.farmerOrders,
                 color: Colors.teal,
               ),
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.add_box,
-              title: t.postProduct,
-              route: RouteName.createProduct,
-              color: Colors.green.shade700,
-            ),
             _buildDrawerItem(
               context: context,
               icon: Icons.psychology,
@@ -840,6 +856,10 @@ class HomeScreen extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                      onTap: () {
+                        // Navigate to products by subcategory
+                        context.pushNamed(RouteName.product, extra: sub.id);
+                      },
                     ),
                   ),
                 ),

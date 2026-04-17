@@ -1,47 +1,21 @@
 import 'package:agrilink/features/cart/data/repository/cartRemoteDataSourceImpl.dart';
-import 'package:agrilink/features/chat/data/repository/chat_repository_impl.dart';
-import 'package:agrilink/features/chat/data/services/chat_service.dart';
-import 'package:agrilink/features/chat/domain/repositories/chat_repository.dart';
-import 'package:agrilink/features/chat/domain/usecases/chat_usecases.dart';
-import 'package:agrilink/features/chat/presentation/bloc/chat_bloc.dart';
-import 'package:agrilink/features/domain/payment/data/repository/checkout_repository_impl.dart';
-import 'package:agrilink/features/domain/payment/data/service/checkout_service.dart';
-import 'package:agrilink/features/domain/payment/domain/repositories/checkout_repository.dart';
-import 'package:agrilink/features/domain/payment/domain/usecases/checkout_usecase.dart';
-import 'package:agrilink/features/my_product/data/repositories/farmer_order_repository.dart';
-import 'package:agrilink/features/my_product/data/services/farmer_order_service.dart';
-import 'package:agrilink/features/my_product/domain/repositories/i_farmer_order_repository.dart';
-import 'package:agrilink/features/my_product/domain/usecases/farmer_order_usecases.dart';
-import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_bloc.dart';
-import 'package:agrilink/features/order/data/repository/order_repository_impl.dart';
-import 'package:agrilink/features/order/data/services/order_service.dart';
-import 'package:agrilink/features/order/domain/repositories/order_repository.dart';
-import 'package:agrilink/features/order/domain/usecases/get_my_orders.dart';
-import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
-import 'package:agrilink/features/product/data/repository/product_repo_imp.dart';
-import 'package:agrilink/features/product/data/services/product_service.dart';
-import 'package:agrilink/features/product/domain/repository/product_repository.dart';
-import 'package:agrilink/features/product/domain/usecases/create_product.dart';
-import 'package:agrilink/features/product/domain/usecases/get_products.dart';
-import 'package:agrilink/features/product/presentation/bloc/product_bloc.dart';
-import 'package:agrilink/features/profile/data/repository/profile_repository_impl.dart';
-import 'package:agrilink/features/profile/data/services/profile_service.dart';
-import 'package:agrilink/features/profile/domain/repository/profile_repository.dart';
-import 'package:agrilink/features/profile/domain/usecases/profile_usecases.dart';
-import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
-import 'package:agrilink/features/recommendation/data/repository/chat_repository_impl.dart';
-import 'package:agrilink/features/recommendation/data/service/chat_service.dart';
-import 'package:agrilink/features/recommendation/domain/repository/chat_repository.dart';
-import 'package:agrilink/features/recommendation/domain/usecase/send_chat_message_usecase.dart';
-import 'package:agrilink/features/recommendation/presentation/bloc/chat_bloc.dart';
+import 'package:agrilink/features/product/domain/usecases/delete_product.dart';
+import 'package:agrilink/features/product/domain/usecases/get_my_products.dart';
+import 'package:agrilink/features/product/domain/usecases/get_product_by_id.dart';
+import 'package:agrilink/features/product/domain/usecases/get_products_by_category.dart';
+import 'package:agrilink/features/product/domain/usecases/search_products.dart';
+import 'package:agrilink/features/product/domain/usecases/update_product.dart';
 import 'package:agrilink/features/role_request/domain/usecases/create_role_request_usecase.dart';
 import 'package:get_it/get_it.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:logger/logger.dart';
 
 import 'package:agrilink/core/network/dio_client.dart';
 import 'package:agrilink/core/network/token_manager.dart';
+import 'package:agrilink/core/localization/language_bloc.dart';
+import 'package:agrilink/core/localization/locale_provider.dart';
 
 // ================= AUTH =================
 import 'package:agrilink/features/auth/data/repository/auth_repository_impl.dart';
@@ -69,16 +43,53 @@ import 'package:agrilink/features/role_request/data/service/role_request_service
 import 'package:agrilink/features/role_request/domain/repositories/role_request_repository.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
 
-// ================= CART =================
+// ================= PROFILE =================
+import 'package:agrilink/features/profile/data/repository/profile_repository_impl.dart';
+import 'package:agrilink/features/profile/data/services/profile_service.dart';
+import 'package:agrilink/features/profile/domain/repository/profile_repository.dart';
+import 'package:agrilink/features/profile/domain/usecases/profile_usecases.dart';
+import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
+
+// ================= PRODUCT =================
+import 'package:agrilink/features/product/data/repository/product_repo_imp.dart';
+import 'package:agrilink/features/product/data/services/product_service.dart';
+import 'package:agrilink/features/product/domain/repository/product_repository.dart';
+import 'package:agrilink/features/product/domain/usecases/create_product.dart';
+import 'package:agrilink/features/product/domain/usecases/get_products.dart';
+import 'package:agrilink/features/product/presentation/bloc/product_bloc.dart';
+
+// ================= CART & PAYMENT =================
 import 'package:agrilink/features/cart/data/service/cart_service.dart';
 import 'package:agrilink/features/cart/domain/repositories/cart_repository.dart';
 import 'package:agrilink/features/cart/domain/usecases/cart_usecases.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_bloc.dart';
-import 'package:logger/logger.dart';
 
-// ================= LOCALIZATION =================
-import 'package:agrilink/core/localization/language_bloc.dart';
-import 'package:agrilink/core/localization/locale_provider.dart';
+// ================= ORDERS =================
+import 'package:agrilink/features/order/data/repository/order_repository_impl.dart';
+import 'package:agrilink/features/order/data/services/order_service.dart';
+import 'package:agrilink/features/order/domain/repositories/order_repository.dart';
+import 'package:agrilink/features/order/domain/usecases/get_my_orders.dart';
+import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
+
+// ================= FARMER ORDERS =================
+import 'package:agrilink/features/my_product/data/repositories/farmer_order_repository.dart';
+import 'package:agrilink/features/my_product/data/services/farmer_order_service.dart';
+import 'package:agrilink/features/my_product/domain/repositories/i_farmer_order_repository.dart';
+import 'package:agrilink/features/my_product/domain/usecases/farmer_order_usecases.dart';
+
+// ================= CHAT =================
+import 'package:agrilink/features/chat/data/repository/chat_repository_impl.dart';
+import 'package:agrilink/features/chat/data/services/chat_service.dart';
+import 'package:agrilink/features/chat/domain/repositories/chat_repository.dart';
+import 'package:agrilink/features/chat/domain/usecases/chat_usecases.dart';
+import 'package:agrilink/features/chat/presentation/bloc/chat_bloc.dart';
+
+// ================= RECOMMENDATION CHAT =================
+import 'package:agrilink/features/recommendation/data/repository/chat_repository_impl.dart';
+import 'package:agrilink/features/recommendation/data/service/chat_service.dart';
+import 'package:agrilink/features/recommendation/domain/repository/chat_repository.dart';
+import 'package:agrilink/features/recommendation/domain/usecase/send_chat_message_usecase.dart';
+import 'package:agrilink/features/recommendation/presentation/bloc/chat_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -88,7 +99,7 @@ Future<void> initInjector() async {
   sl.registerSingleton<FirebaseAuth>(FirebaseAuth.instance);
   sl.registerSingleton<GoogleSignIn>(GoogleSignIn());
 
-  // ================= CORE LOGGER =================
+  // ================= CORE =================
   sl.registerLazySingleton<Logger>(
     () => Logger(
       printer: PrettyPrinter(
@@ -102,7 +113,6 @@ Future<void> initInjector() async {
     ),
   );
 
-  // ================= CORE =================
   final tokenManager = await TokenManager.getInstance();
   sl.registerSingleton<TokenManager>(tokenManager);
   sl.registerSingleton<DioClient>(DioClient(tokenManager: sl<TokenManager>()));
@@ -161,18 +171,15 @@ Future<void> initInjector() async {
   sl.registerSingleton<CategoryService>(
     CategoryService(dioClient: sl<DioClient>()),
   );
-
   sl.registerSingleton<CategoryRepositoryImpl>(
     CategoryRepositoryImpl(service: sl<CategoryService>()),
   );
-
   sl.registerSingleton<GetCategories>(
     GetCategories(sl<CategoryRepositoryImpl>()),
   );
   sl.registerSingleton<GetSubCategories>(
     GetSubCategories(sl<CategoryRepositoryImpl>()),
   );
-
   sl.registerFactory<CategoryBloc>(
     () => CategoryBloc(sl<GetCategories>(), sl<GetSubCategories>()),
   );
@@ -183,15 +190,12 @@ Future<void> initInjector() async {
   sl.registerSingleton<RegistrationService>(
     RegistrationService(dioClient: sl<DioClient>()),
   );
-
   sl.registerSingleton<RegistrationRepository>(
     RegistrationRepositoryImpl(sl<RegistrationService>()),
   );
-
   sl.registerSingleton<RegistrationUseCases>(
     RegistrationUseCases(sl<RegistrationRepository>()),
   );
-
   sl.registerFactory<RegistrationBloc>(
     () => RegistrationBloc(sl<RegistrationUseCases>()),
   );
@@ -200,15 +204,12 @@ Future<void> initInjector() async {
   // ================= ROLE REQUEST FEATURE ==========
   // ==================================================
   sl.registerSingleton<RoleRequestService>(RoleRequestService(sl<DioClient>()));
-
   sl.registerSingleton<RoleRequestRepository>(
     RoleRequestRepositoryImpl(sl<RoleRequestService>()),
   );
-
   sl.registerSingleton<RoleRequestUseCases>(
     RoleRequestUseCases(sl<RoleRequestRepository>()),
   );
-
   sl.registerFactory<RoleRequestBloc>(
     () => RoleRequestBloc(sl<RoleRequestUseCases>()),
   );
@@ -219,11 +220,9 @@ Future<void> initInjector() async {
   sl.registerSingleton<ProfileService>(
     ProfileService(dioClient: sl<DioClient>()),
   );
-
   sl.registerSingleton<ProfileRepository>(
     ProfileRepositoryImpl(profileService: sl<ProfileService>()),
   );
-
   sl.registerSingleton<CreateProfileUseCase>(
     CreateProfileUseCase(sl<ProfileRepository>()),
   );
@@ -233,7 +232,6 @@ Future<void> initInjector() async {
   sl.registerSingleton<GetProfileUseCase>(
     GetProfileUseCase(sl<ProfileRepository>()),
   );
-
   sl.registerFactory<ProfileBloc>(
     () => ProfileBloc(
       createUseCase: sl<CreateProfileUseCase>(),
@@ -245,40 +243,111 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= PRODUCT FEATURE ================
   // ==================================================
+  // Services
   sl.registerSingleton<ProductService>(
     ProductService(dioClient: sl<DioClient>()),
   );
 
+  // Repositories
   sl.registerSingleton<ProductRepository>(
     ProductRepositoryImpl(sl<ProductService>()),
   );
 
+  // Use Cases
   sl.registerSingleton<GetProducts>(GetProducts(sl<ProductRepository>()));
+
   sl.registerSingleton<CreateProduct>(CreateProduct(sl<ProductRepository>()));
 
+  sl.registerSingleton<GetMyProductsUseCase>(
+    GetMyProductsUseCase(sl<ProductRepository>()),
+  );
+
+  sl.registerSingleton<GetProductByIdUseCase>(
+    GetProductByIdUseCase(sl<ProductRepository>()),
+  );
+
+  sl.registerSingleton<UpdateProductUseCase>(
+    UpdateProductUseCase(sl<ProductRepository>()),
+  );
+
+  sl.registerSingleton<DeleteProductUseCase>(
+    DeleteProductUseCase(sl<ProductRepository>()),
+  );
+
+  sl.registerSingleton<GetProductsByCategoryUseCase>(
+    GetProductsByCategoryUseCase(sl<ProductRepository>()),
+  );
+
+  sl.registerSingleton<SearchProductsUseCase>(
+    SearchProductsUseCase(sl<ProductRepository>()),
+  );
+
+  // BLoC
   sl.registerFactory<ProductBloc>(
-    () => ProductBloc(sl<GetProducts>(), sl<CreateProduct>()),
+    () => ProductBloc(
+      getProducts: sl<GetProducts>(),
+      createProduct: sl<CreateProduct>(),
+      getMyProducts: sl<GetMyProductsUseCase>(),
+      getProductById: sl<GetProductByIdUseCase>(),
+      updateProduct: sl<UpdateProductUseCase>(),
+      deleteProduct: sl<DeleteProductUseCase>(),
+      getProductsByCategory: sl<GetProductsByCategoryUseCase>(),
+      searchProducts: sl<SearchProductsUseCase>(),
+    ),
   );
 
   // ==================================================
-  // ================= CART FEATURE ===================
+  // ================= CART & PAYMENT FEATURE =========
   // ==================================================
-  sl.registerSingleton<CartService>(CartService(sl<DioClient>()));
 
+  // SERVICES & REPOSITORIES
+  sl.registerSingleton<CartService>(CartService(sl<DioClient>()));
   sl.registerSingleton<CartRepository>(CartRepositoryImpl(sl<CartService>()));
 
+  // CART USE CASES
   sl.registerSingleton<GetCartUseCase>(GetCartUseCase(sl<CartRepository>()));
-
   sl.registerSingleton<AddToCartUseCase>(
     AddToCartUseCase(sl<CartRepository>()),
   );
-
   sl.registerSingleton<UpdateCartUseCase>(
     UpdateCartUseCase(sl<CartRepository>()),
   );
-
   sl.registerSingleton<RemoveFromCartUseCase>(
     RemoveFromCartUseCase(sl<CartRepository>()),
+  );
+  sl.registerSingleton<ClearCartUseCase>(
+    ClearCartUseCase(sl<CartRepository>()),
+  );
+  sl.registerSingleton<GetCartTotalUseCase>(
+    GetCartTotalUseCase(sl<CartRepository>()),
+  );
+
+  // PAYMENT USE CASES
+  sl.registerSingleton<CheckoutUseCase>(CheckoutUseCase(sl<CartRepository>()));
+  sl.registerSingleton<VerifyPaymentUseCase>(
+    VerifyPaymentUseCase(sl<CartRepository>()),
+  );
+  sl.registerSingleton<CheckPaymentStatusUseCase>(
+    CheckPaymentStatusUseCase(sl<CartRepository>()),
+  );
+  sl.registerSingleton<CancelOrderUseCase>(
+    CancelOrderUseCase(sl<CartRepository>()),
+  );
+  sl.registerSingleton<GetOrderDetailsUseCase>(
+    GetOrderDetailsUseCase(sl<CartRepository>()),
+  );
+
+  // CART BLOC
+  sl.registerFactory<CartBloc>(
+    () => CartBloc(
+      getCartUseCase: sl<GetCartUseCase>(),
+      addToCartUseCase: sl<AddToCartUseCase>(),
+      updateCartUseCase: sl<UpdateCartUseCase>(),
+      removeFromCartUseCase: sl<RemoveFromCartUseCase>(),
+      clearCartUseCase: sl<ClearCartUseCase>(),
+      checkoutUseCase: sl<CheckoutUseCase>(),
+      verifyPaymentUseCase: sl<VerifyPaymentUseCase>(),
+    ),
   );
 
   // ==================================================
@@ -287,15 +356,12 @@ Future<void> initInjector() async {
   sl.registerLazySingleton<OrderService>(
     () => OrderService(dioClient: sl<DioClient>()),
   );
-
   sl.registerLazySingleton<OrderRepository>(
     () => OrderRepositoryImpl(orderService: sl<OrderService>()),
   );
-
   sl.registerLazySingleton<GetMyOrdersUseCase>(
     () => GetMyOrdersUseCase(sl<OrderRepository>()),
   );
-
   sl.registerFactory<OrderBloc>(
     () => OrderBloc(getMyOrdersUseCase: sl<GetMyOrdersUseCase>()),
   );
@@ -303,82 +369,33 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= FARMER ORDER FEATURE ===========
   // ==================================================
-
-  // SERVICE
   sl.registerLazySingleton<FarmerOrderService>(
     () => FarmerOrderService(sl<DioClient>()),
   );
-
-  // REPOSITORY
   sl.registerLazySingleton<IFarmerOrderRepository>(
     () => FarmerOrderRepository(sl<FarmerOrderService>()),
   );
 
-  // USE CASES
   sl.registerLazySingleton<GetFarmerOrdersUseCase>(
     () => GetFarmerOrdersUseCase(sl<IFarmerOrderRepository>()),
   );
-
   sl.registerLazySingleton<GetPendingFarmerOrdersUseCase>(
     () => GetPendingFarmerOrdersUseCase(sl<IFarmerOrderRepository>()),
   );
-
   sl.registerLazySingleton<GetFarmerOrderByIdUseCase>(
     () => GetFarmerOrderByIdUseCase(sl<IFarmerOrderRepository>()),
   );
-
   sl.registerLazySingleton<UpdateOrderStatusUseCase>(
     () => UpdateOrderStatusUseCase(sl<IFarmerOrderRepository>()),
   );
-
   sl.registerLazySingleton<ConfirmOrderUseCase>(
     () => ConfirmOrderUseCase(sl<IFarmerOrderRepository>()),
   );
-
   sl.registerLazySingleton<MarkAsShippedUseCase>(
     () => MarkAsShippedUseCase(sl<IFarmerOrderRepository>()),
   );
-
   sl.registerLazySingleton<MarkAsDeliveredUseCase>(
     () => MarkAsDeliveredUseCase(sl<IFarmerOrderRepository>()),
-  );
-
-  // BLOC
-  sl.registerFactory<FarmerOrderBloc>(
-    () => FarmerOrderBloc(
-      getFarmerOrdersUseCase: sl<GetFarmerOrdersUseCase>(),
-      getPendingFarmerOrdersUseCase: sl<GetPendingFarmerOrdersUseCase>(),
-      getFarmerOrderByIdUseCase: sl<GetFarmerOrderByIdUseCase>(),
-      confirmOrderUseCase: sl<ConfirmOrderUseCase>(),
-      markAsShippedUseCase: sl<MarkAsShippedUseCase>(),
-      markAsDeliveredUseCase: sl<MarkAsDeliveredUseCase>(),
-    ),
-  );
-
-  // ==================================================
-  // ================= CHECKOUT FEATURE ===============
-  // ==================================================
-  sl.registerSingleton<CheckoutService>(CheckoutService(sl<DioClient>()));
-
-  sl.registerSingleton<CheckoutRepository>(
-    CheckoutRepositoryImpl(sl<CheckoutService>()),
-  );
-
-  sl.registerSingleton<ProcessCheckoutUseCase>(
-    ProcessCheckoutUseCase(sl<CheckoutRepository>()),
-  );
-
-  // ==================================================
-  // ================= CART BLOC ======================
-  // ==================================================
-  sl.registerFactory<CartBloc>(
-    () => CartBloc(
-      getCartUseCase: sl<GetCartUseCase>(),
-      addToCartUseCase: sl<AddToCartUseCase>(),
-      updateCartUseCase: sl<UpdateCartUseCase>(),
-      removeFromCartUseCase: sl<RemoveFromCartUseCase>(),
-      processCheckoutUseCase: sl<ProcessCheckoutUseCase>(),
-    ),
   );
 
   // ==================================================
@@ -387,15 +404,12 @@ Future<void> initInjector() async {
   sl.registerLazySingleton<ChatService>(
     () => ChatService(logger: sl<Logger>(), dioClient: sl<DioClient>()),
   );
-
   sl.registerLazySingleton<ChatRepository>(
     () => ChatRepositoryImpl(chatService: sl<ChatService>()),
   );
-
   sl.registerLazySingleton<ChatUseCases>(
     () => ChatUseCases(sl<ChatRepository>()),
   );
-
   sl.registerFactory<ChatBloc>(() => ChatBloc(useCases: sl<ChatUseCases>()));
 
   // ==================================================
@@ -404,21 +418,18 @@ Future<void> initInjector() async {
   sl.registerLazySingleton<ChatService2>(
     () => ChatService2(dioClient: sl<DioClient>()),
   );
-
   sl.registerLazySingleton<ChatRepository2>(
     () => ChatRepositoryImpl2(service: sl<ChatService2>()),
   );
-
   sl.registerLazySingleton<SendChatMessageUseCase2>(
     () => SendChatMessageUseCase2(sl<ChatRepository2>()),
   );
-
   sl.registerFactory<ChatBloc2>(
     () => ChatBloc2(sendMessageUseCase: sl<SendChatMessageUseCase2>()),
   );
 }
 
-// ================= HELPER GETTERS FOR LOCALIZATION =================
+// ================= HELPER GETTERS =================
 LocaleProvider getLocaleProvider() => sl<LocaleProvider>();
 LanguageBloc getLanguageBloc() => sl<LanguageBloc>();
 

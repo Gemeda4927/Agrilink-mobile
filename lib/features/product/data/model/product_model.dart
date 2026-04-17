@@ -23,13 +23,16 @@ class ProductModel extends ProductEntity {
     super.woredaName,
     super.zoneName,
     super.regionName,
+    this.isAvailable = true, // Add this field
   });
+
+  final bool isAvailable; // Add this field
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     // Safely extract nested subCategory data
     final subCategory = json['subCategory'] as Map<String, dynamic>?;
     final category = subCategory?['category'] as Map<String, dynamic>?;
-    
+
     // Safely extract nested farmer data
     final farmer = json['farmer'] as Map<String, dynamic>?;
     final profile = farmer?['profile'] as Map<String, dynamic>?;
@@ -47,24 +50,24 @@ class ProductModel extends ProductEntity {
       price: json['price']?.toString() ?? '0',
       description: json['description'] ?? '',
       image: json['image'] ?? '',
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      
+      isAvailable: json['isAvailable'] ?? true, // Parse from JSON
       // SubCategory data
       subCategoryName: subCategory?['name'],
       categoryId: subCategory?['categoryId'],
       categoryName: category?['name'],
-      
+
       // Farmer basic data
       farmerEmail: farmer?['email'],
       farmerPhone: farmer?['phone'],
       farmerRole: farmer?['role'],
-      
+
       // Farmer profile data
       farmerFullName: profile?['fullName'],
       farmerImageUrl: profile?['imageUrl'],
-      
+
       // Location data
       kebeleName: kebele?['name'],
       woredaName: woreda?['name'],
@@ -84,7 +87,7 @@ class ProductModel extends ProductEntity {
       'description': description,
       'image': image,
       'createdAt': createdAt.toIso8601String(),
-      
+      'isAvailable': isAvailable, // Add to JSON
       // Optional nested data (for sending back to API if needed)
       'subCategoryName': subCategoryName,
       'categoryId': categoryId,
@@ -100,7 +103,7 @@ class ProductModel extends ProductEntity {
       'regionName': regionName,
     };
   }
-  
+
   // Helper method to get formatted location string
   String getFormattedLocation() {
     if (kebeleName != null && woredaName != null && regionName != null) {
@@ -112,7 +115,7 @@ class ProductModel extends ProductEntity {
     }
     return 'Location not specified';
   }
-  
+
   // Helper method to get farmer display name
   String getFarmerDisplayName() {
     if (farmerFullName != null && farmerFullName!.isNotEmpty) {

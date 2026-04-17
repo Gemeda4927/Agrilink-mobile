@@ -13,7 +13,7 @@ import 'package:agrilink/features/cart/presentation/checkout_screen.dart';
 import 'package:agrilink/features/cart/presentation/order_confirmation_screen.dart';
 import 'package:agrilink/features/chat/presentation/chat.dart';
 import 'package:agrilink/features/home/homescreen.dart';
-import 'package:agrilink/features/my_product/presentation/farmer_orders_screen.dart';
+import 'package:agrilink/features/my_product/presentation/my_products_screen.dart';
 import 'package:agrilink/features/order/presentation/screens/my_orders_screen.dart';
 import 'package:agrilink/features/product/FarmerProfilePage.dart';
 import 'package:agrilink/features/product/presentation/create_product_page.dart';
@@ -111,12 +111,6 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const CreateProductPage(),
     ),
 
-    GoRoute(
-      path: RouteName.myProducts,
-      name: RouteName.myProducts,
-      builder: (context, state) => const PlaceholderScreen(title: "My Products"),
-    ),
-
     // Chat Route
     GoRoute(
       path: RouteName.chat,
@@ -164,13 +158,6 @@ final GoRouter appRouter = GoRouter(
       path: RouteName.myOrders,
       name: RouteName.myOrders,
       builder: (context, state) => const MyOrdersScreen(),
-    ),
-
-    // Farmer Orders Route (Orders received from buyers)
-    GoRoute(
-      path: RouteName.farmerOrders,
-      name: RouteName.farmerOrders,
-      builder: (context, state) => const FarmerOrdersScreen(),
     ),
 
     // ================= MAIN APP SHELL (Authenticated Routes) =================
@@ -251,6 +238,12 @@ final GoRouter appRouter = GoRouter(
           path: RouteName.profile,
           name: RouteName.profile,
           builder: (context, state) => const CreateProfileScreen(),
+        ),
+
+        GoRoute(
+          path: RouteName.myProducts,
+          name: RouteName.myProducts,
+          builder: (context, state) => const MyProductsScreen(),
         ),
 
         // View Profile Route

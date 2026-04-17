@@ -21,22 +21,24 @@ class RouteName {
   static const String home = '/home';
   static const String product = '/product';
   static const String myProducts = '/my-products';
-  
-  // Orders
-  static const String myOrders = '/my-orders';      
-  static const String farmerOrders = '/farmer-orders'; 
 
-  // Product Management
-  static const String createProduct = '/createProduct';
-  static const String productDetails = '/productDetails';
-  
+  // Orders
+  static const String myOrders = '/my-orders';
+  static const String farmerOrders = '/farmer-orders';
+
+  // Product Management (UI Routes)
+  static const String createProduct = '/create-product';
+  static const String productDetails = '/product-details/:id'; // With parameter
+  static const String editProduct = '/edit-product/:id'; // With parameter
+  static const String productList = '/product-list';
+
   // AI & Profile
   static const String aiRecommendation = '/recommendation';
   static const String profile = '/profile';
   static const String viewProfile = '/view-profile';
   static const String updateProfile = '/update-profile';
   static const String farmerProfile = '/farmerProfile';
-  
+
   // Other screens
   static const String todo = '/todo';
   static const String itemDetails = '/itemDetails';

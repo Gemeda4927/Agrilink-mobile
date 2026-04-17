@@ -3,15 +3,15 @@ import 'package:go_router/go_router.dart';
 import 'package:agrilink/core/config/routes/route_name.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
-  final String orderId;
-  final double amount;
-  final String paymentMethod;
+  final String? orderId;
+  final double? amount;
+  final String? paymentMethod;
 
   const OrderConfirmationScreen({
     super.key,
-    required this.orderId,
-    required this.amount,
-    required this.paymentMethod,
+    this.orderId,
+    this.amount,
+    this.paymentMethod,
   });
 
   @override
@@ -23,10 +23,18 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+  
+  String _orderId = '';
+  double _amount = 0.0;
+  String _paymentMethod = '';
 
   @override
   void initState() {
     super.initState();
+    
+    // Validate and initialize data
+    _validateAndInitializeData();
+    
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -35,6 +43,26 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
     );
     _animationController.forward();
+  }
+
+  void _validateAndInitializeData() {
+    // Set default values if data is missing
+    _orderId = widget.orderId ?? 'ORD-${DateTime.now().millisecondsSinceEpoch}';
+    _amount = widget.amount ?? 0.0;
+    _paymentMethod = widget.paymentMethod ?? 'Unknown';
+    
+    // If amount is 0, show warning
+    if (_amount <= 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Warning: Order amount is 0"),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      });
+    }
   }
 
   @override
@@ -116,21 +144,21 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
                         // Order ID - Full display without truncation
                         _buildDetailRow(
                           'Order ID',
-                          widget.orderId,
+                          _orderId,
                           Icons.receipt,
                           isFullText: true,
                         ),
                         const SizedBox(height: 12),
                         _buildDetailRow(
                           'Amount Paid',
-                          'ETB ${widget.amount.toStringAsFixed(2)}',
+                          'ETB ${_amount.toStringAsFixed(2)}',
                           Icons.money,
                           isAmount: true,
                         ),
                         const SizedBox(height: 12),
                         _buildDetailRow(
                           'Payment Method',
-                          widget.paymentMethod.toUpperCase(),
+                          _paymentMethod.toUpperCase(),
                           Icons.payment,
                         ),
                         const SizedBox(height: 12),
@@ -150,6 +178,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
+                      // Navigate to home and clear all previous routes
                       context.go(RouteName.home);
                     },
                     style: ElevatedButton.styleFrom(
@@ -240,6 +269,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen>
   }
 
   void _shareOrderDetails() {
+    // Show feedback that share feature is coming
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Share feature coming soon'),
