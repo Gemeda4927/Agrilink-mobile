@@ -8,6 +8,11 @@ import 'package:agrilink/features/domain/payment/data/repository/checkout_reposi
 import 'package:agrilink/features/domain/payment/data/service/checkout_service.dart';
 import 'package:agrilink/features/domain/payment/domain/repositories/checkout_repository.dart';
 import 'package:agrilink/features/domain/payment/domain/usecases/checkout_usecase.dart';
+import 'package:agrilink/features/my_product/data/repositories/farmer_order_repository.dart';
+import 'package:agrilink/features/my_product/data/services/farmer_order_service.dart';
+import 'package:agrilink/features/my_product/domain/repositories/i_farmer_order_repository.dart';
+import 'package:agrilink/features/my_product/domain/usecases/farmer_order_usecases.dart';
+import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_bloc.dart';
 import 'package:agrilink/features/order/data/repository/order_repository_impl.dart';
 import 'package:agrilink/features/order/data/services/order_service.dart';
 import 'package:agrilink/features/order/domain/repositories/order_repository.dart';
@@ -103,11 +108,7 @@ Future<void> initInjector() async {
   sl.registerSingleton<DioClient>(DioClient(tokenManager: sl<TokenManager>()));
 
   // ================= LOCALIZATION =================
-  // Register LocaleProvider as a lazy singleton
   sl.registerLazySingleton<LocaleProvider>(() => LocaleProvider());
-
-  // Register LanguageBloc as a lazy singleton (persists across app lifecycle)
-  // Using registerLazySingleton ensures the same instance is used throughout the app
   sl.registerLazySingleton<LanguageBloc>(() => LanguageBloc());
 
   // ==================================================
@@ -281,27 +282,77 @@ Future<void> initInjector() async {
   );
 
   // ==================================================
-  // ================= ORDER FEATURE ==================
+  // ================= BUYER ORDER FEATURE ============
   // ==================================================
-
-  // SERVICE
   sl.registerLazySingleton<OrderService>(
     () => OrderService(dioClient: sl<DioClient>()),
   );
 
-  // REPOSITORY
   sl.registerLazySingleton<OrderRepository>(
     () => OrderRepositoryImpl(orderService: sl<OrderService>()),
   );
 
-  // USE CASES
   sl.registerLazySingleton<GetMyOrdersUseCase>(
     () => GetMyOrdersUseCase(sl<OrderRepository>()),
   );
 
-  // BLOC
   sl.registerFactory<OrderBloc>(
     () => OrderBloc(getMyOrdersUseCase: sl<GetMyOrdersUseCase>()),
+  );
+
+  // ==================================================
+  // ================= FARMER ORDER FEATURE ===========
+  // ==================================================
+
+  // SERVICE
+  sl.registerLazySingleton<FarmerOrderService>(
+    () => FarmerOrderService(sl<DioClient>()),
+  );
+
+  // REPOSITORY
+  sl.registerLazySingleton<IFarmerOrderRepository>(
+    () => FarmerOrderRepository(sl<FarmerOrderService>()),
+  );
+
+  // USE CASES
+  sl.registerLazySingleton<GetFarmerOrdersUseCase>(
+    () => GetFarmerOrdersUseCase(sl<IFarmerOrderRepository>()),
+  );
+
+  sl.registerLazySingleton<GetPendingFarmerOrdersUseCase>(
+    () => GetPendingFarmerOrdersUseCase(sl<IFarmerOrderRepository>()),
+  );
+
+  sl.registerLazySingleton<GetFarmerOrderByIdUseCase>(
+    () => GetFarmerOrderByIdUseCase(sl<IFarmerOrderRepository>()),
+  );
+
+  sl.registerLazySingleton<UpdateOrderStatusUseCase>(
+    () => UpdateOrderStatusUseCase(sl<IFarmerOrderRepository>()),
+  );
+
+  sl.registerLazySingleton<ConfirmOrderUseCase>(
+    () => ConfirmOrderUseCase(sl<IFarmerOrderRepository>()),
+  );
+
+  sl.registerLazySingleton<MarkAsShippedUseCase>(
+    () => MarkAsShippedUseCase(sl<IFarmerOrderRepository>()),
+  );
+
+  sl.registerLazySingleton<MarkAsDeliveredUseCase>(
+    () => MarkAsDeliveredUseCase(sl<IFarmerOrderRepository>()),
+  );
+
+  // BLOC
+  sl.registerFactory<FarmerOrderBloc>(
+    () => FarmerOrderBloc(
+      getFarmerOrdersUseCase: sl<GetFarmerOrdersUseCase>(),
+      getPendingFarmerOrdersUseCase: sl<GetPendingFarmerOrdersUseCase>(),
+      getFarmerOrderByIdUseCase: sl<GetFarmerOrderByIdUseCase>(),
+      confirmOrderUseCase: sl<ConfirmOrderUseCase>(),
+      markAsShippedUseCase: sl<MarkAsShippedUseCase>(),
+      markAsDeliveredUseCase: sl<MarkAsDeliveredUseCase>(),
+    ),
   );
 
   // ==================================================
@@ -333,60 +384,44 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= CHAT FEATURE ===================
   // ==================================================
-
-  // SERVICE
   sl.registerLazySingleton<ChatService>(
     () => ChatService(logger: sl<Logger>(), dioClient: sl<DioClient>()),
   );
 
-  // REPOSITORY
   sl.registerLazySingleton<ChatRepository>(
     () => ChatRepositoryImpl(chatService: sl<ChatService>()),
   );
 
-  // USE CASES
   sl.registerLazySingleton<ChatUseCases>(
     () => ChatUseCases(sl<ChatRepository>()),
   );
 
-  // BLOC
   sl.registerFactory<ChatBloc>(() => ChatBloc(useCases: sl<ChatUseCases>()));
 
   // ==================================================
   // ========== RECOMMENDATION CHAT V2 FEATURE ========
   // ==================================================
-
-  // SERVICE
   sl.registerLazySingleton<ChatService2>(
     () => ChatService2(dioClient: sl<DioClient>()),
   );
 
-  // REPOSITORY
   sl.registerLazySingleton<ChatRepository2>(
     () => ChatRepositoryImpl2(service: sl<ChatService2>()),
   );
 
-  // USE CASE
   sl.registerLazySingleton<SendChatMessageUseCase2>(
     () => SendChatMessageUseCase2(sl<ChatRepository2>()),
   );
 
-  // BLOC
   sl.registerFactory<ChatBloc2>(
     () => ChatBloc2(sendMessageUseCase: sl<SendChatMessageUseCase2>()),
   );
 }
 
 // ================= HELPER GETTERS FOR LOCALIZATION =================
-// Optional: Add helper methods to easily access localization dependencies
-
-/// Get the LocaleProvider instance from GetIt
 LocaleProvider getLocaleProvider() => sl<LocaleProvider>();
-
-/// Get the LanguageBloc instance from GetIt
 LanguageBloc getLanguageBloc() => sl<LanguageBloc>();
 
-/// Alternative: Extension on GetIt for cleaner syntax
 extension GetItLocalization on GetIt {
   LocaleProvider get localeProvider => get<LocaleProvider>();
   LanguageBloc get languageBloc => get<LanguageBloc>();

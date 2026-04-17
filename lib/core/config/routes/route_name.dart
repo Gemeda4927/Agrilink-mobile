@@ -1,3 +1,4 @@
+// lib/core/config/routes/route_name.dart
 
 class RouteName {
   // Auth & Onboarding
@@ -20,25 +21,28 @@ class RouteName {
   static const String home = '/home';
   static const String product = '/product';
   static const String myProducts = '/my-products';
-  static const String myOrders = '/my-orders';  
+  
+  // Orders
+  static const String myOrders = '/my-orders';      
+  static const String farmerOrders = '/farmer-orders'; 
 
+  // Product Management
   static const String createProduct = '/createProduct';
+  static const String productDetails = '/productDetails';
+  
+  // AI & Profile
   static const String aiRecommendation = '/recommendation';
   static const String profile = '/profile';
   static const String viewProfile = '/view-profile';
   static const String updateProfile = '/update-profile';
   static const String farmerProfile = '/farmerProfile';
   
-  // Removed duplicate 'order' - using 'myOrders' instead
-
-  static const String productDetails = '/productDetails';
-
   // Other screens
   static const String todo = '/todo';
   static const String itemDetails = '/itemDetails';
   static const String categoryDetails = '/categoryDetails';
   static const String chat = '/chat';
 
-  // ROLE REQUEST
+  // Role Request
   static const String roleRequest = "/role-request";
 }

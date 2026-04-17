@@ -1,5 +1,7 @@
 import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/core/localization/language_bloc.dart';
+import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_bloc.dart';
+import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_event.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_event.dart';
 import 'package:flutter/material.dart';
@@ -58,11 +60,22 @@ class MyApp extends StatelessWidget {
             return bloc;
           },
         ),
+        // Buyer Orders
         BlocProvider<OrderBloc>(
           create: (_) {
             final bloc = sl<OrderBloc>();
             WidgetsBinding.instance.addPostFrameCallback((_) {
               bloc.add(GetMyOrdersEvent());
+            });
+            return bloc;
+          },
+        ),
+        // Farmer Orders (Orders received from buyers)
+        BlocProvider<FarmerOrderBloc>(
+          create: (_) {
+            final bloc = sl<FarmerOrderBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.add(LoadFarmerOrders());
             });
             return bloc;
           },
