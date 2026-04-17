@@ -8,6 +8,11 @@ import 'package:agrilink/features/domain/payment/data/repository/checkout_reposi
 import 'package:agrilink/features/domain/payment/data/service/checkout_service.dart';
 import 'package:agrilink/features/domain/payment/domain/repositories/checkout_repository.dart';
 import 'package:agrilink/features/domain/payment/domain/usecases/checkout_usecase.dart';
+import 'package:agrilink/features/order/data/repository/order_repository_impl.dart';
+import 'package:agrilink/features/order/data/services/order_service.dart';
+import 'package:agrilink/features/order/domain/repositories/order_repository.dart';
+import 'package:agrilink/features/order/domain/usecases/get_my_orders.dart';
+import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
 import 'package:agrilink/features/product/data/repository/product_repo_imp.dart';
 import 'package:agrilink/features/product/data/services/product_service.dart';
 import 'package:agrilink/features/product/domain/repository/product_repository.dart';
@@ -100,7 +105,7 @@ Future<void> initInjector() async {
   // ================= LOCALIZATION =================
   // Register LocaleProvider as a lazy singleton
   sl.registerLazySingleton<LocaleProvider>(() => LocaleProvider());
-  
+
   // Register LanguageBloc as a lazy singleton (persists across app lifecycle)
   // Using registerLazySingleton ensures the same instance is used throughout the app
   sl.registerLazySingleton<LanguageBloc>(() => LanguageBloc());
@@ -276,6 +281,30 @@ Future<void> initInjector() async {
   );
 
   // ==================================================
+  // ================= ORDER FEATURE ==================
+  // ==================================================
+
+  // SERVICE
+  sl.registerLazySingleton<OrderService>(
+    () => OrderService(dioClient: sl<DioClient>()),
+  );
+
+  // REPOSITORY
+  sl.registerLazySingleton<OrderRepository>(
+    () => OrderRepositoryImpl(orderService: sl<OrderService>()),
+  );
+
+  // USE CASES
+  sl.registerLazySingleton<GetMyOrdersUseCase>(
+    () => GetMyOrdersUseCase(sl<OrderRepository>()),
+  );
+
+  // BLOC
+  sl.registerFactory<OrderBloc>(
+    () => OrderBloc(getMyOrdersUseCase: sl<GetMyOrdersUseCase>()),
+  );
+
+  // ==================================================
   // ================= CHECKOUT FEATURE ===============
   // ==================================================
   sl.registerSingleton<CheckoutService>(CheckoutService(sl<DioClient>()));
@@ -304,13 +333,10 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= CHAT FEATURE ===================
   // ==================================================
-  
+
   // SERVICE
   sl.registerLazySingleton<ChatService>(
-    () => ChatService(
-      logger: sl<Logger>(), 
-      dioClient: sl<DioClient>(),
-    ),
+    () => ChatService(logger: sl<Logger>(), dioClient: sl<DioClient>()),
   );
 
   // REPOSITORY
@@ -324,9 +350,7 @@ Future<void> initInjector() async {
   );
 
   // BLOC
-  sl.registerFactory<ChatBloc>(
-    () => ChatBloc(useCases: sl<ChatUseCases>()),
-  );
+  sl.registerFactory<ChatBloc>(() => ChatBloc(useCases: sl<ChatUseCases>()));
 
   // ==================================================
   // ========== RECOMMENDATION CHAT V2 FEATURE ========

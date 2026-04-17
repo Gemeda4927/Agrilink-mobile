@@ -1,5 +1,7 @@
 import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/core/localization/language_bloc.dart';
+import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
+import 'package:agrilink/features/order/presentation/bloc/order_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -52,6 +54,15 @@ class MyApp extends StatelessWidget {
             final bloc = sl<RegistrationBloc>();
             WidgetsBinding.instance.addPostFrameCallback((_) {
               bloc.add(LoadRegions());
+            });
+            return bloc;
+          },
+        ),
+        BlocProvider<OrderBloc>(
+          create: (_) {
+            final bloc = sl<OrderBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.add(GetMyOrdersEvent());
             });
             return bloc;
           },
@@ -208,7 +219,6 @@ class AmharicMaterialLocalizationsDelegate
   bool shouldReload(AmharicMaterialLocalizationsDelegate old) => false;
 }
 
-/// Cupertino fallback: Maps Amharic ('am') requests to English Cupertino translations
 class AmharicCupertinoLocalizationsDelegate
     extends LocalizationsDelegate<CupertinoLocalizations> {
   const AmharicCupertinoLocalizationsDelegate();

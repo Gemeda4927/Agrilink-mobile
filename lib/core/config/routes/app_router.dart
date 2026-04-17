@@ -13,6 +13,7 @@ import 'package:agrilink/features/cart/presentation/checkout_screen.dart';
 import 'package:agrilink/features/cart/presentation/order_confirmation_screen.dart';
 import 'package:agrilink/features/chat/presentation/chat.dart';
 import 'package:agrilink/features/home/homescreen.dart';
+import 'package:agrilink/features/order/presentation/screens/my_orders_screen.dart';
 import 'package:agrilink/features/product/FarmerProfilePage.dart';
 import 'package:agrilink/features/product/presentation/create_product_page.dart';
 import 'package:agrilink/features/product/presentation/product_details_page.dart';
@@ -55,7 +56,6 @@ final GoRouter appRouter = GoRouter(
   routes: [
     // ================= PUBLIC ROUTES (Outside Shell) =================
 
-    // Splash Screen
     GoRoute(
       path: RouteName.splash,
       name: RouteName.splash,
@@ -107,7 +107,6 @@ final GoRouter appRouter = GoRouter(
       name: RouteName.createProduct,
       builder: (context, state) => const CreateProductPage(),
     ),
-    // Chat Route
 
     // Chat Route
     GoRoute(
@@ -151,6 +150,13 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
+    // My Orders Route (Public - Can be accessed after auth)
+    GoRoute(
+      path: RouteName.myOrders,
+      name: RouteName.myOrders,
+      builder: (context, state) => const MyOrdersScreen(),
+    ),
+
     // ================= MAIN APP SHELL (Authenticated Routes) =================
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -168,7 +174,13 @@ final GoRouter appRouter = GoRouter(
 
             // Redirect to login if not authenticated
             if (user == null) {
-              return const LoginPage();
+              // Use a delayed microtask to avoid navigation during build
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) {
+                  context.go(RouteName.login);
+                }
+              });
+              return const SizedBox.shrink();
             }
 
             // Return BasePage with authenticated child
@@ -251,7 +263,6 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const CartScreen(),
         ),
 
-        // ================= CHECKOUT ROUTE - ADD THIS =================
         // Checkout Route
         GoRoute(
           path: RouteName.checkout,
