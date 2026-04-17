@@ -1,5 +1,6 @@
+import 'package:agrilink/features/order/data/models/product_model.dart';
+
 import '../../domain/entities/order_item.dart';
-import 'product_model.dart';
 
 class OrderItemModel {
   final String id;
@@ -7,7 +8,7 @@ class OrderItemModel {
   final String productId;
   final int amount;
   final double priceAtOrder;
-  final ProductModel product;
+  final ProductOrderModel product;
 
   OrderItemModel({
     required this.id,
@@ -20,12 +21,16 @@ class OrderItemModel {
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
     return OrderItemModel(
-      id: json['id'],
-      orderId: json['orderId'],
-      productId: json['productId'],
-      amount: json['amount'],
-      priceAtOrder: (json['priceAtOrder'] as num).toDouble(),
-      product: ProductModel.fromJson(json['product']),
+      id: json['id'] ?? '',
+      orderId: json['orderId'] ?? '',
+      productId: json['productId'] ?? '',
+      amount: json['amount'] ?? 0,
+      priceAtOrder: json['priceAtOrder'] != null
+          ? (json['priceAtOrder'] as num).toDouble()
+          : 0.0,
+      product: json['product'] != null
+          ? ProductOrderModel.fromJson(json['product'])
+          : ProductOrderModel.empty(),
     );
   }
 

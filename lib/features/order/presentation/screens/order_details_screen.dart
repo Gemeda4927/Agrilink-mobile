@@ -1,6 +1,8 @@
 import 'package:agrilink/features/order/domain/entities/order.dart';
 import 'package:flutter/material.dart';
 
+import '../../domain/entities/product.dart';
+
 class OrderDetailsScreen extends StatelessWidget {
   final Order order;
 
@@ -255,6 +257,38 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildProductImage(Product product) {
+    if (product.hasImage) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          product.imageUrl,
+          width: 80,
+          height: 80,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: 80,
+              height: 80,
+              color: Colors.grey[200],
+              child: const Icon(Icons.image_not_supported, size: 40),
+            );
+          },
+        ),
+      );
+    } else {
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.image_not_supported, size: 40),
+      );
+    }
+  }
+
   Widget _buildItemsList() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -288,26 +322,7 @@ class OrderDetailsScreen extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      item.product.image,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey[200],
-                          child: const Icon(
-                            Icons.image_not_supported,
-                            size: 40,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  _buildProductImage(item.product),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

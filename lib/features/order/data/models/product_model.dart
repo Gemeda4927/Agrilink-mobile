@@ -1,6 +1,8 @@
-import '../../domain/entities/order_item.dart';
+// lib/features/order/data/models/product_order_model.dart
 
-class ProductModel {
+import '../../domain/entities/product.dart';
+
+class ProductOrderModel {
   final String id;
   final String farmerId;
   final String name;
@@ -8,10 +10,10 @@ class ProductModel {
   final int amount;
   final double price;
   final String description;
-  final String image;
+  final String? image;
   final DateTime createdAt;
 
-  ProductModel({
+  ProductOrderModel({
     required this.id,
     required this.farmerId,
     required this.name,
@@ -19,29 +21,40 @@ class ProductModel {
     required this.amount,
     required this.price,
     required this.description,
-    required this.image,
+    this.image,
     required this.createdAt,
   });
 
-  factory ProductModel.fromJson(Map<String, dynamic> json) {
-    return ProductModel(
-      id: json['id'],
-      farmerId: json['farmerId'],
-      name: json['name'],
-      subCategoryId: json['subCategoryId'],
-      amount: json['amount'],
-      price: _parsePrice(json['price']),
-      description: json['description'],
-      image: json['image'],
-      createdAt: DateTime.parse(json['createdAt']),
+  factory ProductOrderModel.fromJson(Map<String, dynamic> json) {
+    return ProductOrderModel(
+      id: json['id'] ?? '',
+      farmerId: json['farmerId'] ?? '',
+      name: json['name'] ?? '',
+      subCategoryId: json['subCategoryId'] ?? '',
+      amount: json['amount'] ?? 0,
+      price: json['price'] != null
+          ? double.tryParse(json['price'].toString()) ?? 0.0
+          : 0.0,
+      description: json['description'] ?? '',
+      image: json['image'], // This can be null - key fix!
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
     );
   }
 
-  static double _parsePrice(dynamic price) {
-    if (price == null) return 0.0;
-    if (price is String) return double.parse(price);
-    if (price is num) return price.toDouble();
-    return 0.0;
+  factory ProductOrderModel.empty() {
+    return ProductOrderModel(
+      id: '',
+      farmerId: '',
+      name: 'Unknown Product',
+      subCategoryId: '',
+      amount: 0,
+      price: 0.0,
+      description: 'No description available',
+      image: null,
+      createdAt: DateTime.now(),
+    );
   }
 
   Product toEntity() {
@@ -57,4 +70,8 @@ class ProductModel {
       createdAt: createdAt,
     );
   }
+
+  String getImageUrl() => image ?? '';
+
+  bool hasImage() => image != null && image!.isNotEmpty;
 }

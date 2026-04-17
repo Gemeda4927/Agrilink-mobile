@@ -28,18 +28,24 @@ class OrderModel {
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
-      id: json['id'],
-      buyerId: json['buyerId'],
-      totalAmount: (json['totalAmount'] as num).toDouble(),
-      txRef: json['tx_ref'],
-      status: json['status'],
-      paymentId: json['paymentId'],
-      paymentUrl: json['paymentUrl'],
-      currency: json['currency'],
-      createdAt: DateTime.parse(json['createdAt']),
-      items: (json['items'] as List)
-          .map((item) => OrderItemModel.fromJson(item))
-          .toList(),
+      id: json['id'] ?? '',
+      buyerId: json['buyerId'] ?? '',
+      totalAmount: json['totalAmount'] != null 
+          ? (json['totalAmount'] as num).toDouble() 
+          : 0.0,
+      txRef: json['tx_ref'] ?? '',
+      status: json['status'] ?? 'PENDING',
+      paymentId: json['paymentId'] ?? '',
+      paymentUrl: json['paymentUrl'] ?? '',
+      currency: json['currency'] ?? 'ETB',
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt']) 
+          : DateTime.now(),
+      items: json['items'] != null && json['items'] is List
+          ? (json['items'] as List)
+              .map((item) => OrderItemModel.fromJson(item))
+              .toList()
+          : [],
     );
   }
 
