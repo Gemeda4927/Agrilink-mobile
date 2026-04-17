@@ -9,12 +9,23 @@ class ProductEntity {
   final String image;
   final DateTime createdAt;
 
+  // SubCategory nested data
   final String? subCategoryName;
   final String? categoryId;
-
+  final String? categoryName;
+  
+  // Farmer nested data
   final String? farmerEmail;
   final String? farmerPhone;
   final String? farmerRole;
+  final String? farmerFullName;
+  final String? farmerImageUrl;
+  
+  // Location data from farmer's profile
+  final String? kebeleName;
+  final String? woredaName;
+  final String? zoneName;
+  final String? regionName;
 
   ProductEntity({
     required this.id,
@@ -26,11 +37,17 @@ class ProductEntity {
     required this.description,
     required this.image,
     required this.createdAt,
-
     this.subCategoryName,
     this.categoryId,
+    this.categoryName,
     this.farmerEmail,
     this.farmerPhone,
     this.farmerRole,
+    this.farmerFullName,
+    this.farmerImageUrl,
+    this.kebeleName,
+    this.woredaName,
+    this.zoneName,
+    this.regionName,
   });
 }
