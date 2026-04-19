@@ -8,6 +8,25 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
   RegistrationRepositoryImpl(this.service);
 
   @override
+  Future<CreateFarmerResponse> createFarmer({
+    required String email,
+    required String password,
+    required String confirmPassword,
+    required String phone,
+    String role = "BUYER",
+  }) async {
+    final response = await service.createFarmer(
+      email: email,
+      password: password,
+      confirmPassword: confirmPassword,
+      phone: phone,
+      role: role,
+    );
+
+    return CreateFarmerResponse.fromJson(response);
+  }
+
+  @override
   Future<UserModel> registerUser(Map<String, dynamic> data) async {
     final response = await service.registerUser(data);
 

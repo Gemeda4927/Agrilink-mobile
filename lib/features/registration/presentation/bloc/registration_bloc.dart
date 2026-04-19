@@ -66,5 +66,23 @@ class RegistrationBloc extends Bloc<RegistrationEvent, RegistrationState> {
         emit(RegistrationError(e.toString()));
       }
     });
+
+    /// Create Farmer
+    on<CreateFarmer>((event, emit) async {
+      emit(RegistrationLoading());
+
+      try {
+        final response = await useCases.createFarmer(
+          email: event.email,
+          password: event.password,
+          confirmPassword: event.confirmPassword,
+          phone: event.phone,
+          role: event.role,
+        );
+        emit(CreateFarmerSuccess(message: response.message));
+      } catch (e) {
+        emit(RegistrationError(e.toString()));
+      }
+    });
   }
 }

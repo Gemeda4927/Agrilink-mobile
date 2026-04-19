@@ -223,7 +223,7 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: RouteName.dashboard,
           name: RouteName.dashboard,
-          builder: (context, state) => const RegisterPage(),
+          builder: (context, state) => const CreateFarmerScreen(),
         ),
 
         // AI Recommendation Route

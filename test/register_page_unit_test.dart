@@ -1,225 +1,330 @@
+import 'package:agrilink/features/registration/data/models/user_model.dart';
+import 'package:agrilink/features/registration/presentation/screen/register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
-import 'package:agrilink/features/auth/domain/usecase/auth_usecases.dart';
-import 'package:agrilink/features/registration/presentation/screen/register_page.dart';
+import 'package:agrilink/features/registration/presentation/bloc/registration_bloc.dart';
+import 'package:agrilink/features/registration/presentation/bloc/registration_state.dart';
+import 'package:agrilink/features/registration/presentation/bloc/registration_event.dart';
+import 'package:agrilink/features/registration/domain/usecases/registration_usecases.dart';
 
-// Mock UseCases
-class MockSignInUseCase extends Mock implements SignInUseCase {}
-
-class MockSignUpUseCase extends Mock implements SignUpUseCase {}
-
-class MockVerifyOtpUseCase extends Mock implements VerifyOtpUseCase {}
-
-class MockGoogleSignInUseCase extends Mock implements GoogleSignInUseCase {}
-
-class MockForgotPasswordUseCase extends Mock implements ForgotPasswordUseCase {}
-
-class MockResetPasswordUseCase extends Mock implements ResetPasswordUseCase {}
+// Mock RegistrationUseCases
+class MockRegistrationUseCases extends Mock implements RegistrationUseCases {}
 
 void main() {
-  late AuthBloc authBloc;
-  late MockSignInUseCase mockSignInUseCase;
-  late MockSignUpUseCase mockSignUpUseCase;
-  late MockVerifyOtpUseCase mockVerifyOtpUseCase;
-  late MockGoogleSignInUseCase mockGoogleSignInUseCase;
-  late MockForgotPasswordUseCase mockForgotPasswordUseCase;
-  late MockResetPasswordUseCase mockResetPasswordUseCase;
+  late RegistrationBloc registrationBloc;
+  late MockRegistrationUseCases mockRegistrationUseCases;
 
   setUp(() {
-    mockSignInUseCase = MockSignInUseCase();
-    mockSignUpUseCase = MockSignUpUseCase();
-    mockVerifyOtpUseCase = MockVerifyOtpUseCase();
-    mockGoogleSignInUseCase = MockGoogleSignInUseCase();
-    mockForgotPasswordUseCase = MockForgotPasswordUseCase();
-    mockResetPasswordUseCase = MockResetPasswordUseCase();
-
-    authBloc = AuthBloc(
-      signInUseCase: mockSignInUseCase,
-      signUpUseCase: mockSignUpUseCase,
-      verifyOtpUseCase: mockVerifyOtpUseCase,
-      googleSignInUseCase: mockGoogleSignInUseCase,
-      forgotPasswordUseCase: mockForgotPasswordUseCase,
-      resetPasswordUseCase: mockResetPasswordUseCase,
-    );
+    mockRegistrationUseCases = MockRegistrationUseCases();
+    registrationBloc = RegistrationBloc(mockRegistrationUseCases);
   });
 
-  Widget createRegisterPage() {
+  Widget createCreateFarmerScreen() {
     return MaterialApp(
-      home: BlocProvider<AuthBloc>.value(
-        value: authBloc,
-        child: const RegisterPage(),
+      home: BlocProvider<RegistrationBloc>.value(
+        value: registrationBloc,
+        child: const CreateFarmerScreen(),
       ),
     );
   }
 
-  group('RegisterPage Unit Tests', () {
-    testWidgets('1. RegisterPage renders without crashing', (
+  group('CreateFarmerScreen Widget Tests', () {
+    testWidgets('1. CreateFarmerScreen renders without crashing', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
-      expect(find.byType(RegisterPage), findsOneWidget);
+      expect(find.byType(CreateFarmerScreen), findsOneWidget);
     });
 
-    testWidgets('2. RegisterPage has Scaffold', (WidgetTester tester) async {
-      await tester.pumpWidget(createRegisterPage());
+    testWidgets('2. CreateFarmerScreen has Scaffold', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
-    testWidgets('3. RegisterPage has SafeArea', (WidgetTester tester) async {
-      await tester.pumpWidget(createRegisterPage());
-      await tester.pump();
-      expect(find.byType(SafeArea), findsOneWidget);
-    });
-
-    testWidgets('4. RegisterPage has SingleChildScrollView', (
+    testWidgets('3. CreateFarmerScreen has AppBar', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget);
     });
 
-    testWidgets('5. RegisterPage shows header title', (
+    testWidgets('4. CreateFarmerScreen AppBar has correct title', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
-      expect(find.text('Add New Farmer'), findsOneWidget);
+      expect(find.text('Create Farmer Account'), findsOneWidget);
     });
 
-    testWidgets('6. RegisterPage shows subtitle', (WidgetTester tester) async {
-      await tester.pumpWidget(createRegisterPage());
-      await tester.pump();
-      expect(find.text('Register farmer to the system'), findsOneWidget);
-    });
-
-    testWidgets('7. RegisterPage has agriculture logo icon', (
+    testWidgets('5. CreateFarmerScreen has back button', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
-      expect(find.byIcon(Icons.agriculture_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios), findsOneWidget);
     });
 
-    testWidgets('8. RegisterPage has name input field', (
+    testWidgets('6. CreateFarmerScreen has person add icon', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
-      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+      expect(find.byIcon(Icons.person_add_alt_1), findsOneWidget);
     });
 
-    testWidgets('9. RegisterPage has email input field', (
+    testWidgets('7. CreateFarmerScreen shows title text', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
+      await tester.pump();
+      expect(find.text('Create New Farmer'), findsOneWidget);
+    });
+
+    testWidgets('8. CreateFarmerScreen shows subtitle', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
+      await tester.pump();
+      expect(
+        find.text('Fill in the details to create a farmer account'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('9. CreateFarmerScreen has email input field', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
       expect(find.byIcon(Icons.email_outlined), findsOneWidget);
     });
 
-    testWidgets('10. RegisterPage has phone input field', (
+    testWidgets('10. CreateFarmerScreen has phone input field', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
       expect(find.byIcon(Icons.phone_outlined), findsOneWidget);
     });
 
-    testWidgets('11. RegisterPage has password fields', (
+    testWidgets('11. CreateFarmerScreen has password fields', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
       expect(find.byIcon(Icons.lock_outline), findsNWidgets(2));
     });
 
-    testWidgets('12. RegisterPage has terms checkbox', (
+    testWidgets('12. CreateFarmerScreen has 4 TextFormFields', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
-      expect(find.byType(Checkbox), findsOneWidget);
+      expect(find.byType(TextField), findsNWidgets(4));
     });
 
-    testWidgets('13. RegisterPage has register button', (
+    testWidgets('13. CreateFarmerScreen has create button', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
       expect(find.byType(ElevatedButton), findsOneWidget);
     });
 
-    testWidgets('14. RegisterPage button has correct text', (
+    testWidgets('14. CreateFarmerScreen button has correct text', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
-      expect(find.text('Register Farmer'), findsOneWidget);
+      expect(find.text('Create Farmer Account'), findsOneWidget);
     });
 
-    testWidgets('15. RegisterPage has reset form button', (
+    testWidgets('15. CreateFarmerScreen has BlocListener', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
-      expect(find.text('Reset Form'), findsOneWidget);
-    });
-
-    testWidgets('16. RegisterPage has Form widget', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(createRegisterPage());
-      await tester.pump();
-      expect(find.byType(Form), findsOneWidget);
-    });
-
-    testWidgets('17. RegisterPage has 5 TextFormFields', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(createRegisterPage());
-      await tester.pump();
-      expect(find.byType(TextFormField), findsNWidgets(5));
-    });
-
-    testWidgets('18. Register button is disabled when terms not checked', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(createRegisterPage());
-      await tester.pump();
-
-      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
-      expect(button.onPressed, isNull);
-    });
-
-    testWidgets('19. RegisterPage has terms text', (WidgetTester tester) async {
-      await tester.pumpWidget(createRegisterPage());
-      await tester.pump();
-
-      expect(find.byType(RichText), findsWidgets);
-
-      final richTextFinder = find.byWidgetPredicate(
-        (widget) =>
-            widget is RichText &&
-            widget.text.toPlainText().contains(
-              'I confirm that the information is accurate',
-            ),
+      expect(
+        find.byType(BlocListener<RegistrationBloc, RegistrationState>),
+        findsOneWidget,
       );
-
-      expect(richTextFinder, findsOneWidget);
     });
 
-    testWidgets('20. RegisterPage has BlocBuilder', (
+    testWidgets('16. CreateFarmerScreen has BlocBuilder', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createRegisterPage());
+      await tester.pumpWidget(createCreateFarmerScreen());
       await tester.pump();
-      expect(find.byType(BlocBuilder<AuthBloc, AuthState>), findsOneWidget);
+      expect(
+        find.byType(BlocBuilder<RegistrationBloc, RegistrationState>),
+        findsOneWidget,
+      );
     });
+
+    testWidgets('17. CreateFarmerScreen has SingleChildScrollView', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
+      await tester.pump();
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
+    });
+
+    testWidgets('18. CreateFarmerScreen has password visibility toggle', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
+      await tester.pump();
+      expect(find.byIcon(Icons.visibility_off_outlined), findsNWidgets(2));
+    });
+
+    testWidgets('19. Email field accepts text input', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
+      await tester.pump();
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Email'),
+        'test@example.com',
+      );
+      await tester.pump();
+
+      expect(find.text('test@example.com'), findsOneWidget);
+    });
+
+    testWidgets('20. Phone field accepts text input', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
+      await tester.pump();
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Phone'),
+        '+251911223344',
+      );
+      await tester.pump();
+
+      expect(find.text('+251911223344'), findsOneWidget);
+    });
+
+    testWidgets('21. Password field accepts text input', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
+      await tester.pump();
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Password'),
+        '12345678',
+      );
+      await tester.pump();
+
+      expect(find.text('12345678'), findsOneWidget);
+    });
+
+    testWidgets('22. Confirm password field accepts text input', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
+      await tester.pump();
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Confirm Password'),
+        '12345678',
+      );
+      await tester.pump();
+
+      expect(find.text('12345678'), findsOneWidget);
+    });
+
+    testWidgets('23. Create button is enabled when all fields filled', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createCreateFarmerScreen());
+      await tester.pump();
+
+      // Fill all fields
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Email'),
+        'test@example.com',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Phone'),
+        '+251911223344',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Password'),
+        '12345678',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Confirm Password'),
+        '12345678',
+      );
+      await tester.pump();
+
+      final button = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Create Farmer Account'),
+      );
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets(
+      '24. Shows loading indicator when state is RegistrationLoading',
+      (WidgetTester tester) async {
+        // Set loading state
+        when(
+          () => mockRegistrationUseCases.createFarmer(
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+            confirmPassword: any(named: 'confirmPassword'),
+            phone: any(named: 'phone'),
+            role: any(named: 'role'),
+          ),
+        ).thenAnswer(
+          (_) async => Future.delayed(
+            const Duration(seconds: 1),
+            () => CreateFarmerResponse(message: 'Success'),
+          ),
+        );
+
+        await tester.pumpWidget(createCreateFarmerScreen());
+        await tester.pump();
+
+        // Fill fields
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Email'),
+          'test@example.com',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Phone'),
+          '+251911223344',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Password'),
+          '12345678',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Confirm Password'),
+          '12345678',
+        );
+        await tester.pump();
+
+        // Tap create button
+        await tester.tap(
+          find.widgetWithText(ElevatedButton, 'Create Farmer Account'),
+        );
+        await tester.pump();
+
+        // Should show loading indicator
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      },
+    );
   });
 }
