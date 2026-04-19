@@ -139,10 +139,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       appBar: AppBar(
         title: const Text(
           'Update Profile',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
@@ -266,9 +263,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                       ),
                     ],
                   ),
-                  child: ClipOval(
-                    child: _buildImageWidget(),
-                  ),
+                  child: ClipOval(child: _buildImageWidget()),
                 ),
                 // Camera Icon Overlay
                 Positioned(
@@ -391,7 +386,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Full Name Field
           TextField(
             controller: _nameController,
@@ -526,9 +521,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: textGrey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: primaryGreen, width: 2),
@@ -540,9 +533,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       value: value,
       hint: Text(
         hint,
-        style: TextStyle(
-          color: enabled ? textGrey : Colors.grey,
-        ),
+        style: TextStyle(color: enabled ? textGrey : Colors.grey),
       ),
       icon: Icon(
         Icons.keyboard_arrow_down,
@@ -588,10 +579,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                   )
                 : const Text(
                     "Update Profile",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
           ),
         ),

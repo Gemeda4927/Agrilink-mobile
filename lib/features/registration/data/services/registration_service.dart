@@ -6,6 +6,34 @@ class RegistrationService {
 
   RegistrationService({required this.dioClient});
 
+  /// ================= CREATE FARMER (AGENT ONLY) =================
+  Future<dynamic> createFarmer({
+    required String email,
+    required String password,
+    required String confirmPassword,
+    required String phone,
+    String role = "BUYER",
+  }) async {
+    final data = {
+      "role": role,
+      "email": email,
+      "password": password,
+      "confirmPassword": confirmPassword,
+      "phone": phone,
+    };
+
+    print("📤 CREATE FARMER REQUEST");
+    print("URL: ${ApiConstants.createFarmer}");
+    print("DATA: $data");
+
+    final response = await dioClient.post(ApiConstants.createFarmer, data: data);
+
+    print("✅ CREATE FARMER RESPONSE:");
+    print(response.data);
+
+    return response.data;
+  }
+
   /// ================= REGISTER USER =================
   Future<dynamic> registerUser(Map<String, dynamic> data) async {
     print("📤 REGISTER USER REQUEST");

@@ -1,11 +1,27 @@
 import 'package:agrilink/features/registration/data/models/user_model.dart';
-
 import '../repositories/registration_repository.dart';
 
 class RegistrationUseCases {
   final RegistrationRepository repository;
 
   RegistrationUseCases(this.repository);
+
+  /// Create farmer (Agent only)
+  Future<CreateFarmerResponse> createFarmer({
+    required String email,
+    required String password,
+    required String confirmPassword,
+    required String phone,
+    String role = "BUYER",
+  }) {
+    return repository.createFarmer(
+      email: email,
+      password: password,
+      confirmPassword: confirmPassword,
+      phone: phone,
+      role: role,
+    );
+  }
 
   /// Register user
   Future<UserModel> registerUser(Map<String, dynamic> data) {

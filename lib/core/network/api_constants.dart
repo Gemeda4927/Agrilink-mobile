@@ -11,6 +11,10 @@ class ApiConstants {
   static const String verifyOtp = "$baseUrl/auth/verify-otp";
   static const String forgotPassword = "$baseUrl/auth/forgot-password";
   static const String resetPassword = "$baseUrl/auth/reset-password";
+  
+  // ================= ROLE-SPECIFIC CREATION (AGENT ONLY) =================
+  static const String createFarmer = "$baseUrl/auth/create-farmer";
+  // Note: Only farmer creation endpoint exists. The role field in body is ignored.
 
   // ================= CATEGORY =================
   static const String category = "$baseUrl/category";

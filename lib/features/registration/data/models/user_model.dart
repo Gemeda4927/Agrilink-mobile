@@ -44,3 +44,23 @@ class UserModel {
     };
   }
 }
+
+class CreateFarmerResponse {
+  final String message;
+
+  CreateFarmerResponse({
+    required this.message,
+  });
+
+  factory CreateFarmerResponse.fromJson(Map<String, dynamic> json) {
+    return CreateFarmerResponse(
+      message: json['message'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'message': message,
+    };
+  }
+}
