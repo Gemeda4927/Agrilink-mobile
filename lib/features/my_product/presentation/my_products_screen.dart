@@ -1,5 +1,7 @@
 // lib/features/product/presentation/screens/my_products_screen.dart
 
+import 'dart:async';
+
 import 'package:agrilink/features/product/data/model/product_model.dart';
 import 'package:agrilink/features/product/presentation/bloc/product_event.dart';
 import 'package:agrilink/features/product/presentation/bloc/product_state.dart'
@@ -24,14 +26,17 @@ class MyProductsScreen extends StatefulWidget {
   State<MyProductsScreen> createState() => _MyProductsScreenState();
 }
 
-class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerProviderStateMixin {
+class _MyProductsScreenState extends State<MyProductsScreen>
+    with SingleTickerProviderStateMixin {
   String _selectedFilter = 'All';
   String _selectedSort = 'Newest';
-  
+
   // Search variables
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   bool _isSearching = false;
   String _searchQuery = '';
+  List<ProductModel> _filteredProducts = [];
 
   // Pagination variables
   int _currentPage = 1;
@@ -40,10 +45,13 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
   bool _hasMore = true;
   final ScrollController _scrollController = ScrollController();
   bool _isRefreshing = false;
-  
+
   // Animation
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  // Debounce for search
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -59,22 +67,36 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
     );
     _loadProducts();
     _animationController.forward();
+
+    // Add search listener
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _searchFocusNode.dispose();
+    _debounceTimer?.cancel();
     _animationController.dispose();
     super.dispose();
   }
 
+  void _onSearchChanged() {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
   void _scrollListener() {
-    // Only load more when not refreshing and not already loading
-    if (_scrollController.position.pixels >= 
-        _scrollController.position.maxScrollExtent - 300 && 
-        !_isLoadingMore && 
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 300 &&
+        !_isLoadingMore &&
         _hasMore &&
         !_isRefreshing) {
       _loadMoreProducts();
@@ -105,16 +127,12 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
   void _refreshProducts() {
     _currentPage = 1;
     _hasMore = true;
-    _searchQuery = '';
-    _searchController.clear();
     setState(() {
-      _isSearching = false;
       _isLoadingMore = false;
       _isRefreshing = true;
     });
     context.read<ProductBloc>().add(RefreshMyProducts());
-    
-    // Reset refreshing flag after a delay
+
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
         setState(() {
@@ -122,6 +140,15 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
         });
       }
     });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _searchQuery = '';
+    setState(() {
+      _isSearching = false;
+    });
+    FocusScope.of(context).unfocus();
   }
 
   void _navigateToCreateProduct() async {
@@ -143,69 +170,122 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
     }
   }
 
-  void _deleteProduct(String productId, String productName) {
+  // Enhanced delete confirmation with warning
+  void _showDeleteConfirmation(
+    String productId,
+    String productName,
+    int stockCount,
+  ) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.red.shade50,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.delete_outline, color: Colors.red.shade700, size: 24),
+              child: Icon(
+                Icons.warning_rounded,
+                color: Colors.red.shade700,
+                size: 48,
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(height: 16),
             const Text(
-              'Delete Product',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              'Delete Product?',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Color(0xFF1A1A1A),
+              ),
             ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Are you sure you want to delete this product?',
-              style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
-            ),
-            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey.shade200),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(Icons.inventory_2, color: Colors.grey.shade600, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      productName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.inventory_2,
+                        color: Colors.grey.shade700,
+                        size: 20,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          productName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.inventory_rounded,
+                        color: Colors.orange.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Stock: $stockCount units',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'This action cannot be undone.',
-              style: TextStyle(
-                color: Colors.red.shade600,
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Colors.red.shade700,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'This action cannot be undone. The product will be permanently deleted from your inventory.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.red.shade700,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -216,28 +296,36 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
             style: TextButton.styleFrom(
               foregroundColor: Colors.grey.shade700,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: const Text('Cancel', style: TextStyle(fontSize: 14)),
+            child: const Text('Cancel', style: TextStyle(fontSize: 15)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              context.read<ProductBloc>().add(DeleteProductEvent(productId));
-              _showInfoSnackBar('Deleting "$productName"...', Icons.hourglass_empty);
+              _deleteProduct(productId, productName);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
+              elevation: 2,
             ),
-            child: const Text('Delete', style: TextStyle(fontSize: 14)),
+            child: const Text('Delete Forever', style: TextStyle(fontSize: 15)),
           ),
         ],
       ),
     );
+  }
+
+  void _deleteProduct(String productId, String productName) {
+    context.read<ProductBloc>().add(DeleteProductEvent(productId));
+    _showInfoSnackBar('Deleting "$productName"...', Icons.delete_outline);
   }
 
   void _showSuccessSnackBar(String message, IconData icon) {
@@ -252,7 +340,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
         ),
         backgroundColor: Colors.green.shade600,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -270,8 +358,8 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
         ),
         backgroundColor: Colors.orange.shade600,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -345,6 +433,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
               _buildIconButton(
                 icon: Icons.sort_rounded,
                 color: const Color(0xFF1976D2),
+                badge: _selectedSort != 'Newest',
                 onPressed: () => _showSortBottomSheet(context),
               ),
             ],
@@ -399,23 +488,33 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
+          color: _isSearching ? Colors.white : const Color(0xFFF5F5F5),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _isSearching ? const Color(0xFF2E7D32) : Colors.transparent,
             width: 2,
           ),
+          boxShadow: _isSearching
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF2E7D32).withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: TextField(
           controller: _searchController,
-          onChanged: (value) {
-            setState(() {
-              _searchQuery = value;
-            });
-          },
+          focusNode: _searchFocusNode,
           onTap: () {
             setState(() {
               _isSearching = true;
+            });
+          },
+          onSubmitted: (value) {
+            setState(() {
+              _searchQuery = value;
             });
           },
           decoration: InputDecoration(
@@ -427,24 +526,26 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
             ),
             prefixIcon: Icon(
               Icons.search_rounded,
-              color: _isSearching ? const Color(0xFF2E7D32) : Colors.grey.shade500,
+              color: _isSearching
+                  ? const Color(0xFF2E7D32)
+                  : Colors.grey.shade500,
               size: 22,
             ),
-            suffixIcon: _searchQuery.isNotEmpty
+            suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
-                    icon: Icon(Icons.clear_rounded, color: Colors.grey.shade600, size: 20),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {
-                        _searchQuery = '';
-                        _isSearching = false;
-                      });
-                      FocusScope.of(context).unfocus();
-                    },
+                    icon: Icon(
+                      Icons.clear_rounded,
+                      color: Colors.grey.shade600,
+                      size: 20,
+                    ),
+                    onPressed: _clearSearch,
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ),
@@ -452,7 +553,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
   }
 
   Widget _buildFilterChips() {
-    if (_selectedFilter == 'All' && _searchQuery.isEmpty) return const SizedBox.shrink();
+    if (_selectedFilter == 'All' && _searchQuery.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -466,13 +569,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                 label: 'Search: "$_searchQuery"',
                 icon: Icons.search_rounded,
                 color: const Color(0xFF1976D2),
-                onRemove: () {
-                  _searchController.clear();
-                  setState(() {
-                    _searchQuery = '';
-                    _isSearching = false;
-                  });
-                },
+                onRemove: _clearSearch,
               ),
             if (_selectedFilter != 'All') ...[
               if (_searchQuery.isNotEmpty) const SizedBox(width: 8),
@@ -561,7 +658,10 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
           current is ProductDeleted || current is ProductError,
       listener: (context, state) {
         if (state is ProductDeleted) {
-          _showSuccessSnackBar('Product deleted successfully', Icons.delete_outline);
+          _showSuccessSnackBar(
+            'Product deleted successfully',
+            Icons.check_circle,
+          );
           _refreshProducts();
         }
         if (state is ProductError) {
@@ -569,23 +669,27 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                  const Icon(
+                    Icons.error_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(child: Text(state.message)),
                 ],
               ),
               backgroundColor: Colors.red.shade600,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
-          // Reset loading state on error
           setState(() {
             _isLoadingMore = false;
             _isRefreshing = false;
           });
         }
-        // Reset loading state when products are loaded
         if (state is MyProductsLoaded) {
           setState(() {
             _isLoadingMore = false;
@@ -600,24 +704,24 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
 
         if (state is MyProductsLoaded) {
           final products = _applyFiltersAndSort(state.products);
+          _filteredProducts = products;
 
           if (products.isEmpty) {
-            return _searchQuery.isNotEmpty || _selectedFilter != 'All'
-                ? _buildNoResultsWidget()
-                : EmptyProductsWidget(onAddPressed: _navigateToCreateProduct);
+            if (_searchQuery.isNotEmpty || _selectedFilter != 'All') {
+              return _buildNoResultsWidget();
+            }
+            return EmptyProductsWidget(onAddPressed: _navigateToCreateProduct);
           }
 
           return RefreshIndicator(
             onRefresh: () async {
               _refreshProducts();
-              // Wait for refresh to complete
               await Future.delayed(const Duration(milliseconds: 800));
             },
             color: const Color(0xFF2E7D32),
             backgroundColor: Colors.white,
             child: NotificationListener<ScrollNotification>(
               onNotification: (scrollNotification) {
-                // Prevent refresh indicator from triggering during normal scroll
                 if (scrollNotification is ScrollUpdateNotification &&
                     _scrollController.position.pixels < 0) {
                   return false;
@@ -642,7 +746,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                                 padding: EdgeInsets.symmetric(vertical: 16),
                                 child: Center(
                                   child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2E7D32)),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFF2E7D32),
+                                    ),
                                     strokeWidth: 2,
                                   ),
                                 ),
@@ -656,18 +762,23 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                             child: ProductCard(
                               product: product,
                               onEdit: () => _navigateToEditProduct(product.id),
-                              onDelete: () => _deleteProduct(product.id, product.name),
+                              onDelete: () => _showDeleteConfirmation(
+                                product.id,
+                                product.name,
+                                product.amount,
+                              ),
                             ),
                           );
                         },
                         childCount: products.length + (_isLoadingMore ? 1 : 0),
                       ),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.72,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.72,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
                     ),
                   ),
                 ],
@@ -705,7 +816,11 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                   color: const Color(0xFF2E7D32).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.inventory_2, color: Color(0xFF2E7D32), size: 18),
+                child: const Icon(
+                  Icons.inventory_2,
+                  color: Color(0xFF2E7D32),
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 10),
               Text(
@@ -718,7 +833,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
               ),
             ],
           ),
-          if (_selectedSort != 'Newest')
+          if (_selectedSort != 'Newest' || _searchQuery.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
@@ -727,10 +842,14 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.sort_rounded, size: 14, color: Color(0xFF1976D2)),
+                  const Icon(
+                    Icons.sort_rounded,
+                    size: 14,
+                    color: Color(0xFF1976D2),
+                  ),
                   const SizedBox(width: 4),
                   Text(
-                    _selectedSort,
+                    _selectedSort != 'Newest' ? _selectedSort : 'Filtered',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -789,14 +908,18 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.filter_alt_off_rounded,
+                _searchQuery.isNotEmpty
+                    ? Icons.search_off_rounded
+                    : Icons.filter_alt_off_rounded,
                 size: 60,
                 color: Colors.grey.shade400,
               ),
             ),
             const SizedBox(height: 20),
             Text(
-              'No Products Found',
+              _searchQuery.isNotEmpty
+                  ? 'No Products Found'
+                  : 'No Products Match Filters',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -806,12 +929,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
             const SizedBox(height: 8),
             Text(
               _searchQuery.isNotEmpty
-                  ? 'Try adjusting your search terms'
-                  : 'Try changing your filters',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
+                  ? 'Try different search terms or clear the search'
+                  : 'Try changing your filters to see more products',
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -819,17 +939,18 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
               onPressed: () {
                 setState(() {
                   _selectedFilter = 'All';
-                  _searchQuery = '';
-                  _searchController.clear();
-                  _isSearching = false;
+                  _clearSearch();
                 });
               },
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Clear Filters'),
+              label: const Text('Clear All Filters'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF2E7D32),
                 side: const BorderSide(color: Color(0xFF2E7D32)),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -849,10 +970,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
       icon: const Icon(Icons.add_rounded, size: 24),
       label: const Text(
         'Add Product',
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -860,11 +978,13 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
   List<ProductModel> _applyFiltersAndSort(List<ProductModel> products) {
     List<ProductModel> filtered = List.from(products);
 
-    // Apply search
+    // Apply search (case-insensitive)
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((p) => 
-        p.name.toLowerCase().contains(_searchQuery.toLowerCase())
-      ).toList();
+      filtered = filtered
+          .where(
+            (p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+          )
+          .toList();
     }
 
     // Apply filters
@@ -873,7 +993,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
         filtered = filtered.where((p) => p.amount > 0).toList();
         break;
       case 'Low Stock':
-        filtered = filtered.where((p) => p.amount < 10 && p.amount > 0).toList();
+        filtered = filtered
+            .where((p) => p.amount < 10 && p.amount > 0)
+            .toList();
         break;
       case 'Out of Stock':
         filtered = filtered.where((p) => p.amount == 0).toList();
@@ -946,7 +1068,10 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.close_rounded, color: Colors.grey.shade600),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: Colors.grey.shade600,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -991,7 +1116,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                     const Color(0xFFD32F2F),
                     _selectedFilter == 'Out of Stock',
                     () {
-                      setStateBottomSheet(() => _selectedFilter = 'Out of Stock');
+                      setStateBottomSheet(
+                        () => _selectedFilter = 'Out of Stock',
+                      );
                       Navigator.pop(context);
                       setState(() {});
                     },
@@ -1035,7 +1162,10 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.close_rounded, color: Colors.grey.shade600),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: Colors.grey.shade600,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -1091,7 +1221,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                     const Color(0xFF2E7D32),
                     _selectedSort == 'Price: Low to High',
                     () {
-                      setStateBottomSheet(() => _selectedSort = 'Price: Low to High');
+                      setStateBottomSheet(
+                        () => _selectedSort = 'Price: Low to High',
+                      );
                       Navigator.pop(context);
                       setState(() {});
                     },
@@ -1102,7 +1234,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                     const Color(0xFFF57C00),
                     _selectedSort == 'Price: High to Low',
                     () {
-                      setStateBottomSheet(() => _selectedSort = 'Price: High to Low');
+                      setStateBottomSheet(
+                        () => _selectedSort = 'Price: High to Low',
+                      );
                       Navigator.pop(context);
                       setState(() {});
                     },
@@ -1113,7 +1247,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                     const Color(0xFFD32F2F),
                     _selectedSort == 'Stock: Low to High',
                     () {
-                      setStateBottomSheet(() => _selectedSort = 'Stock: Low to High');
+                      setStateBottomSheet(
+                        () => _selectedSort = 'Stock: Low to High',
+                      );
                       Navigator.pop(context);
                       setState(() {});
                     },
@@ -1124,7 +1260,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
                     const Color(0xFF0097A7),
                     _selectedSort == 'Stock: High to Low',
                     () {
-                      setStateBottomSheet(() => _selectedSort = 'Stock: High to Low');
+                      setStateBottomSheet(
+                        () => _selectedSort = 'Stock: High to Low',
+                      );
                       Navigator.pop(context);
                       setState(() {});
                     },
@@ -1175,7 +1313,11 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
         ),
         trailing: isSelected
             ? Icon(Icons.check_circle_rounded, color: color, size: 24)
-            : Icon(Icons.circle_outlined, color: Colors.grey.shade300, size: 24),
+            : Icon(
+                Icons.circle_outlined,
+                color: Colors.grey.shade300,
+                size: 24,
+              ),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -1218,7 +1360,11 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
         ),
         trailing: isSelected
             ? Icon(Icons.check_circle_rounded, color: color, size: 24)
-            : Icon(Icons.circle_outlined, color: Colors.grey.shade300, size: 24),
+            : Icon(
+                Icons.circle_outlined,
+                color: Colors.grey.shade300,
+                size: 24,
+              ),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -1270,7 +1416,10 @@ class _MyProductsScreenState extends State<MyProductsScreen> with SingleTickerPr
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2E7D32),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

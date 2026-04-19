@@ -19,7 +19,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.forgotPasswordUseCase,
     required this.resetPasswordUseCase,
   }) : super(AuthInitial()) {
-    // Sign In
     on<SignInEvent>((event, emit) async {
       emit(AuthLoading());
       try {
@@ -30,7 +29,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
 
-    // Sign Up
     on<SignUpEvent>((event, emit) async {
       emit(AuthLoading());
       try {
@@ -41,7 +39,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
 
-    // Verify OTP
     on<VerifyOtpEvent>((event, emit) async {
       emit(AuthLoading());
       try {
@@ -52,7 +49,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
 
-    // Google SignIn
     on<GoogleSignInEvent>((event, emit) async {
       emit(AuthLoading());
       try {
@@ -63,7 +59,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
 
-    // Forgot Password
     on<ForgotPasswordEvent>((event, emit) async {
       emit(AuthLoading());
       try {
@@ -74,7 +69,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
 
-    // Reset Password
     on<ResetPasswordEvent>((event, emit) async {
       emit(AuthLoading());
       try {
@@ -85,12 +79,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
 
-    // Logout
     on<LogoutEvent>((event, emit) async {
       emit(AuthLoading());
       try {
-        // TODO: Add logout use case when implemented
-        // await logoutUseCase.execute();
         emit(AuthInitial());
       } catch (e) {
         emit(AuthFailure(error: e.toString()));

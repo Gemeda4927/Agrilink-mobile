@@ -2,7 +2,6 @@ import 'package:agrilink/features/auth/domain/entities/auth_response_entity.dart
 import 'package:agrilink/features/auth/domain/entities/auth_user.dart';
 import 'package:agrilink/features/auth/domain/repository/auth_repository.dart';
 
-/// SignIn Use Case
 class SignInUseCase {
   final AuthRepository repository;
 
@@ -26,7 +25,6 @@ class SignInUseCase {
   }
 }
 
-/// SignUp Use Case
 class SignUpUseCase {
   final AuthRepository repository;
 
@@ -37,7 +35,6 @@ class SignUpUseCase {
   }
 }
 
-/// Verify OTP Use Case
 class VerifyOtpUseCase {
   final AuthRepository repository;
 
@@ -61,7 +58,6 @@ class VerifyOtpUseCase {
   }
 }
 
-/// Google SignIn Use Case
 class GoogleSignInUseCase {
   final AuthRepository repository;
 
@@ -85,7 +81,6 @@ class GoogleSignInUseCase {
   }
 }
 
-/// Forgot Password Use Case
 class ForgotPasswordUseCase {
   final AuthRepository repository;
 
@@ -96,7 +91,6 @@ class ForgotPasswordUseCase {
   }
 }
 
-/// Reset Password Use Case
 class ResetPasswordUseCase {
   final AuthRepository repository;
 

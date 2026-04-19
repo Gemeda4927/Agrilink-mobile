@@ -212,13 +212,13 @@ class ProductCard extends StatelessWidget {
 
     if (product.amount == 0) {
       backgroundColor = const Color(0xFFD32F2F);
-      text = 'Out';
+      text = 'Out of Stock';
     } else if (product.amount < 10) {
       backgroundColor = const Color(0xFFF57C00);
-      text = 'Low';
+      text = 'Low Stock';
     } else {
       backgroundColor = const Color(0xFF2E7D32);
-      text = 'Stock';
+      text = 'In Stock';
     }
 
     return Container(
