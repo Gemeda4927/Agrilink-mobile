@@ -83,7 +83,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   void _showLanguageSelector(BuildContext context) {
     final currentLanguage = _getCurrentLanguageCode(context);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -162,7 +162,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         final languageBloc = context.read<LanguageBloc>();
         languageBloc.add(ChangeLanguage(Locale(languageCode)));
         Navigator.pop(context);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Language changed to $languageName'),
@@ -186,16 +186,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     languageName,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Colors.green.shade700 : Colors.black87,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isSelected
+                          ? Colors.green.shade700
+                          : Colors.black87,
                     ),
                   ),
                   Text(
                     nativeName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -234,11 +235,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 opacity: _fadeAnimation,
                 child: Column(
                   children: [
-                    // Top Row with Back Button and Language Switcher
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Back Button to Splash Screen
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -253,14 +252,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           ),
                           child: IconButton(
                             onPressed: () {
-                              // Navigate back to splash screen
                               context.go(RouteName.splash);
                             },
-                            icon: Icon(Icons.arrow_back, color: Colors.green.shade700),
+                            icon: Icon(
+                              Icons.arrow_back,
+                              color: Colors.green.shade700,
+                            ),
                             tooltip: 'Back to Splash',
                           ),
                         ),
-                        // Language Switcher Button
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -275,7 +275,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           ),
                           child: IconButton(
                             onPressed: () => _showLanguageSelector(context),
-                            icon: Icon(Icons.language, color: Colors.green.shade700),
+                            icon: Icon(
+                              Icons.language,
+                              color: Colors.green.shade700,
+                            ),
                             tooltip: localizations.selectLanguage,
                           ),
                         ),
@@ -360,7 +363,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           key: _formKey,
           child: Column(
             children: [
-              // Debug Dropdown
               SizedBox(
                 width: double.infinity,
                 child: DropdownButtonFormField<DebugUser>(
@@ -420,8 +422,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Email/Phone Field
               TextFormField(
                 controller: _identifierController,
                 keyboardType: TextInputType.emailAddress,
@@ -458,8 +458,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 },
               ),
               const SizedBox(height: 16),
-
-              // Password Field
               TextFormField(
                 controller: _passwordController,
                 obscureText: !_isPasswordVisible,
@@ -512,8 +510,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 },
               ),
               const SizedBox(height: 10),
-
-              // Remember Me & Forgot Password
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -555,8 +551,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Bloc Listener
               BlocListener<AuthBloc, AuthState>(
                 listener: (context, state) {
                   if (state is AuthSuccess) {
@@ -593,7 +587,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   builder: (context, state) {
                     return Column(
                       children: [
-                        // Login Button
                         SizedBox(
                           width: double.infinity,
                           height: 55,
@@ -647,8 +640,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 20),
-
-                        // OR Divider
                         Row(
                           children: [
                             Expanded(
@@ -671,8 +662,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           ],
                         ),
                         const SizedBox(height: 20),
-
-                        // Google Sign In
                         SizedBox(
                           width: double.infinity,
                           height: 55,

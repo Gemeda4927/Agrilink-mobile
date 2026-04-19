@@ -1,20 +1,20 @@
 {
   "project_info": {
-    "project_number": "382823090654",
-    "project_id": "agrilink-2925c",
-    "storage_bucket": "agrilink-2925c.firebasestorage.app"
+    "project_number": "842881665346",
+    "project_id": "agrilink-c9788",
+    "storage_bucket": "agrilink-c9788.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:382823090654:android:1c076c94e45b039008754f",
+        "mobilesdk_app_id": "1:842881665346:android:ffea165975738c3346e0db",
         "android_client_info": {
           "package_name": "com.agrilink.mobile"
         }
       },
       "oauth_client": [
         {
-          "client_id": "382823090654-m197jb3djntn87je53sa98g07m17rvnj.apps.googleusercontent.com",
+          "client_id": "842881665346-t73p5cctojie2jm188n83eogls6lldcb.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.agrilink.mobile",
@@ -22,21 +22,28 @@
           }
         },
         {
-          "client_id": "382823090654-a36q59jaflhvu45c48050q4frbrl54qo.apps.googleusercontent.com",
+          "client_id": "842881665346-l3hh8uccio8uq11566h5mj3ss2h7hr2a.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDaAsSlBYtAamANjM711tEA3JtfwB4D6Ng"
+          "current_key": "AIzaSyCT7-LpogE_O037-RjmX0_9f9TTBVbhp98"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "382823090654-a36q59jaflhvu45c48050q4frbrl54qo.apps.googleusercontent.com",
+              "client_id": "842881665346-l3hh8uccio8uq11566h5mj3ss2h7hr2a.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "842881665346-2qiomjda55r3cqf9hi7bg8522nqlmbsk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.agrilink.mobile"
+              }
             }
           ]
         }
