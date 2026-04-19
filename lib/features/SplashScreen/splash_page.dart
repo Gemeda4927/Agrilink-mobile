@@ -64,81 +64,177 @@ class _SplashScreenState extends State<SplashScreen> {
       _isLoading = true;
     });
 
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    
-    if (!serviceEnabled) {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      
+      if (!serviceEnabled) {
+        setState(() {
+          _locationServiceEnabled = false;
+          _locationGranted = false;
+          _locationStatus = 'Location services are disabled. Please enable GPS/location to continue.';
+          _isLoading = false;
+        });
+        return;
+      }
+
       setState(() {
+        _locationServiceEnabled = true;
+      });
+
+      PermissionStatus status = await Permission.location.status;
+
+      if (status.isGranted) {
+        setState(() {
+          _locationGranted = true;
+          _locationStatus = 'Location access granted! You can now proceed.';
+          _isLoading = false;
+        });
+      } else if (status.isDenied) {
+        setState(() {
+          _locationGranted = false;
+          _locationStatus = 'Location access is required for the best experience';
+          _isLoading = false;
+        });
+      } else if (status.isPermanentlyDenied) {
+        setState(() {
+          _locationGranted = false;
+          _locationStatus = 'Location permission permanently denied. Please enable in settings.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _locationGranted = false;
         _locationServiceEnabled = false;
-        _locationGranted = false;
-        _locationStatus = 'Location services are disabled. Please enable GPS/location to continue.';
+        _locationStatus = 'Error checking location. Please try again.';
         _isLoading = false;
       });
-      _showLocationServiceDialog();
-      return;
-    }
-
-    setState(() {
-      _locationServiceEnabled = true;
-    });
-
-    PermissionStatus status = await Permission.location.status;
-
-    if (status.isGranted) {
-      setState(() {
-        _locationGranted = true;
-        _locationStatus = 'Location access granted! You can now proceed.';
-        _isLoading = false;
-      });
-    } else if (status.isDenied) {
-      setState(() {
-        _locationGranted = false;
-        _locationStatus = 'Location access is required for the best experience';
-        _isLoading = false;
-      });
-    } else if (status.isPermanentlyDenied) {
-      setState(() {
-        _locationGranted = false;
-        _locationStatus = 'Location permission permanently denied. Please enable in settings.';
-        _isLoading = false;
-      });
+      debugPrint('Location check error: $e');
     }
   }
 
-  Future<void> _checkLocationServiceBeforeProceed() async {
+  // NEW: Dedicated method to enable location
+  Future<void> _enableLocation() async {
     setState(() {
       _isLoading = true;
     });
 
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    
-    if (!serviceEnabled) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showLocationServiceDialog();
-      return;
-    }
+    try {
+      // First check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      
+      if (!serviceEnabled) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showLocationServiceDialog();
+        return;
+      }
 
-    PermissionStatus status = await Permission.location.status;
-    
-    if (status.isGranted) {
+      // Check current permission status
+      PermissionStatus status = await Permission.location.status;
+      
+      if (status.isGranted) {
+        setState(() {
+          _locationGranted = true;
+          _locationServiceEnabled = true;
+          _locationStatus = 'Location access granted!';
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location enabled successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+      
+      if (status.isDenied) {
+        // Request permission
+        PermissionStatus requestedStatus = await Permission.location.request();
+        
+        if (requestedStatus.isGranted) {
+          setState(() {
+            _locationGranted = true;
+            _locationServiceEnabled = true;
+            _locationStatus = 'Location access granted!';
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location enabled successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          setState(() {
+            _locationGranted = false;
+            _locationStatus = 'Location access denied';
+            _isLoading = false;
+          });
+          _showLocationWarningDialog();
+        }
+      } else if (status.isPermanentlyDenied) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showSettingsDialog();
+      }
+    } catch (e) {
       setState(() {
-        _locationGranted = true;
-        _locationServiceEnabled = true;
-        _locationStatus = 'Location access granted!';
         _isLoading = false;
       });
-      _navigateToLogin();
-    } else if (status.isDenied) {
+      debugPrint('Enable location error: $e');
+      _showLocationErrorDialog();
+    }
+  }
+
+  Future<void> _checkLocationBeforeProceed() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      
+      if (!serviceEnabled) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showLocationServiceDialog();
+        return;
+      }
+
+      PermissionStatus status = await Permission.location.status;
+      
+      if (status.isGranted) {
+        setState(() {
+          _locationGranted = true;
+          _locationServiceEnabled = true;
+          _locationStatus = 'Location access granted!';
+          _isLoading = false;
+        });
+        _navigateToLogin();
+      } else if (status.isDenied) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showLocationWarningDialog();
+      } else if (status.isPermanentlyDenied) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showSettingsDialog();
+      }
+    } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      _requestLocationPermission();
-    } else if (status.isPermanentlyDenied) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showSettingsDialog();
+      debugPrint('Location check error: $e');
+      _showLocationErrorDialog();
     }
   }
 
@@ -203,7 +299,9 @@ class _SplashScreenState extends State<SplashScreen> {
               onPressed: () async {
                 Navigator.of(context).pop();
                 await Geolocator.openLocationSettings();
-                _checkLocationPermission();
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  _checkLocationPermission();
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
@@ -276,7 +374,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                _requestLocationPermission();
+                _enableLocation();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
@@ -287,42 +385,6 @@ class _SplashScreenState extends State<SplashScreen> {
         );
       },
     );
-  }
-
-  Future<void> _requestLocationPermission() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    
-    if (!serviceEnabled) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showLocationServiceDialog();
-      return;
-    }
-
-    PermissionStatus status = await Permission.location.request();
-
-    setState(() {
-      _isLoading = false;
-      if (status.isGranted) {
-        _locationGranted = true;
-        _locationServiceEnabled = true;
-        _locationStatus = 'Location access granted!';
-        _navigateToLogin();
-      } else if (status.isDenied) {
-        _locationGranted = false;
-        _locationStatus = 'Location access is needed for local farming information';
-        _showLocationWarningDialog();
-      } else if (status.isPermanentlyDenied) {
-        _locationGranted = false;
-        _locationStatus = 'Please enable location in app settings';
-        _showSettingsDialog();
-      }
-    });
   }
 
   void _showSettingsDialog() {
@@ -364,11 +426,42 @@ class _SplashScreenState extends State<SplashScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
                 openAppSettings();
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  _checkLocationPermission();
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
               ),
               child: const Text('Open Settings'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLocationErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Location Error'),
+          content: const Text('Unable to check location services. Please try again or continue without location.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _navigateToLogin();
+              },
+              child: const Text('Continue'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _enableLocation();
+              },
+              child: const Text('Retry'),
             ),
           ],
         );
@@ -496,7 +589,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Location Icon and Title - FIXED ROW HERE
+                          // Location Icon and Title
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -508,7 +601,7 @@ class _SplashScreenState extends State<SplashScreen> {
                                 size: 24,
                               ),
                               const SizedBox(width: 12),
-                              Expanded(  // IMPORTANT: This Expanded prevents overflow
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -580,6 +673,37 @@ class _SplashScreenState extends State<SplashScreen> {
 
                           const SizedBox(height: 16),
 
+                          // NEW: Enable Location Button (shown when location is not granted)
+                          if (!_locationGranted || !_locationServiceEnabled)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: ElevatedButton.icon(
+                                onPressed: _isLoading ? null : _enableLocation,
+                                icon: _isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Icon(Icons.location_on, size: 18),
+                                label: _isLoading
+                                    ? const Text('Enabling...')
+                                    : const Text('Enable Location'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  minimumSize: const Size(double.infinity, 40),
+                                ),
+                              ),
+                            ),
+
                           // Warning message if location not enabled
                           if (!_locationGranted || !_locationServiceEnabled)
                             Container(
@@ -633,7 +757,7 @@ class _SplashScreenState extends State<SplashScreen> {
                                 child: ElevatedButton(
                                   onPressed: _isLoading
                                       ? null
-                                      : _checkLocationServiceBeforeProceed,
+                                      : _checkLocationBeforeProceed,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                     foregroundColor: Colors.white,
