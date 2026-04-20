@@ -1,5 +1,8 @@
 import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/core/localization/language_bloc.dart';
+import 'package:agrilink/core/services/notification_service.dart';
+import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
+import 'package:agrilink/features/notification/presentation/notification_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_event.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_event.dart';
@@ -21,9 +24,58 @@ import 'package:agrilink/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_event.dart';
 import 'package:agrilink/injector.dart';
+import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
-class MyApp extends StatelessWidget {
+// Global navigator key for notification navigation
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  late final NotificationService _notificationService;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _notificationService = sl<NotificationService>();
+    _initializeNotifications();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _notificationService.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _notificationService.clearBadge();
+    }
+  }
+
+  Future<void> _initializeNotifications() async {
+    await _notificationService.initialize();
+
+    NotificationService.navigateTo =
+        (String route, {Map<String, dynamic>? extra}) {
+          final context = rootNavigatorKey.currentState?.context;
+          if (context != null) {
+            final currentRoute = GoRouterState.of(context).uri.toString();
+            if (currentRoute != route) {
+              context.pushNamed(route, extra: extra);
+            }
+          }
+        };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +84,16 @@ class MyApp extends StatelessWidget {
         // Use injected LanguageBloc from GetIt (singleton instance)
         BlocProvider<LanguageBloc>(create: (_) => sl<LanguageBloc>()),
         BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>()),
+
+        // Notification BLoC
+        BlocProvider<NotificationBloc>(
+          create: (_) {
+            final bloc = sl<NotificationBloc>();
+            bloc.add(InitializeNotifications());
+            return bloc;
+          },
+        ),
+
         BlocProvider<CategoryBloc>(
           create: (_) {
             final bloc = sl<CategoryBloc>();
@@ -153,10 +215,62 @@ class MyApp extends StatelessWidget {
               ),
             ),
             routerConfig: appRouter,
+            // Auth state listener for token registration
+            builder: (context, child) {
+              return BlocListener<AuthBloc, AuthState>(
+                listener: (context, state) {
+                  if (state is AuthSuccess) {
+                    _registerDeviceTokenAndSubscribe(state);
+                  } else if (state is AuthInitial) {
+                    _unregisterDeviceToken();
+                  }
+                },
+                child: child,
+              );
+            },
           );
         },
       ),
     );
+  }
+
+  Future<void> _registerDeviceTokenAndSubscribe(AuthSuccess state) async {
+    try {
+      final token = await _notificationService.getSavedToken();
+
+      if (token != null && token.isNotEmpty) {
+        await _notificationService.registerDeviceToken(token);
+      }
+
+      // Safe role extraction
+      final user = state.authResponse.user;
+      final role = user.role;
+
+      if (role != null && role.toString().isNotEmpty) {
+        final normalizedRole = role.toString().toLowerCase().trim();
+
+        await _notificationService.subscribeToTopic('all_users');
+        await _notificationService.subscribeToTopic('role_$normalizedRole');
+      } else {
+        // fallback subscription
+        await _notificationService.subscribeToTopic('all_users');
+      }
+    } catch (e, stackTrace) {
+      // You should log this instead of silent fail in production
+      sl<Logger>().e(
+        'Failed to register device token and subscribe to topics',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _unregisterDeviceToken() async {
+    try {
+      await _notificationService.unregisterDeviceToken();
+    } catch (e) {
+      // Silent fail
+    }
   }
 
   /// Get font family based on language code

@@ -205,8 +205,8 @@ class AuthService {
 
       // Sign in to Firebase
       debugPrint('Signing in to Firebase...');
-      final UserCredential userCredential =
-          await firebaseAuth.signInWithCredential(credential);
+      final UserCredential userCredential = await firebaseAuth
+          .signInWithCredential(credential);
 
       final User? user = userCredential.user;
       if (user == null) {

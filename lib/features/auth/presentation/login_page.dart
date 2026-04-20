@@ -1,11 +1,15 @@
 import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/core/localization/language_bloc.dart';
+import 'package:agrilink/core/services/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_event.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
+import 'package:agrilink/injector.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 
 class DebugUser {
@@ -56,6 +60,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initializeAnimations();
+    _checkNotificationStatus();
   }
 
   void _initializeAnimations() {
@@ -67,6 +72,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
     _animationController.forward();
+  }
+
+  Future<void> _checkNotificationStatus() async {
+    try {
+      final notificationService = sl<NotificationService>();
+      final token = await notificationService.getSavedToken();
+
+      if (token != null) {
+        debugPrint('✅ FCM Token exists: ${token.substring(0, 10)}...');
+      } else {
+        debugPrint('⏳ FCM Token not yet available, will be generated');
+      }
+    } catch (e) {
+      debugPrint('❌ Notification check failed: $e');
+    }
   }
 
   @override
@@ -261,26 +281,53 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             tooltip: 'Back to Splash',
                           ),
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.shade200,
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                        Row(
+                          children: [
+                            // Notification Test Button (Debug)
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.shade200,
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: IconButton(
-                            onPressed: () => _showLanguageSelector(context),
-                            icon: Icon(
-                              Icons.language,
-                              color: Colors.green.shade700,
+                              child: IconButton(
+                                onPressed: _showNotificationDiagnostic,
+                                icon: Icon(
+                                  Icons.notifications_active,
+                                  color: Colors.orange.shade700,
+                                ),
+                                tooltip: 'Test Notifications',
+                              ),
                             ),
-                            tooltip: localizations.selectLanguage,
-                          ),
+                            const SizedBox(width: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.shade200,
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: IconButton(
+                                onPressed: () => _showLanguageSelector(context),
+                                icon: Icon(
+                                  Icons.language,
+                                  color: Colors.green.shade700,
+                                ),
+                                tooltip: localizations.selectLanguage,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -296,6 +343,135 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _showNotificationDiagnostic() async {
+    final notificationService = sl<NotificationService>();
+
+    final token = await notificationService.getSavedToken();
+    final permissions = await notificationService.getNotificationSettings();
+
+    final safeTokenPreview = (token != null && token.isNotEmpty)
+        ? (token.length > 20 ? '${token.substring(0, 20)}...' : token)
+        : 'Not available';
+
+    final tokenStatus = token != null ? '✅' : '❌';
+
+    final permissionStatus =
+        permissions.authorizationStatus == AuthorizationStatus.authorized
+        ? '✅'
+        : '❌';
+
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '🔔 Notification Diagnostic',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+
+              _buildDiagnosticRow('FCM Token', tokenStatus, safeTokenPreview),
+
+              _buildDiagnosticRow(
+                'Permission',
+                permissionStatus,
+                permissions.authorizationStatus.name,
+              ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    await notificationService.localNotifications.show(
+                      DateTime.now().millisecondsSinceEpoch.remainder(100000),
+                      'Test Notification',
+                      'Your notifications are working! ✅',
+                      const NotificationDetails(
+                        android: AndroidNotificationDetails(
+                          'general_channel',
+                          'General Notifications',
+                          importance: Importance.high,
+                          priority: Priority.high,
+                        ),
+                        iOS: DarwinNotificationDetails(),
+                      ),
+                    );
+
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Test notification sent!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  label: const Text('Send Test Notification'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Text(
+                'Note: FCM token is registered after login and synced with backend.',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDiagnosticRow(String label, String status, String detail) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Text(status, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 3,
+            child: Text(
+              detail,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
