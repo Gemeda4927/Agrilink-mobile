@@ -122,13 +122,16 @@ class AppLocalizationsAm extends AppLocalizations {
   String get farmingCompanion => 'የእርሻ አጋርዎ';
 
   @override
-  String get roleAgentActive => 'ሚና፡ ወኪል';
+  String get roleAgentActive => 'የወኪል ሚና ንቁ ነው';
 
   @override
   String get activeStatus => 'ንቁ';
 
   @override
   String get joinAsAgent => 'እንደ ወኪል ይቀላቀሉ';
+
+  @override
+  String get requestAgentRole => 'የወኪል ሚና ጠይቅ';
 
   @override
   String get sendingRequest => 'ጥያቄ በመላክ ላይ...';
@@ -138,4 +141,46 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get statusLabel => 'ሁኔታ';
+
+  @override
+  String get roleRequestPending => 'የሚና ጥያቄ በመጠባበቅ ላይ';
+
+  @override
+  String get roleRequestApproved => 'የሚና ጥያቄ ጸድቋል!';
+
+  @override
+  String get roleRequestRejected => 'ጥያቄ ውድቅ ተደርጓል';
+
+  @override
+  String get active => 'ንቁ';
+
+  @override
+  String get reapply => 'እንደገና አመልክት';
+
+  @override
+  String get failedToLoadRequestStatus => 'የጥያቄ ሁኔታ መጫን አልቻለም';
+
+  @override
+  String get retry => 'እንደገና ሞክር';
+
+  @override
+  String get requestSubmittedSuccessfully => 'ጥያቄ በሚገባ ተልኳል!';
+
+  @override
+  String get administratorAccess => 'አስተዳዳሪ መዳረሻ';
+
+  @override
+  String get notifications => 'ማሳወቂያዎች';
+
+  @override
+  String get comingSoon => 'በቅርቡ ይመጣል!';
+
+  @override
+  String get marketplace => 'ገበያ';
+
+  @override
+  String get quickActions => 'ፈጣን ድርጊቶች';
+
+  @override
+  String get ordersReceived => 'የደረሱ ትዕዛዞች';
 }

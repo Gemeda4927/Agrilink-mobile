@@ -325,13 +325,13 @@ abstract class AppLocalizations {
   /// No description provided for @roleAgentActive.
   ///
   /// In en, this message translates to:
-  /// **'Role: AGENT'**
+  /// **'Agent Role Active'**
   String get roleAgentActive;
 
   /// No description provided for @activeStatus.
   ///
   /// In en, this message translates to:
-  /// **'Active'**
+  /// **'ACTIVE'**
   String get activeStatus;
 
   /// No description provided for @joinAsAgent.
@@ -339,6 +339,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Join as Agent'**
   String get joinAsAgent;
+
+  /// No description provided for @requestAgentRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Agent Role'**
+  String get requestAgentRole;
 
   /// No description provided for @sendingRequest.
   ///
@@ -357,6 +363,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Status'**
   String get statusLabel;
+
+  /// No description provided for @roleRequestPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Role Request Pending'**
+  String get roleRequestPending;
+
+  /// No description provided for @roleRequestApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Role Request Approved!'**
+  String get roleRequestApproved;
+
+  /// No description provided for @roleRequestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Rejected'**
+  String get roleRequestRejected;
+
+  /// No description provided for @active.
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIVE'**
+  String get active;
+
+  /// No description provided for @reapply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reapply'**
+  String get reapply;
+
+  /// No description provided for @failedToLoadRequestStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load request status'**
+  String get failedToLoadRequestStatus;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @requestSubmittedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Request submitted successfully!'**
+  String get requestSubmittedSuccessfully;
+
+  /// No description provided for @administratorAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Administrator Access'**
+  String get administratorAccess;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon!'**
+  String get comingSoon;
+
+  /// No description provided for @marketplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Marketplace'**
+  String get marketplace;
+
+  /// No description provided for @quickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Actions'**
+  String get quickActions;
+
+  /// No description provided for @ordersReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders Received'**
+  String get ordersReceived;
 }
 
 class _AppLocalizationsDelegate

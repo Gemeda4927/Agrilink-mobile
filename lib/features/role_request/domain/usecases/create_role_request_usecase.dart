@@ -6,12 +6,23 @@ class RoleRequestUseCases {
 
   RoleRequestUseCases(this.repository);
 
-  Future<void> createRoleRequest() async {
-    return await repository.createRoleRequest();
-  }
-
-  /// Get role requests
-  Future<List<RoleRequest>> getRoleRequests() async {
-    return await repository.getRoleRequests();
+  Future<RoleRequest> createRoleRequest({
+    required String kebeleId,
+    required bool experienceInAgriculture,
+    required String currentRole,
+    required String educationLevel,
+    required bool digitalSkills,
+    required bool governmentAssigned,
+    List<String>? filePaths,
+  }) async {
+    return await repository.createRoleRequest(
+      kebeleId: kebeleId,
+      experienceInAgriculture: experienceInAgriculture,
+      currentRole: currentRole,
+      educationLevel: educationLevel,
+      digitalSkills: digitalSkills,
+      governmentAssigned: governmentAssigned,
+      filePaths: filePaths,
+    );
   }
 }

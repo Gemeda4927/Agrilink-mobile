@@ -2,6 +2,7 @@ import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/core/localization/language_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_event.dart';
+import 'package:agrilink/features/role_request/presentation/bloc/role_request_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -69,7 +70,16 @@ class MyApp extends StatelessWidget {
           },
         ),
 
-        BlocProvider<RoleRequestBloc>(create: (_) => sl<RoleRequestBloc>()),
+        BlocProvider<RoleRequestBloc>(
+          create: (_) {
+            final bloc = sl<RoleRequestBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.add(GetMyRoleRequestsEvent());
+            });
+            return bloc;
+          },
+        ),
+
         BlocProvider<ProfileBloc>(create: (_) => sl<ProfileBloc>()),
         BlocProvider<ChatBloc>(create: (_) => sl<ChatBloc>()),
         BlocProvider<CartBloc>(

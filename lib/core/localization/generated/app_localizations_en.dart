@@ -122,13 +122,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get farmingCompanion => 'Your Farming Companion';
 
   @override
-  String get roleAgentActive => 'Role: AGENT';
+  String get roleAgentActive => 'Agent Role Active';
 
   @override
-  String get activeStatus => 'Active';
+  String get activeStatus => 'ACTIVE';
 
   @override
   String get joinAsAgent => 'Join as Agent';
+
+  @override
+  String get requestAgentRole => 'Request Agent Role';
 
   @override
   String get sendingRequest => 'Sending request...';
@@ -138,4 +141,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statusLabel => 'Status';
+
+  @override
+  String get roleRequestPending => 'Role Request Pending';
+
+  @override
+  String get roleRequestApproved => 'Role Request Approved!';
+
+  @override
+  String get roleRequestRejected => 'Request Rejected';
+
+  @override
+  String get active => 'ACTIVE';
+
+  @override
+  String get reapply => 'Reapply';
+
+  @override
+  String get failedToLoadRequestStatus => 'Failed to load request status';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get requestSubmittedSuccessfully => 'Request submitted successfully!';
+
+  @override
+  String get administratorAccess => 'Administrator Access';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get comingSoon => 'Coming soon!';
+
+  @override
+  String get marketplace => 'Marketplace';
+
+  @override
+  String get quickActions => 'Quick Actions';
+
+  @override
+  String get ordersReceived => 'Orders Received';
 }

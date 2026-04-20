@@ -9,32 +9,33 @@ class AppLocalizationsOm extends AppLocalizations {
   AppLocalizationsOm([String locale = 'om']) : super(locale);
 
   @override
-  String get welcomeBack => 'Baga Nagaan Dhuftan!';
+  String get welcomeBack => 'Baga nagaan dhuftan!';
 
   @override
-  String get signInSubtitle => 'Akkaawuntii kee seenuuf galchi';
+  String get signInSubtitle => 'Akkaawuntii kee seenuuf galmaa\'i';
 
   @override
-  String get emailOrPhone => 'Imeelii ykn Bilbila';
+  String get emailOrPhone => 'Imeelii ykn lakkoofsa bilbilaa';
 
   @override
-  String get emailOrPhoneHint => 'Imeelii ykn bilbila keessan galchaa';
+  String get emailOrPhoneHint => 'Imeelii ykn lakkoofsa bilbilaa galchi';
 
   @override
-  String get emailOrPhoneRequired => 'Maalimoo imeelii ykn bilbila galchaa';
+  String get emailOrPhoneRequired =>
+      'Maaloo imeelii ykn lakkoofsa bilbilaa galchi';
 
   @override
   String get password => 'Jecha icciitii';
 
   @override
-  String get passwordHint => 'Jecha icciitii keessan galchaa';
+  String get passwordHint => 'Jecha icciitii kee galchi';
 
   @override
-  String get passwordRequired => 'Maalimoo jecha icciitii galchaa';
+  String get passwordRequired => 'Maaloo jecha icciitii galchi';
 
   @override
   String get passwordMinLength =>
-      'Jechi icciitii xiqqaatti 6 arfii ta\'uu qaba';
+      'Jechi icciitii yoo xiqqaate qubee 6 qabaachuu qaba';
 
   @override
   String get login => 'Seeni';
@@ -43,16 +44,16 @@ class AppLocalizationsOm extends AppLocalizations {
   String get rememberMe => 'Na yaadadhu';
 
   @override
-  String get forgotPassword => 'Jecha icciitii irraanfadhe';
+  String get forgotPassword => 'Jecha icciitii irraanfatte?';
 
   @override
-  String get createAccount => 'Akkaawuntii uumuu';
+  String get createAccount => 'Akkaawuntii uumi';
 
   @override
   String get noAccount => 'Akkaawuntii hin qabduu?';
 
   @override
-  String get quickDebugLogin => 'Seensa Testii';
+  String get quickDebugLogin => 'Seensa Qormaataa';
 
   @override
   String get selectTestAccount => 'Akkaawuntii filadhu';
@@ -61,46 +62,46 @@ class AppLocalizationsOm extends AppLocalizations {
   String get orDivider => 'Ykn';
 
   @override
-  String get signInWithGoogle => 'Google tiin seeni';
+  String get signInWithGoogle => 'Google\'n seeni';
 
   @override
   String welcomeMessage(Object email) {
-    return 'Baga nagaan dhufte $email';
+    return 'Baga nagaan dhuftan $email';
   }
 
   @override
-  String get selectLanguage => 'Afaan Filadhu';
+  String get selectLanguage => 'Afaan filadhu';
 
   @override
   String get appTitle => 'AgriLink';
 
   @override
-  String get goodMorning => 'Bareedan Bulte';
+  String get goodMorning => 'Akkam bulte';
 
   @override
-  String get goodAfternoon => 'Baga Ooltan';
+  String get goodAfternoon => 'Akkam ooltan';
 
   @override
-  String get goodEvening => 'Galgaloo Gaarii';
+  String get goodEvening => 'Akkam galgaloofte';
 
   @override
   String get logout => 'Ba\'i';
 
   @override
   String get noUserDataFound =>
-      'Dhaataa fayyadamtaa hin argamne. Maalimoo seeni.';
+      'Odeeffannoon fayyadamaa hin argamne. Maaloo seeni.';
 
   @override
-  String get exploreCategories => 'Koreewwan Daawwadhu';
+  String get exploreCategories => 'Ramaddiiwwan daawwadhu';
 
   @override
   String get noCategoriesAvailable => 'Ramaddiin hin jiru';
 
   @override
-  String get noSubcategories => 'Ramaddiin xiqqaan hin argamne';
+  String get noSubcategories => 'Ramaddii xiqqaan hin jiru';
 
   @override
-  String get backToCategories => 'Gara Ramaddiiwwaniitti Deebi\'i';
+  String get backToCategories => 'Gara ramaddiiwwaniitti deebi\'i';
 
   @override
   String get home => 'Mana';
@@ -109,35 +110,81 @@ class AppLocalizationsOm extends AppLocalizations {
   String get products => 'Oomishoota';
 
   @override
-  String get myProducts => 'Oomishoota Kiyya';
+  String get myProducts => 'Oomisha koo';
 
   @override
-  String get myOrders => 'Ajajawwan Kiyya';
+  String get myOrders => 'Ajaja koo';
 
   @override
-  String get postProduct => 'Oomisha Galchi';
+  String get postProduct => 'Oomisha maxxansi';
 
   @override
   String get aiAdvisory => 'Gorsa AI';
 
   @override
-  String get farmingCompanion => 'Hiriyaa Qonna Keessan';
+  String get farmingCompanion => 'Hiriyaa qonnaa kee';
 
   @override
-  String get roleAgentActive => 'Gahee: AGEENTII';
+  String get roleAgentActive => 'Gaheen Agentii hojiirra jira';
 
   @override
-  String get activeStatus => 'Aktiivii';
+  String get activeStatus => 'HOJIIRRA JIRA';
 
   @override
-  String get joinAsAgent => 'Ageentii ta\'uu';
+  String get joinAsAgent => 'Akka Agentitti makami';
 
   @override
-  String get sendingRequest => 'Gaafannaa ergaa...';
+  String get requestAgentRole => 'Gahee Agentii gaafadhu';
 
   @override
-  String get requestStatus => 'Haala Gaafannaa';
+  String get sendingRequest => 'Gaafannaa ergaa jira...';
+
+  @override
+  String get requestStatus => 'Haala gaafannaa';
 
   @override
   String get statusLabel => 'Haala';
+
+  @override
+  String get roleRequestPending => 'Gaafannaan eegamaa jira';
+
+  @override
+  String get roleRequestApproved => 'Gaafannaan hayyamame!';
+
+  @override
+  String get roleRequestRejected => 'Gaafannaan didame';
+
+  @override
+  String get active => 'HOJIIRRA JIRA';
+
+  @override
+  String get reapply => 'Irra deebi\'ii gaafadhu';
+
+  @override
+  String get failedToLoadRequestStatus =>
+      'Haalli gaafannaa fe\'amuu hin dandeenye';
+
+  @override
+  String get retry => 'Irra deebi\'ii yaali';
+
+  @override
+  String get requestSubmittedSuccessfully => 'Gaafannaan milkaa\'inaan ergame!';
+
+  @override
+  String get administratorAccess => 'Seensa Bulchiinsaa';
+
+  @override
+  String get notifications => 'Beeksisoota';
+
+  @override
+  String get comingSoon => 'Dhiheenya keessatti ni dhufa!';
+
+  @override
+  String get marketplace => 'Gabaa';
+
+  @override
+  String get quickActions => 'Tarkaanfii ariifachiisaa';
+
+  @override
+  String get ordersReceived => 'Ajaja ga\'an';
 }
