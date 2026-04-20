@@ -36,9 +36,41 @@ class ApiConstants {
   static const String kebeles = "$baseUrl/kebeles";
   static const String kebelesByWoreda = "$baseUrl/kebeles/by-woreda";
 
-  // ================= ROLE & REGISTRATION =================
-  static const String register = "$baseUrl/auth/signup";
+  // ================= ROLE REQUEST =================
   static const String roleRequest = "$baseUrl/role-request";
+  static String getRoleRequestById(String id) => "$baseUrl/role-request/$id";
+  static String updateRoleRequestStatus(String id) => "$baseUrl/role-request/$id";
+  static String deleteRoleRequest(String id) => "$baseUrl/role-request/$id";
+  
+  // ================= ROLE REQUEST ENUMS =================
+  // Current Role Options
+  static const List<String> currentRoleOptions = [
+    'DA_OFFICER',
+    'FARMER',
+    'OTHER',
+  ];
+  
+  // Education Level Options
+  static const List<String> educationLevelOptions = [
+    'NONE',
+    'PRIMARY',
+    'SECONDARY',
+    'DIPLOMA',
+    'DEGREE',
+    'MASTERS',
+    'PHD',
+  ];
+  
+  // Request Status Options
+  static const List<String> requestStatusOptions = [
+    'PENDING',
+    'APPROVED',
+    'REJECTED',
+    'CANCELLED',
+  ];
+
+  // ================= REGISTRATION (Legacy - use signup instead) =================
+  static const String register = "$baseUrl/auth/signup";
 
   // ================= PROFILE =================
   static const String profileCreate = "$baseUrl/profile";

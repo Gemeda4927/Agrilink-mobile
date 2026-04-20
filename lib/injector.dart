@@ -204,16 +204,18 @@ Future<void> initInjector() async {
   // ================= ROLE REQUEST FEATURE ==========
   // ==================================================
   sl.registerSingleton<RoleRequestService>(RoleRequestService(sl<DioClient>()));
+
   sl.registerSingleton<RoleRequestRepository>(
     RoleRequestRepositoryImpl(sl<RoleRequestService>()),
   );
+
   sl.registerSingleton<RoleRequestUseCases>(
     RoleRequestUseCases(sl<RoleRequestRepository>()),
   );
+
   sl.registerFactory<RoleRequestBloc>(
     () => RoleRequestBloc(sl<RoleRequestUseCases>()),
   );
-
   // ==================================================
   // ================= PROFILE FEATURE ================
   // ==================================================
