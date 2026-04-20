@@ -47,14 +47,14 @@ class PlaceholderScreen extends StatelessWidget {
 }
 
 // ================= NAVIGATION KEYS =================
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey =
     GlobalKey<NavigatorState>();
 
 // ================= ROUTER CONFIGURATION =================
 final GoRouter appRouter = GoRouter(
   debugLogDiagnostics: true,
-  navigatorKey: _rootNavigatorKey,
+  navigatorKey: rootNavigatorKey,
   initialLocation: RouteName.login,
   routes: [
     // ================= PUBLIC ROUTES (Outside Shell) =================
