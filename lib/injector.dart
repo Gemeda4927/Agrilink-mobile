@@ -1,3 +1,4 @@
+import 'package:agrilink/core/services/notification_service.dart';
 import 'package:agrilink/features/cart/data/repository/cartRemoteDataSourceImpl.dart';
 import 'package:agrilink/features/product/domain/usecases/delete_product.dart';
 import 'package:agrilink/features/product/domain/usecases/get_my_products.dart';
@@ -98,6 +99,7 @@ Future<void> initInjector() async {
   await Firebase.initializeApp();
   sl.registerSingleton<FirebaseAuth>(FirebaseAuth.instance);
   sl.registerSingleton<GoogleSignIn>(GoogleSignIn());
+  sl.registerLazySingleton<NotificationService>(() => NotificationService());
 
   // ================= CORE =================
   sl.registerLazySingleton<Logger>(
