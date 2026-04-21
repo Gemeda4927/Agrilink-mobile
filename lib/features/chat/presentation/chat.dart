@@ -37,7 +37,6 @@ class _ChatScreenState extends State<ChatScreen>
   Timer? _typingTimer;
   bool _isLoadingConversations = true;
 
-  // Reply state
   String? _replyToMessageId;
   String? _replyToContent;
   String? _replyToSenderId;
@@ -127,12 +126,9 @@ class _ChatScreenState extends State<ChatScreen>
       return;
     }
 
-    // Create message with reply context
     String messageContent = text;
     if (_replyToMessageId != null && _replyToContent != null) {
-      // You can format the message to include reply context
-      // This will be handled in the UI when displaying
-      messageContent = text;
+      
     }
 
     _chatBloc.add(
