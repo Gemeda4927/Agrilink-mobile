@@ -235,12 +235,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                     title: 'Account Information',
                     icon: Icons.account_circle,
                     children: [
-                      _buildInfoRow(
-                        icon: Icons.person_outline,
-                        label: 'User ID',
-                        value: getProfileModel.id,
-                        isMonospace: true,
-                      ),
+                  
                       const Divider(height: 24),
                       _buildInfoRow(
                         icon: Icons.calendar_today,
