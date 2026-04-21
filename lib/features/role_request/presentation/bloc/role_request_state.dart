@@ -7,12 +7,12 @@ class RoleRequestInitial extends RoleRequestState {}
 class RoleRequestCreating extends RoleRequestState {}
 
 class RoleRequestSuccess extends RoleRequestState {
-  final RoleRequest roleRequest;
+  final RoleRequest? roleRequest;
   final String message;
 
-  RoleRequestSuccess(
-    this.roleRequest, {
-    this.message = 'Role request submitted successfully',
+  RoleRequestSuccess({
+    this.roleRequest,
+    required this.message,
   });
 }
 
