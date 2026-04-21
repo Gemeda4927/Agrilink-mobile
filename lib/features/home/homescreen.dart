@@ -485,7 +485,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icons.receipt_long_outlined,
                   label: t.ordersReceived ?? 'Orders Received',
                   color: Colors.teal,
-                  onTap: () => context.pushNamed(RouteName.farmerOrders),
+                  onTap: () => context.pushNamed(RouteName.myOrders),
                 ),
                 const SizedBox(width: _standardSpacing),
               ],
@@ -854,7 +854,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
             _buildDrawerItem(context: context, icon: Icons.shopping_cart, title: t.myOrders ?? 'My Orders', route: RouteName.myOrders, color: Colors.deepOrange.shade700),
             if (isFarmer)
-              _buildDrawerItem(context: context, icon: Icons.receipt_long, title: t.ordersReceived ?? 'Orders Received', route: RouteName.farmerOrders, color: Colors.teal),
+              _buildDrawerItem(context: context, icon: Icons.receipt_long, title: t.ordersReceived ?? 'Orders Received', route: RouteName.myOrders, color: Colors.teal),
             _buildDrawerItem(context: context, icon: Icons.chat_bubble_outline, title: 'AI Chatbot', route: RouteName.aiRecommendation, color: Colors.green.shade600),
             const Divider(),
             _buildRoleRequestSection(context, t, role, userId),

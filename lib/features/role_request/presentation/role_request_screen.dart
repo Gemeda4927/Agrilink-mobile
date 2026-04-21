@@ -1,34 +1,41 @@
 import 'dart:io';
+import 'package:agrilink/features/profile/data/model/ProfileModel.dart';
+import 'package:agrilink/features/profile/domain/entity/profile_entity.dart';
+import 'package:agrilink/injector.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:agrilink/features/auth/domain/entities/auth_user.dart';
+import 'package:agrilink/features/auth/data/service/auth_service.dart';
 import 'package:agrilink/features/registration/presentation/bloc/registration_bloc.dart';
 import 'package:agrilink/features/registration/presentation/bloc/registration_event.dart';
 import 'package:agrilink/features/registration/presentation/bloc/registration_state.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_event.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_state.dart';
+import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:agrilink/features/profile/presentation/bloc/profile_event.dart';
+import 'package:agrilink/features/profile/presentation/bloc/profile_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RoleRequestScreen extends StatefulWidget {
-  final AuthUserEntity? authUser;
-
-  const RoleRequestScreen({super.key, this.authUser});
+  const RoleRequestScreen({super.key});
 
   @override
   State<RoleRequestScreen> createState() => _RoleRequestScreenState();
 }
 
 class _RoleRequestScreenState extends State<RoleRequestScreen> {
-  // User Data
   AuthUserEntity? _authUser;
+  Profile? _userProfile;
+  String _userFullName = '';
   String _currentUserRole = '';
   bool _isLoading = true;
   String _requestStatus = 'NONE';
   bool _canAccessRequest = false;
 
-  // Location Data
+  late AuthService _authService;
+
   List _regions = [];
   List _zones = [];
   List _woredas = [];
@@ -38,14 +45,12 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
   String? _selectedZoneId;
   String? _selectedWoredaId;
   String? _selectedKebeleId;
-  
-  // Location Names for Review
+
   String _selectedRegionName = '';
   String _selectedZoneName = '';
   String _selectedWoredaName = '';
   String _selectedKebeleName = '';
 
-  // Form Data
   final _formKey = GlobalKey<FormState>();
   String _requestedRole = 'AGENT';
   String _currentRole = '';
@@ -53,15 +58,13 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
   bool _experienceInAgriculture = true;
   bool _digitalSkills = true;
   bool _governmentAssigned = false;
-  
-  // File Upload
+
   List<File> _selectedFiles = [];
   List<String> _fileNames = [];
   List<String> _filePaths = [];
 
-  // Dropdown Options
   final List<String> _requestedRoles = ['AGENT', 'DATA_CONTRIBUTOR'];
-  final List<String> _currentRoles = ['DA_OFFICER', 'FARMER', 'OTHER'];
+  final List<String> _currentRoles = ['BUYER', 'DA_OFFICER', 'FARMER'];
   final List<String> _educationLevels = [
     'NONE',
     'PRIMARY',
@@ -75,17 +78,81 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _initializeAuthService();
+    _clearPendingStatusIfNoRequest();
+    _loadLoggedInUser();
     _loadCurrentUserRole();
     _loadCachedRequestStatus();
     _loadRegions();
+  }
+
+  void _initializeAuthService() {
+    _authService = sl<AuthService>();
+  }
+
+  Future<void> _clearPendingStatusIfNoRequest() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasRealRequest = prefs.getBool('has_real_request') ?? false;
+    if (!hasRealRequest) {
+      await prefs.remove('role_request_status');
+    }
+  }
+
+  Future<void> _loadLoggedInUser() async {
+    try {
+      setState(() => _isLoading = true);
+
+      final authUserEntity = await _authService.getLoggedInUser();
+
+      if (authUserEntity != null) {
+        setState(() {
+          _authUser = authUserEntity;
+          _currentUserRole = authUserEntity.role;
+          _canAccessRequest =
+              (authUserEntity.role != 'ADMIN' &&
+              authUserEntity.role != 'AGENT');
+
+          if (_currentRoles.contains(authUserEntity.role)) {
+            _currentRole = authUserEntity.role;
+          }
+
+          _isLoading = false;
+        });
+
+        debugPrint(
+          'User loaded successfully: ${authUserEntity.email} (Role: ${authUserEntity.role})',
+        );
+
+        _loadUserProfile();
+      } else {
+        setState(() => _isLoading = false);
+        _showSnackBar(
+          'No logged-in user found. Please login again.',
+          Colors.red,
+        );
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) Navigator.pop(context);
+        });
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      debugPrint('Error loading logged-in user: $e');
+      _showSnackBar('Error loading user data: $e', Colors.red);
+    }
+  }
+
+  void _loadUserProfile() {
+    if (_authUser == null) return;
+
+    debugPrint('Loading profile for user: ${_authUser!.id}');
+    context.read<ProfileBloc>().add(LoadProfile(userId: _authUser!.id));
   }
 
   Future<void> _loadCurrentUserRole() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedRole = prefs.getString('role');
-      
+
       if (savedRole != null && savedRole.isNotEmpty) {
         setState(() {
           _currentUserRole = savedRole;
@@ -94,7 +161,7 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading user role: $e');
+      debugPrint('Error loading user role from prefs: $e');
     }
   }
 
@@ -102,13 +169,6 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _requestStatus = prefs.getString('role_request_status') ?? 'NONE';
-    });
-  }
-
-  void _loadUserData() {
-    setState(() {
-      _authUser = widget.authUser;
-      _isLoading = false;
     });
   }
 
@@ -135,14 +195,17 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
       );
-      
+
       if (result != null) {
         setState(() {
           _selectedFiles = result.paths.map((path) => File(path!)).toList();
           _fileNames = result.files.map((file) => file.name).toList();
           _filePaths = result.paths.whereType<String>().toList();
         });
-        _showSnackBar('${_selectedFiles.length} file(s) selected', Colors.green);
+        _showSnackBar(
+          '${_selectedFiles.length} file(s) selected',
+          Colors.green,
+        );
       }
     } catch (e) {
       _showSnackBar('Error picking files: $e', Colors.red);
@@ -169,7 +232,6 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
           ),
           child: Column(
             children: [
-              // Header
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: const BoxDecoration(
@@ -191,7 +253,6 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                   ],
                 ),
               ),
-              // Scrollable Content
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
@@ -200,42 +261,119 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                     children: [
                       _buildReviewSection('Personal Information', Icons.person),
                       const SizedBox(height: 12),
-                      _buildReviewItem(Icons.badge, 'Full Name', _authUser?.email?.split('@').first ?? 'Not provided'),
-                      _buildReviewItem(Icons.email, 'Email', _authUser?.email ?? 'Not provided'),
-                      _buildReviewItem(Icons.phone, 'Phone', _authUser?.phone ?? 'Not provided'),
-                      _buildReviewItem(Icons.verified_user, 'Current Role', _currentUserRole),
-                      
+                      _buildReviewItem(
+                        Icons.person,
+                        'Full Name',
+                        _userFullName.isNotEmpty
+                            ? _userFullName
+                            : _getDisplayName(),
+                      ),
+                      _buildReviewItem(
+                        Icons.email,
+                        'Email',
+                        _authUser?.email ?? 'Not provided',
+                      ),
+                      _buildReviewItem(
+                        Icons.phone,
+                        'Phone',
+                        _authUser?.phone.isNotEmpty == true
+                            ? _authUser!.phone
+                            : 'Not provided',
+                      ),
+                      _buildReviewItem(
+                        Icons.verified_user,
+                        'Current Role',
+                        _currentUserRole,
+                      ),
                       const Divider(height: 24),
-                      
-                      _buildReviewSection('Location Information', Icons.location_on),
+                      _buildReviewSection(
+                        'Location Information',
+                        Icons.location_on,
+                      ),
                       const SizedBox(height: 12),
-                      _buildReviewItem(Icons.map, 'Region', _selectedRegionName.isNotEmpty ? _selectedRegionName : 'Not selected'),
-                      _buildReviewItem(Icons.location_city, 'Zone', _selectedZoneName.isNotEmpty ? _selectedZoneName : 'Not selected'),
-                      _buildReviewItem(Icons.location_city, 'Woreda', _selectedWoredaName.isNotEmpty ? _selectedWoredaName : 'Not selected'),
-                      _buildReviewItem(Icons.home, 'Kebele', _selectedKebeleName.isNotEmpty ? _selectedKebeleName : 'Not selected'),
-                      
+                      _buildReviewItem(
+                        Icons.map,
+                        'Region',
+                        _selectedRegionName.isNotEmpty
+                            ? _selectedRegionName
+                            : 'Not selected',
+                      ),
+                      _buildReviewItem(
+                        Icons.location_city,
+                        'Zone',
+                        _selectedZoneName.isNotEmpty
+                            ? _selectedZoneName
+                            : 'Not selected',
+                      ),
+                      _buildReviewItem(
+                        Icons.location_city,
+                        'Woreda',
+                        _selectedWoredaName.isNotEmpty
+                            ? _selectedWoredaName
+                            : 'Not selected',
+                      ),
+                      _buildReviewItem(
+                        Icons.home,
+                        'Kebele',
+                        _selectedKebeleName.isNotEmpty
+                            ? _selectedKebeleName
+                            : 'Not selected',
+                      ),
                       const Divider(height: 24),
-                      
-                      _buildReviewSection('Role Request Details', Icons.assignment_turned_in),
+                      _buildReviewSection(
+                        'Role Request Details',
+                        Icons.assignment_turned_in,
+                      ),
                       const SizedBox(height: 12),
-                      _buildReviewItem(Icons.verified_user, 'Requested Role', _requestedRole.replaceAll('_', ' ')),
-                      _buildReviewItem(Icons.work, 'Current Role (Form)', _currentRole.replaceAll('_', ' ')),
-                      _buildReviewItem(Icons.school, 'Education Level', _educationLevel),
-                      _buildReviewItem(Icons.agriculture, 'Experience in Agriculture', _experienceInAgriculture ? 'Yes' : 'No'),
-                      _buildReviewItem(Icons.computer, 'Digital Skills', _digitalSkills ? 'Yes' : 'No'),
-                      _buildReviewItem(Icons.account_balance, 'Government Assigned', _governmentAssigned ? 'Yes' : 'No'),
-                      
+                      _buildReviewItem(
+                        Icons.verified_user,
+                        'Requested Role',
+                        _requestedRole.replaceAll('_', ' '),
+                      ),
+                      _buildReviewItem(
+                        Icons.work,
+                        'Current Role (Form)',
+                        _currentRole.replaceAll('_', ' '),
+                      ),
+                      _buildReviewItem(
+                        Icons.school,
+                        'Education Level',
+                        _educationLevel,
+                      ),
+                      _buildReviewItem(
+                        Icons.agriculture,
+                        'Experience in Agriculture',
+                        _experienceInAgriculture ? 'Yes' : 'No',
+                      ),
+                      _buildReviewItem(
+                        Icons.computer,
+                        'Digital Skills',
+                        _digitalSkills ? 'Yes' : 'No',
+                      ),
+                      _buildReviewItem(
+                        Icons.account_balance,
+                        'Government Assigned',
+                        _governmentAssigned ? 'Yes' : 'No',
+                      ),
                       if (_fileNames.isNotEmpty) ...[
                         const Divider(height: 24),
-                        _buildReviewSection('Verification Documents', Icons.attach_file),
+                        _buildReviewSection(
+                          'Verification Documents',
+                          Icons.attach_file,
+                        ),
                         const SizedBox(height: 12),
-                        ..._fileNames.map((fileName) => _buildReviewItem(Icons.insert_drive_file, 'Document', fileName)),
+                        ..._fileNames.map(
+                          (fileName) => _buildReviewItem(
+                            Icons.insert_drive_file,
+                            'Document',
+                            fileName,
+                          ),
+                        ),
                       ],
                     ],
                   ),
                 ),
               ),
-              // Footer Buttons
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -249,7 +387,10 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text('Edit', style: TextStyle(fontSize: 16)),
+                        child: const Text(
+                          'Edit',
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -266,7 +407,10 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text('Confirm Submit', style: TextStyle(fontSize: 16)),
+                        child: const Text(
+                          'Confirm Submit',
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                   ],
@@ -277,6 +421,26 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
         ),
       ),
     );
+  }
+
+  String _getDisplayName() {
+    if (_authUser == null) return 'Not provided';
+
+    final email = _authUser!.email;
+    if (email.isNotEmpty && email.contains('@')) {
+      final namePart = email.split('@').first;
+      return namePart
+          .split('.')
+          .map((word) {
+            if (word.isNotEmpty) {
+              return word[0].toUpperCase() + word.substring(1);
+            }
+            return word;
+          })
+          .join(' ');
+    }
+
+    return email;
   }
 
   Widget _buildReviewSection(String title, IconData icon) {
@@ -300,8 +464,12 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: Colors.grey.shade600),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(icon, size: 18, color: Colors.grey.shade600),
+          ),
           const SizedBox(width: 12),
           SizedBox(
             width: 120,
@@ -328,7 +496,7 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
         _showSnackBar('Please upload verification documents', Colors.orange);
         return;
       }
-      
+
       context.read<RoleRequestBloc>().add(
         CreateRoleRequestEvent(
           kebeleId: _selectedKebeleId!,
@@ -349,12 +517,14 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
   Future<void> _saveRequestStatus(String status) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('role_request_status', status);
+    await prefs.setBool('has_real_request', true);
     setState(() {
       _requestStatus = status;
     });
   }
 
   void _showSnackBar(String message, Color color) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -364,12 +534,143 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
     );
   }
 
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4CAF50).withOpacity(0.3),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Request Submitted! 🎉',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Your role request has been successfully submitted for review.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade700,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: Colors.orange.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Our team will review your request and notify you once approved.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.orange.shade900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Go back to previous screen
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A8F5E),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Got it',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: Color(0xFFF5F7FA),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                'Loading user data...',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
       );
+    }
+
+    if (_authUser == null) {
+      return _buildNoUserScreen();
     }
 
     if (!_canAccessRequest) {
@@ -402,13 +703,30 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
           listener: (context, state) {
             if (state is RoleRequestSuccess) {
               _saveRequestStatus('PENDING');
-              _showSnackBar(state.message, Colors.green);
-              Navigator.pop(context);
+              _showSuccessDialog();
             } else if (state is RoleRequestError) {
               if (state.message.toLowerCase().contains('already')) {
                 _saveRequestStatus('PENDING');
               }
               _showSnackBar(state.message, Colors.red);
+            }
+          },
+        ),
+
+        BlocListener<ProfileBloc, ProfileState>(
+          listener: (context, state) {
+            if (state is ProfileLoaded) {
+              setState(() {
+                if (state.profile.profile != null) {
+                  _userFullName = state.profile.profile!.fullName;
+                  _userProfile = state.profile.profile as Profile?;
+                }
+              });
+              debugPrint('Profile loaded: $_userFullName');
+            } else if (state is ProfileNotFound) {
+              debugPrint('Profile not found for user');
+            } else if (state is ProfileError) {
+              debugPrint('Error loading profile: ${state.message}');
             }
           },
         ),
@@ -449,6 +767,82 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
     if (regState is ZonesLoaded) _zones = regState.zones;
     if (regState is WoredasLoaded) _woredas = regState.woredas;
     if (regState is KebelesLoaded) _kebeles = regState.kebeles;
+  }
+
+  Widget _buildNoUserScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        title: const Text('Request Role'),
+        elevation: 0,
+        backgroundColor: const Color(0xFF1A8F5E),
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: Container(
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person_off,
+                  size: 60,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'No User Found',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Please login to request a role',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A8F5E),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Go to Login'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildAccessDeniedScreen() {
@@ -506,7 +900,7 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Role requests are only available for Farmers',
+                'Role requests are only available for Farmers and DA Officers',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
@@ -515,7 +909,10 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFDC3545),
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -572,23 +969,43 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            _buildInfoTile(Icons.badge_outlined, 'Full Name', _authUser?.email?.split('@').first ?? 'Not provided'),
             const SizedBox(height: 16),
-            _buildInfoTile(Icons.email_outlined, 'Email', _authUser?.email ?? 'Not provided'),
+            _buildInfoTile(
+              Icons.person_outline,
+              'Full Name',
+              _userFullName.isNotEmpty ? _userFullName : _getDisplayName(),
+            ),
             const SizedBox(height: 16),
-            _buildInfoTile(Icons.phone_outlined, 'Phone', _authUser?.phone ?? 'Not provided'),
+            _buildInfoTile(
+              Icons.email_outlined,
+              'Email',
+              _authUser?.email ?? 'Not provided',
+            ),
+            const SizedBox(height: 16),
+            _buildInfoTile(
+              Icons.phone_outlined,
+              'Phone',
+              _authUser?.phone.isNotEmpty == true
+                  ? _authUser!.phone
+                  : 'Not provided',
+            ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color(0xFF1A8F5E).withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF1A8F5E).withOpacity(0.2)),
+                border: Border.all(
+                  color: const Color(0xFF1A8F5E).withOpacity(0.2),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.verified_user, color: Color(0xFF1A8F5E), size: 20),
+                  const Icon(
+                    Icons.verified_user,
+                    color: Color(0xFF1A8F5E),
+                    size: 20,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -599,7 +1016,9 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                         Text(
-                          _currentUserRole.isEmpty ? 'Loading...' : _currentUserRole,
+                          _currentUserRole.isEmpty
+                              ? 'Loading...'
+                              : _currentUserRole,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -627,9 +1046,18 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+              ),
               const SizedBox(height: 2),
-              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ),
@@ -761,7 +1189,10 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
 
   String _getItemName(List items, String? id) {
     if (id == null) return '';
-    final item = items.firstWhere((item) => item['id'].toString() == id, orElse: () => null);
+    final item = items.firstWhere(
+      (item) => item['id'].toString() == id,
+      orElse: () => null,
+    );
     return item != null ? item['name'].toString() : '';
   }
 
@@ -815,40 +1246,46 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                 label: 'Requested Role',
                 icon: Icons.verified_user,
                 value: _requestedRole,
-                items: _requestedRoles.map((role) => {
-                  'id': role,
-                  'name': role.replaceAll('_', ' '),
-                }).toList(),
+                items: _requestedRoles
+                    .map(
+                      (role) => {'id': role, 'name': role.replaceAll('_', ' ')},
+                    )
+                    .toList(),
                 onChanged: (value) => setState(() => _requestedRole = value!),
               ),
               const SizedBox(height: 16),
               _buildDropdownField(
                 label: 'Current Role',
                 icon: Icons.work,
-                value: _currentRole,
-                items: _currentRoles.map((role) => {
-                  'id': role,
-                  'name': role.replaceAll('_', ' '),
-                }).toList(),
+                value: _currentRole.isEmpty ? null : _currentRole,
+                items: _currentRoles
+                    .map(
+                      (role) => {'id': role, 'name': role.replaceAll('_', ' ')},
+                    )
+                    .toList(),
                 onChanged: (value) => setState(() => _currentRole = value!),
+                validator: (value) =>
+                    value == null ? 'Please select current role' : null,
               ),
               const SizedBox(height: 16),
               _buildDropdownField(
                 label: 'Education Level',
                 icon: Icons.school,
                 value: _educationLevel.isEmpty ? null : _educationLevel,
-                items: _educationLevels.map((level) => {
-                  'id': level,
-                  'name': level,
-                }).toList(),
+                items: _educationLevels
+                    .map((level) => {'id': level, 'name': level})
+                    .toList(),
                 onChanged: (value) => setState(() => _educationLevel = value!),
+                validator: (value) =>
+                    value == null ? 'Please select education level' : null,
               ),
               const SizedBox(height: 16),
               _buildSwitchField(
                 title: 'Experience in Agriculture',
                 subtitle: 'Do you have experience in agriculture?',
                 value: _experienceInAgriculture,
-                onChanged: (value) => setState(() => _experienceInAgriculture = value),
+                onChanged: (value) =>
+                    setState(() => _experienceInAgriculture = value),
                 icon: Icons.agriculture,
                 color: const Color(0xFF27AE60),
               ),
@@ -866,7 +1303,8 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                 title: 'Government Assigned',
                 subtitle: 'Are you assigned by the government?',
                 value: _governmentAssigned,
-                onChanged: (value) => setState(() => _governmentAssigned = value),
+                onChanged: (value) =>
+                    setState(() => _governmentAssigned = value),
                 icon: Icons.account_balance,
                 color: const Color(0xFF9B59B6),
               ),
@@ -910,17 +1348,22 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Verification Documents',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2C3E50),
+                const Expanded(
+                  child: Text(
+                    'Verification Documents',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2C3E50),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(4),
@@ -961,21 +1404,40 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.insert_drive_file, size: 18, color: Colors.grey.shade600),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.insert_drive_file,
+                          size: 18,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           fileName,
                           style: const TextStyle(fontSize: 13),
                           overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 18, color: Colors.red),
-                        onPressed: () => _removeFile(index),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => _removeFile(index),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.red,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -989,8 +1451,9 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
   }
 
   Widget _buildSubmitButton() {
-    final isSubmitting = context.watch<RoleRequestBloc>().state is RoleRequestCreating;
-    
+    final isSubmitting =
+        context.watch<RoleRequestBloc>().state is RoleRequestCreating;
+
     return SizedBox(
       width: double.infinity,
       height: 50,
@@ -1032,8 +1495,9 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
     required String label,
     required IconData icon,
     required String? value,
-    required List<dynamic> items, 
+    required List<dynamic> items,
     required Function(String?) onChanged,
+    String? Function(String?)? validator,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -1055,7 +1519,10 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Color(0xFF1A8F5E), width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
         items: items.map((item) {
           return DropdownMenuItem<String>(
@@ -1064,7 +1531,9 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
           );
         }).toList(),
         onChanged: onChanged,
-        validator: (value) => value == null ? 'Please select $label' : null,
+        validator:
+            validator ??
+            (value) => value == null ? 'Please select $label' : null,
       ),
     );
   }
@@ -1094,7 +1563,10 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF2C3E50)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2C3E50),
+                  ),
                 ),
                 Text(
                   subtitle,
@@ -1103,11 +1575,7 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
               ],
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: color,
-          ),
+          Switch(value: value, onChanged: onChanged, activeColor: color),
         ],
       ),
     );
@@ -1157,7 +1625,10 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
               const SizedBox(height: 24),
               Text(
                 title,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
@@ -1176,7 +1647,10 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A8F5E),
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

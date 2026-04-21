@@ -380,7 +380,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
               ),
               child: const Icon(Icons.arrow_back_ios_new, size: 18),
             ),
-            onPressed: () => context.pop(),
+            onPressed: () => context.goNamed(RouteName.login),
           ),
           actions: [
             TextButton(

@@ -1,6 +1,5 @@
 import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/features/auth/domain/entities/auth_user.dart';
-import 'package:agrilink/features/recommendation/presentation/ai_chatbot_floating_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 

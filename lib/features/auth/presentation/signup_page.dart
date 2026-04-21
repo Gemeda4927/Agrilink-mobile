@@ -16,11 +16,10 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
 
-  final emailController = TextEditingController();
-  final phoneController = TextEditingController();
+  final identifierController = TextEditingController(); // Combined email/phone
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-  String role = 'BUYER'; // default role
+  String role = 'BUYER';
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -29,7 +28,6 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // Color scheme matching Login page
   static const Color primaryGreen = Color(0xFF2E7D32);
   static const Color softGrey = Color(0xFFF5F5F5);
   static const Color textGrey = Color(0xFF757575);
@@ -53,12 +51,98 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    emailController.dispose();
-    phoneController.dispose();
+    identifierController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  // ==================== IDENTIFIER DETECTION & VALIDATION ====================
+
+  bool _isEmail(String input) {
+    return input.contains('@') && input.contains('.');
+  }
+
+  bool _isPhoneNumber(String input) {
+    String cleaned = input.replaceAll(RegExp(r'\s+'), '');
+
+    // Check for valid Ethiopian phone number formats
+    if (RegExp(r'^\+251[1-9]\d{8}$').hasMatch(cleaned)) return true;
+    if (RegExp(r'^251[1-9]\d{8}$').hasMatch(cleaned)) return true;
+    if (RegExp(r'^0[1-9]\d{8}$').hasMatch(cleaned)) return true;
+    if (RegExp(r'^[1-9]\d{8}$').hasMatch(cleaned)) return true;
+
+    return false;
+  }
+
+  String? _validateIdentifier(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Please enter email or phone number";
+    }
+
+    // Check if it's a valid email
+    if (_isEmail(value)) {
+      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+        return "Enter a valid email address";
+      }
+      return null; // Valid email
+    }
+
+    // Check if it's a valid phone number
+    if (_isPhoneNumber(value)) {
+      return null; // Valid phone
+    }
+
+    return "Enter a valid email or phone number\nExample: user@email.com or +251912345678";
+  }
+
+  String _formatPhoneNumberToInternational(String phone) {
+    // Remove all spaces
+    String cleaned = phone.replaceAll(RegExp(r'\s+'), '');
+
+    // If already has +251, return as is
+    if (cleaned.startsWith('+251')) {
+      return cleaned;
+    }
+
+    // If starts with 251 (without +), add +
+    if (cleaned.startsWith('251')) {
+      return '+$cleaned';
+    }
+
+    // If starts with 0 (local format), convert to +251
+    if (cleaned.startsWith('0') && cleaned.length == 10) {
+      return '+251${cleaned.substring(1)}';
+    }
+
+    // If has 9 digits (no leading zero), add +251
+    if (cleaned.length == 9) {
+      return '+251$cleaned';
+    }
+
+    return cleaned;
+  }
+
+  Map<String, String> _prepareSignupData() {
+    String identifier = identifierController.text.trim();
+    Map<String, String> data = {
+      "role": role,
+      "password": passwordController.text.trim(),
+      "confirmPassword": confirmPasswordController.text.trim(),
+    };
+
+    if (_isEmail(identifier)) {
+      data["email"] = identifier;
+      debugPrint('📧 Detected EMAIL: $identifier');
+    } else {
+      String formattedPhone = _formatPhoneNumberToInternational(identifier);
+      data["phone"] = formattedPhone;
+      debugPrint('📱 Detected PHONE (raw): $identifier');
+      debugPrint('📱 Detected PHONE (formatted): $formattedPhone');
+    }
+
+    return data;
   }
 
   @override
@@ -74,11 +158,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.green.shade50,
-              Colors.white,
-              Colors.green.shade50,
-            ],
+            colors: [Colors.green.shade50, Colors.white, Colors.green.shade50],
           ),
         ),
         child: SafeArea(
@@ -142,10 +222,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
         const SizedBox(height: 8),
         const Text(
           "Join our community today",
-          style: TextStyle(
-            fontSize: 16,
-            color: Color(0xFF5E6D5C),
-          ),
+          style: TextStyle(fontSize: 16, color: Color(0xFF5E6D5C)),
         ),
       ],
     );
@@ -171,14 +248,19 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
           key: _formKey,
           child: Column(
             children: [
-              // Email Field
+              // Combined Email or Phone Field
               TextFormField(
-                controller: emailController,
+                controller: identifierController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.email_outlined, color: primaryGreen),
-                  labelText: "Email",
-                  hintText: "Enter your email",
+                  prefixIcon: const Icon(
+                    Icons.alternate_email,
+                    color: primaryGreen,
+                  ),
+                  labelText: "Email or Phone Number",
+                  hintText: "user@email.com or +251912345678",
+                  helperText: "Enter your email address or phone number",
+                  helperStyle: const TextStyle(fontSize: 11, color: textGrey),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                     borderSide: BorderSide(color: Colors.grey.shade300),
@@ -194,47 +276,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                   filled: true,
                   fillColor: softGrey,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Please enter email";
-                  }
-                  if (!value.contains('@')) {
-                    return "Enter a valid email";
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Phone Field
-              TextFormField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.phone_outlined, color: primaryGreen),
-                  labelText: "Phone Number",
-                  hintText: "Enter your phone number",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: primaryGreen, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: softGrey,
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Please enter phone number";
-                  }
-                  return null;
-                },
+                validator: _validateIdentifier,
               ),
               const SizedBox(height: 16),
 
@@ -243,12 +285,17 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                 controller: passwordController,
                 obscureText: !_isPasswordVisible,
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.lock_outline, color: primaryGreen),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline,
+                    color: primaryGreen,
+                  ),
                   labelText: "Password",
-                  hintText: "Create a password",
+                  hintText: "Create a password (min 6 characters)",
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                      _isPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: primaryGreen,
                     ),
                     onPressed: () {
@@ -289,12 +336,17 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                 controller: confirmPasswordController,
                 obscureText: !_isConfirmPasswordVisible,
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.lock_outline, color: primaryGreen),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline,
+                    color: primaryGreen,
+                  ),
                   labelText: "Confirm Password",
                   hintText: "Re-enter your password",
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                      _isConfirmPasswordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: primaryGreen,
                     ),
                     onPressed: () {
@@ -344,9 +396,15 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                     labelText: "Select Role",
                     prefixIcon: Icon(Icons.person_outline, color: primaryGreen),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                   ),
-                  icon: const Icon(Icons.arrow_drop_down_circle, color: primaryGreen),
+                  icon: const Icon(
+                    Icons.arrow_drop_down_circle,
+                    color: primaryGreen,
+                  ),
                   isExpanded: true,
                   items: const [
                     DropdownMenuItem(
@@ -354,8 +412,12 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                       child: Text("BUYER - I want to buy products"),
                     ),
                     DropdownMenuItem(
-                      value: "SELLER",
-                      child: Text("SELLER - I want to sell products"),
+                      value: "FARMER",
+                      child: Text("FARMER - I want to sell products"),
+                    ),
+                    DropdownMenuItem(
+                      value: "AGENT",
+                      child: Text("AGENT - I want to help farmers"),
                     ),
                   ],
                   onChanged: (value) {
@@ -435,12 +497,18 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                       ),
                     );
 
+                    // Send the identifier (email or phone) that user entered
+                    String identifier = identifierController.text.trim();
+                    if (!_isEmail(identifier)) {
+                      // If it's a phone, send formatted version
+                      identifier = _formatPhoneNumberToInternational(
+                        identifier,
+                      );
+                    }
+
                     context.goNamed(
                       RouteName.verifyOtp,
-                      extra: {
-                        "identifier": emailController.text.trim(),
-                        "purpose": "SIGNUP",
-                      },
+                      extra: {"identifier": identifier, "purpose": "SIGNUP"},
                     );
                   }
 
@@ -461,7 +529,6 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                   builder: (context, state) {
                     return Column(
                       children: [
-                        // Sign Up Button
                         SizedBox(
                           width: double.infinity,
                           height: 55,
@@ -478,14 +545,23 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                                 ? null
                                 : () {
                                     if (_formKey.currentState!.validate()) {
-                                      authBloc.add(SignUpEvent(data: {
-                                        "role": role,
-                                        "email": emailController.text.trim(),
-                                        "phone": phoneController.text.trim(),
-                                        "password": passwordController.text.trim(),
-                                        "confirmPassword":
-                                            confirmPasswordController.text.trim(),
-                                      }));
+                                      Map<String, String> signupData =
+                                          _prepareSignupData();
+
+                                      debugPrint('📝 Signup Data:');
+                                      debugPrint(
+                                        '   Role: ${signupData["role"]}',
+                                      );
+                                      debugPrint(
+                                        '   Email: ${signupData["email"] ?? "N/A"}',
+                                      );
+                                      debugPrint(
+                                        '   Phone: ${signupData["phone"] ?? "N/A"}',
+                                      );
+
+                                      authBloc.add(
+                                        SignUpEvent(data: signupData),
+                                      );
                                     }
                                   },
                             child: state is AuthLoading
@@ -494,7 +570,9 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                                     width: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
                                     ),
                                   )
                                 : const Text(
@@ -530,9 +608,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
           onPressed: () {
             context.goNamed(RouteName.login);
           },
-          style: TextButton.styleFrom(
-            foregroundColor: primaryGreen,
-          ),
+          style: TextButton.styleFrom(foregroundColor: primaryGreen),
           child: const Text(
             "Login",
             style: TextStyle(fontWeight: FontWeight.bold),

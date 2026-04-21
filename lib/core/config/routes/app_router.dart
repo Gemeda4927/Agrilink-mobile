@@ -24,7 +24,7 @@ import 'package:agrilink/features/profile/presentation/view_profile.dart';
 import 'package:agrilink/features/profile/presentation/update_profile_screen.dart';
 import 'package:agrilink/features/profile/data/model/ProfileModel.dart';
 import 'package:agrilink/features/recommendation/presentation/ai_chatbot_floating_button.dart';
-import 'package:agrilink/features/recommendation/presentation/ai_recommendation_screen.dart';
+
 import 'package:agrilink/features/registration/presentation/screen/register_page.dart';
 import 'package:agrilink/features/role_request/presentation/role_request_screen.dart';
 import 'package:agrilink/injector.dart';

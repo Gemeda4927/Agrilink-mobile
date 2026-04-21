@@ -9,6 +9,7 @@ import 'package:agrilink/features/recommendation/presentation/bloc/chat_state.da
 import 'package:agrilink/features/recommendation/domain/entity/chat_response_entity.dart';
 import 'package:agrilink/features/recommendation/domain/entity/agent_breakdown_entity.dart';
 import 'package:agrilink/injector.dart' as di;
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class AIChatbotFAB extends StatefulWidget {
   const AIChatbotFAB({super.key});
@@ -18,7 +19,7 @@ class AIChatbotFAB extends StatefulWidget {
 }
 
 class _AIChatbotFABState extends State<AIChatbotFAB>
-    with TickerProviderStateMixin {  // ✅ Changed to TickerProviderStateMixin
+    with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _rotateController;
   late Animation<double> _pulseAnimation;
@@ -28,23 +29,21 @@ class _AIChatbotFABState extends State<AIChatbotFAB>
   @override
   void initState() {
     super.initState();
-    
-    // Pulse animation for attention
+
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
-    
+
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    
-    // Subtle rotation animation
+
     _rotateController = AnimationController(
       duration: const Duration(milliseconds: 3000),
       vsync: this,
     )..repeat();
-    
+
     _rotateAnimation = Tween<double>(begin: -0.05, end: 0.05).animate(
       CurvedAnimation(parent: _rotateController, curve: Curves.easeInOut),
     );
@@ -59,7 +58,7 @@ class _AIChatbotFABState extends State<AIChatbotFAB>
 
   void _showChatbotModal(BuildContext context) {
     _pulseController.stop();
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -71,7 +70,6 @@ class _AIChatbotFABState extends State<AIChatbotFAB>
         child: const AIChatbotModal(),
       ),
     ).then((_) {
-      // Resume animation when modal is closed
       if (mounted) {
         _pulseController.repeat(reverse: true);
       }
@@ -102,19 +100,16 @@ class _AIChatbotFABState extends State<AIChatbotFAB>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: [
-                  // Outer glow
                   BoxShadow(
                     color: const Color(0xFF1A8C3F).withOpacity(0.4),
                     blurRadius: 20,
                     spreadRadius: _pulseAnimation.value * 2 - 1,
                   ),
-                  // Inner shadow for depth
                   BoxShadow(
                     color: const Color(0xFF1A8C3F).withOpacity(0.3),
                     blurRadius: 12,
                     spreadRadius: 2,
                   ),
-                  // Drop shadow
                   BoxShadow(
                     color: Colors.black.withOpacity(0.2),
                     blurRadius: 10,
@@ -125,16 +120,12 @@ class _AIChatbotFABState extends State<AIChatbotFAB>
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTapDown: (_) {
-                    setState(() => _isPressed = true);
-                  },
+                  onTapDown: (_) => setState(() => _isPressed = true),
                   onTapUp: (_) {
                     setState(() => _isPressed = false);
                     _showChatbotModal(context);
                   },
-                  onTapCancel: () {
-                    setState(() => _isPressed = false);
-                  },
+                  onTapCancel: () => setState(() => _isPressed = false),
                   borderRadius: BorderRadius.circular(30),
                   child: Container(
                     decoration: BoxDecoration(
@@ -157,7 +148,6 @@ class _AIChatbotFABState extends State<AIChatbotFAB>
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        // Shine effect
                         Positioned(
                           top: 8,
                           left: 8,
@@ -170,9 +160,7 @@ class _AIChatbotFABState extends State<AIChatbotFAB>
                             ),
                           ),
                         ),
-                        // Premium Robot Icon
                         _buildPremiumRobotIcon(),
-                        // Animated ring
                         CustomPaint(
                           painter: _RingPainter(
                             progress: _pulseAnimation.value - 1.0,
@@ -208,7 +196,6 @@ class _PremiumRobotPainter extends CustomPainter {
     final centerX = width / 2;
     final centerY = height / 2;
 
-    // Main body paint
     final bodyPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topLeft,
@@ -217,7 +204,6 @@ class _PremiumRobotPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(0, 0, width, height))
       ..style = PaintingStyle.fill;
 
-    // Stroke paint
     final strokePaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
@@ -225,12 +211,10 @@ class _PremiumRobotPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    // Shadow paint
     final shadowPaint = Paint()
       ..color = Colors.black.withOpacity(0.1)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
-    // Robot head (rounded rectangle)
     final headRect = RRect.fromRectAndRadius(
       Rect.fromCenter(
         center: Offset(centerX, centerY - 2),
@@ -240,45 +224,37 @@ class _PremiumRobotPainter extends CustomPainter {
       Radius.circular(width * 0.1),
     );
 
-    // Draw shadow
-    canvas.drawRRect(
-      headRect.shift(const Offset(0, 1)),
-      shadowPaint,
-    );
-
-    // Draw head
+    canvas.drawRRect(headRect.shift(const Offset(0, 1)), shadowPaint);
     canvas.drawRRect(headRect, bodyPaint);
     canvas.drawRRect(headRect, strokePaint);
 
-    // Antenna
     final antennaPath = Path()
       ..moveTo(centerX, centerY - height * 0.25)
       ..lineTo(centerX, centerY - height * 0.38);
-    
     canvas.drawPath(antennaPath, strokePaint);
-    
-    // Antenna ball with gradient
+
     final antennaBallPaint = Paint()
-      ..shader = const RadialGradient(
-        colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-      ).createShader(Rect.fromCircle(
-        center: Offset(centerX, centerY - height * 0.4),
-        radius: width * 0.07,
-      ));
-    
+      ..shader =
+          const RadialGradient(
+            colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(centerX, centerY - height * 0.4),
+              radius: width * 0.07,
+            ),
+          );
+
     canvas.drawCircle(
       Offset(centerX, centerY - height * 0.4),
       width * 0.07,
       antennaBallPaint,
     );
-    
     canvas.drawCircle(
       Offset(centerX, centerY - height * 0.4),
       width * 0.07,
       strokePaint,
     );
 
-    // Eyes with glow
     final eyeGlowPaint = Paint()
       ..color = const Color(0xFF4CAF50).withOpacity(0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
@@ -288,14 +264,12 @@ class _PremiumRobotPainter extends CustomPainter {
       width * 0.07,
       eyeGlowPaint,
     );
-    
     canvas.drawCircle(
       Offset(centerX + width * 0.12, centerY - height * 0.05),
       width * 0.07,
       eyeGlowPaint,
     );
 
-    // Eyes
     final eyePaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topLeft,
@@ -308,27 +282,23 @@ class _PremiumRobotPainter extends CustomPainter {
       width * 0.06,
       eyePaint,
     );
-    
     canvas.drawCircle(
       Offset(centerX + width * 0.12, centerY - height * 0.05),
       width * 0.06,
       eyePaint,
     );
 
-    // Eye shine
     canvas.drawCircle(
       Offset(centerX - width * 0.14, centerY - height * 0.07),
       width * 0.02,
       Paint()..color = Colors.white,
     );
-    
     canvas.drawCircle(
       Offset(centerX + width * 0.10, centerY - height * 0.07),
       width * 0.02,
       Paint()..color = Colors.white,
     );
 
-    // Smile
     final smilePath = Path()
       ..moveTo(centerX - width * 0.1, centerY + height * 0.05)
       ..quadraticBezierTo(
@@ -337,10 +307,8 @@ class _PremiumRobotPainter extends CustomPainter {
         centerX + width * 0.1,
         centerY + height * 0.05,
       );
-    
     canvas.drawPath(smilePath, strokePaint);
 
-    // Ears
     final earPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topLeft,
@@ -348,7 +316,6 @@ class _PremiumRobotPainter extends CustomPainter {
         colors: [Color(0xFFE0E0E0), Colors.white],
       ).createShader(Rect.fromLTWH(0, 0, width, height));
 
-    // Left ear
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
@@ -372,7 +339,6 @@ class _PremiumRobotPainter extends CustomPainter {
       strokePaint,
     );
 
-    // Right ear
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
@@ -401,10 +367,8 @@ class _PremiumRobotPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// Animated ring painter
 class _RingPainter extends CustomPainter {
   final double progress;
-
   _RingPainter({required this.progress});
 
   @override
@@ -481,11 +445,14 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
   }
 
   void _addWelcomeMessage() {
-    _messages.add(ChatMessage(
-      isUser: false,
-      text: "👋 Hello! I'm your AI Crop Advisor. I can help you with:\n\n🌱 Crop recommendations\n🌍 Soil health advice\n🐛 Pest management\n🌦️ Weather planning\n\nWhat would you like to know?",
-      timestamp: DateTime.now(),
-    ));
+    _messages.add(
+      ChatMessage(
+        isUser: false,
+        text:
+            "👋 Hello! I'm your AI Crop Advisor. I can help you with:\n\n🌱 Crop recommendations\n🌍 Soil health advice\n🐛 Pest management\n🌦️ Weather planning\n\nWhat would you like to know?",
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   void _scrollToBottom() {
@@ -505,13 +472,11 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
     if (text.isEmpty) return;
 
     _lastUserMessage = text;
-    
+
     setState(() {
-      _messages.add(ChatMessage(
-        isUser: true,
-        text: text,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(isUser: true, text: text, timestamp: DateTime.now()),
+      );
     });
 
     _controller.clear();
@@ -523,7 +488,9 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
 
   void _retryLastMessage() {
     if (_lastUserMessage != null) {
-      context.read<ChatBloc2>().add(RetryLastMessageEvent(message: _lastUserMessage!));
+      context.read<ChatBloc2>().add(
+        RetryLastMessageEvent(message: _lastUserMessage!),
+      );
     }
   }
 
@@ -535,10 +502,110 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
     context.read<ChatBloc2>().add(ClearChatEvent());
   }
 
+  Map<String, dynamic> _categorizeError(String errorMessage) {
+    final lowerError = errorMessage.toLowerCase();
+
+    if (lowerError.contains('network') ||
+        lowerError.contains('connection') ||
+        lowerError.contains('timeout') ||
+        lowerError.contains('failed host lookup') ||
+        lowerError.contains('socketexception')) {
+      return {
+        'icon': Icons.wifi_off_rounded,
+        'title': 'Connection Issue',
+        'message':
+            'It seems like there\'s a problem with your internet connection. Please check your connection and try again.',
+        'suggestions': [
+          'Check your WiFi or mobile data',
+          'Try moving to an area with better signal',
+          'Restart your internet connection',
+        ],
+        'color': Colors.orange,
+      };
+    }
+
+    if (lowerError.contains('500') ||
+        lowerError.contains('502') ||
+        lowerError.contains('503') ||
+        lowerError.contains('server error')) {
+      return {
+        'icon': Icons.cloud_off_rounded,
+        'title': 'Service Unavailable',
+        'message':
+            'Our AI service is taking a short break. We\'ll be back shortly!',
+        'suggestions': [
+          'Wait a moment and try again',
+          'The issue is on our end, not yours',
+          'We\'re working to fix this quickly',
+        ],
+        'color': Colors.purple,
+      };
+    }
+
+    if (lowerError.contains('unauthorized') ||
+        lowerError.contains('401') ||
+        lowerError.contains('authentication')) {
+      return {
+        'icon': Icons.lock_outline_rounded,
+        'title': 'Session Expired',
+        'message':
+            'Your session has expired. Please log in again to continue chatting.',
+        'suggestions': [
+          'Log out and log back in',
+          'This helps keep your account secure',
+        ],
+        'color': Colors.red,
+      };
+    }
+
+    if (lowerError.contains('rate limit') ||
+        lowerError.contains('too many requests') ||
+        lowerError.contains('429')) {
+      return {
+        'icon': Icons.timer_off_rounded,
+        'title': 'Too Many Questions',
+        'message':
+            'Whoa, you\'re curious! 😊 Please wait a moment before asking your next question.',
+        'suggestions': [
+          'Wait 30 seconds before trying again',
+          'Take time to review previous answers',
+        ],
+        'color': Colors.amber,
+      };
+    }
+
+    if (lowerError.contains('invalid') || lowerError.contains('validation')) {
+      return {
+        'icon': Icons.edit_note_rounded,
+        'title': 'Question Not Clear',
+        'message':
+            'I didn\'t quite understand that. Could you rephrase your question?',
+        'suggestions': [
+          'Try being more specific',
+          'Ask about crops, soil, pests, or weather',
+          'Use complete sentences',
+        ],
+        'color': Colors.blue,
+      };
+    }
+
+    return {
+      'icon': Icons.error_outline_rounded,
+      'title': 'Oops! Something Went Wrong',
+      'message': 'I encountered an unexpected issue. Let\'s try that again!',
+      'suggestions': [
+        'Try asking your question differently',
+        'Check your internet connection',
+        'Contact support if this persists',
+      ],
+      'color': Colors.grey,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       margin: EdgeInsets.only(bottom: bottomInset),
@@ -557,33 +624,49 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
         children: [
           _buildHeader(),
           Expanded(
-            child: BlocConsumer<ChatBloc2, ChatState2>(
+            child: BlocListener<ChatBloc2, ChatState2>(
               listener: (context, state) {
                 if (state is ChatLoaded) {
-                  setState(() {
-                    _messages.add(ChatMessage(
-                      isUser: false,
-                      text: state.response.response,
-                      timestamp: DateTime.now(),
-                      responseEntity: state.response,
-                    ));
-                  });
-                  _scrollToBottom();
+                  final lastMessage = _messages.isNotEmpty
+                      ? _messages.last
+                      : null;
+                  final isDuplicate =
+                      lastMessage != null &&
+                      !lastMessage.isUser &&
+                      lastMessage.text == state.response.response;
+
+                  if (!isDuplicate) {
+                    _messages.add(
+                      ChatMessage(
+                        isUser: false,
+                        text: state.response.response,
+                        timestamp: DateTime.now(),
+                        responseEntity: state.response,
+                      ),
+                    );
+                    _scrollToBottom();
+                    setState(() {});
+                  }
                 } else if (state is ChatError) {
-                  setState(() {
-                    _messages.add(ChatMessage(
+                  final errorInfo = _categorizeError(state.message);
+                  _messages.add(
+                    ChatMessage(
                       isUser: false,
-                      text: "❌ ${state.message}",
+                      text: errorInfo['message'],
                       timestamp: DateTime.now(),
                       isError: true,
-                    ));
-                  });
+                      errorInfo: errorInfo,
+                    ),
+                  );
                   _scrollToBottom();
+                  setState(() {});
                 }
               },
-              builder: (context, state) {
-                return _buildChatArea(state);
-              },
+              child: BlocBuilder<ChatBloc2, ChatState2>(
+                builder: (context, state) {
+                  return _buildChatArea(state);
+                },
+              ),
             ),
           ),
           _buildInputArea(),
@@ -598,13 +681,10 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade100),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
       ),
       child: Column(
         children: [
-          // Drag handle
           Container(
             width: 40,
             height: 4,
@@ -614,10 +694,8 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          // Header content
           Row(
             children: [
-              // Premium Robot Avatar
               Stack(
                 children: [
                   Container(
@@ -654,10 +732,7 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF4CAF50),
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2.5,
-                        ),
+                        border: Border.all(color: Colors.white, width: 2.5),
                       ),
                       child: Center(
                         child: Container(
@@ -719,7 +794,6 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
                   ],
                 ),
               ),
-              // Action buttons
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
@@ -775,130 +849,36 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
   }
 
   Widget _buildMessageBubble(ChatMessage message) {
+    // Check if this is an error/apology message
+    final isErrorLike =
+        !message.isUser &&
+        (message.text.toLowerCase().contains('apologize') ||
+            message.text.toLowerCase().contains('issue') ||
+            message.text.toLowerCase().contains('error') ||
+            message.text.toLowerCase().contains('try again'));
+
     return Column(
-      crossAxisAlignment: message.isUser 
-          ? CrossAxisAlignment.end 
+      crossAxisAlignment: message.isUser
+          ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
         Align(
-          alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+          alignment: message.isUser
+              ? Alignment.centerRight
+              : Alignment.centerLeft,
           child: Container(
             margin: EdgeInsets.only(bottom: message.isUser ? 16 : 8),
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.78,
             ),
-            child: Column(
-              crossAxisAlignment:
-                  message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: message.isUser
-                        ? const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-                          )
-                        : null,
-                    color: message.isUser 
-                        ? null 
-                        : message.isError 
-                            ? Colors.red.shade50 
-                            : Colors.grey.shade50,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(22),
-                      topRight: const Radius.circular(22),
-                      bottomLeft: Radius.circular(message.isUser ? 22 : 6),
-                      bottomRight: Radius.circular(message.isUser ? 6 : 22),
-                    ),
-                    boxShadow: message.isUser
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF2E7D32).withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
-                        : message.isError
-                            ? [
-                                BoxShadow(
-                                  color: Colors.red.withOpacity(0.1),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ]
-                            : null,
-                    border: message.isError && !message.isUser
-                        ? Border.all(color: Colors.red.shade200)
-                        : null,
-                  ),
-                  child: Text(
-                    message.text,
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      height: 1.45,
-                      color: message.isUser 
-                          ? Colors.white 
-                          : message.isError 
-                              ? Colors.red.shade700 
-                              : const Color(0xFF2C2C2C),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 6, left: 10, right: 10),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _formatTime(message.timestamp),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade400,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (message.isError && !message.isUser) ...[
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          onTap: _retryLastMessage,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.refresh_rounded,
-                                  size: 12,
-                                  color: Colors.green.shade700,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Retry',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.green.shade700,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            child: message.isError && !message.isUser
+                ? _buildErrorCard(message)
+                : _buildRegularMessage(message),
           ),
         ),
-        if (!message.isUser && message.responseEntity != null) ...[
+        if (!message.isUser &&
+            message.responseEntity != null &&
+            !isErrorLike) ...[
           if (message.responseEntity!.agentBreakdown.isNotEmpty)
             _buildAgentBreakdown(message.responseEntity!.agentBreakdown),
           if (message.responseEntity!.followUpQuestions.isNotEmpty)
@@ -906,6 +886,283 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
         ],
       ],
     );
+  }
+
+  Widget _buildRegularMessage(ChatMessage message) {
+    return Column(
+      crossAxisAlignment: message.isUser
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: message.isUser
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+                  )
+                : null,
+            color: message.isUser ? null : Colors.grey.shade50,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(22),
+              topRight: const Radius.circular(22),
+              bottomLeft: Radius.circular(message.isUser ? 22 : 6),
+              bottomRight: Radius.circular(message.isUser ? 6 : 22),
+            ),
+            boxShadow: message.isUser
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF2E7D32).withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          child: message.isUser
+              ? Text(
+                  message.text,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    height: 1.45,
+                    color: Colors.white,
+                  ),
+                )
+              : MarkdownBody(
+                  data: message.text,
+                  styleSheet: MarkdownStyleSheet(
+                    p: const TextStyle(
+                      fontSize: 14.5,
+                      height: 1.45,
+                      color: Color(0xFF2C2C2C),
+                    ),
+                    h1: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                    h2: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                    h3: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                    strong: const TextStyle(fontWeight: FontWeight.bold),
+                    em: const TextStyle(fontStyle: FontStyle.italic),
+                    listBullet: const TextStyle(
+                      fontSize: 14.5,
+                      color: Color(0xFF2C2C2C),
+                    ),
+                  ),
+                ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 6, left: 10, right: 10),
+          child: Text(
+            _formatTime(message.timestamp),
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade400,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorCard(ChatMessage message) {
+    final errorInfo = message.errorInfo ?? _categorizeError('Unknown error');
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _getErrorIconBackground(errorInfo['title'] as String),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  errorInfo['icon'] as IconData,
+                  color: _getErrorIconColor(errorInfo['title'] as String),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      errorInfo['title'] as String,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatTime(message.timestamp),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              errorInfo['message'] as String,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: Colors.grey.shade800,
+              ),
+            ),
+          ),
+          if (errorInfo['suggestions'] != null &&
+              (errorInfo['suggestions'] as List).isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.blue.shade100.withOpacity(0.5),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.lightbulb_outline_rounded,
+                        size: 16,
+                        color: Colors.blue.shade700,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Quick Tips',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...(errorInfo['suggestions'] as List<String>).map(
+                    (suggestion) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(top: 7, right: 10),
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade400,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              suggestion,
+                              style: TextStyle(
+                                fontSize: 13,
+                                height: 1.4,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _retryLastMessage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text(
+                'Try Again',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getErrorIconColor(String title) {
+    if (title.contains('Connection')) return Colors.orange.shade700;
+    if (title.contains('Service')) return Colors.purple.shade700;
+    if (title.contains('Session')) return Colors.red.shade700;
+    if (title.contains('Too Many')) return Colors.amber.shade700;
+    if (title.contains('Question')) return Colors.blue.shade700;
+    return Colors.grey.shade700;
+  }
+
+  Color _getErrorIconBackground(String title) {
+    if (title.contains('Connection')) return Colors.orange.shade50;
+    if (title.contains('Service')) return Colors.purple.shade50;
+    if (title.contains('Session')) return Colors.red.shade50;
+    if (title.contains('Too Many')) return Colors.amber.shade50;
+    if (title.contains('Question')) return Colors.blue.shade50;
+    return Colors.grey.shade50;
   }
 
   Widget _buildAgentBreakdown(List<AgentBreakdownEntity> agents) {
@@ -1000,12 +1257,19 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
               ),
               if (agent.confidence > 0) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
-                    color: _getConfidenceColor(agent.confidence).withOpacity(0.1),
+                    color: _getConfidenceColor(
+                      agent.confidence,
+                    ).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: _getConfidenceColor(agent.confidence).withOpacity(0.3),
+                      color: _getConfidenceColor(
+                        agent.confidence,
+                      ).withOpacity(0.3),
                     ),
                   ),
                   child: Row(
@@ -1032,12 +1296,16 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            agent.response,
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.4,
-              color: Colors.grey.shade700,
+          MarkdownBody(
+            data: agent.response,
+            styleSheet: MarkdownStyleSheet(
+              p: TextStyle(
+                fontSize: 13,
+                height: 1.4,
+                color: Colors.grey.shade700,
+              ),
+              strong: const TextStyle(fontWeight: FontWeight.bold),
+              em: const TextStyle(fontStyle: FontStyle.italic),
             ),
           ),
           if (agent.sources.isNotEmpty) ...[
@@ -1045,7 +1313,9 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: agent.sources.map((source) => _buildSourceChip(source)).toList(),
+              children: agent.sources
+                  .map((source) => _buildSourceChip(source))
+                  .toList(),
             ),
           ],
         ],
@@ -1064,11 +1334,7 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.link_rounded,
-            size: 12,
-            color: Colors.grey.shade600,
-          ),
+          Icon(Icons.link_rounded, size: 12, color: Colors.grey.shade600),
           const SizedBox(width: 4),
           Text(
             source.name,
@@ -1110,60 +1376,67 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
               ],
             ),
           ),
-          ...questions.map((question) => GestureDetector(
-                onTap: () {
-                  _controller.text = question;
-                  _sendMessage();
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.3)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF4CAF50).withOpacity(0.05),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(
-                          Icons.chat_bubble_outline_rounded,
-                          size: 14,
-                          color: const Color(0xFF2E7D32),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          question,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF2E7D32),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 12,
-                        color: const Color(0xFF4CAF50).withOpacity(0.5),
-                      ),
-                    ],
-                  ),
+          ...questions.map(
+            (question) => GestureDetector(
+              onTap: () {
+                _controller.text = question;
+                _sendMessage();
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-              )),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFF4CAF50).withOpacity(0.3),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4CAF50).withOpacity(0.05),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CAF50).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 14,
+                        color: const Color(0xFF2E7D32),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        question,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF2E7D32),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 12,
+                      color: const Color(0xFF4CAF50).withOpacity(0.5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1207,8 +1480,9 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
       curve: Curves.easeInOut,
       builder: (context, value, child) {
         final delay = index * 0.25;
-        final offset = math.sin((value * 2 * math.pi) + (delay * 2 * math.pi)) * 0.4 + 0.6;
-        
+        final offset =
+            math.sin((value * 2 * math.pi) + (delay * 2 * math.pi)) * 0.4 + 0.6;
+
         return Transform.translate(
           offset: Offset(0, -3 * offset),
           child: Container(
@@ -1234,9 +1508,7 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Colors.grey.shade100),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey.shade100)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -1248,7 +1520,7 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
       child: BlocBuilder<ChatBloc2, ChatState2>(
         builder: (context, state) {
           final isLoading = state is ChatLoading;
-          
+
           return Row(
             children: [
               Expanded(
@@ -1351,10 +1623,11 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
 
   String _formatTime(DateTime time) {
     final now = DateTime.now();
-    if (now.day == time.day && now.month == time.month && now.year == time.year) {
+    if (now.day == time.day &&
+        now.month == time.month &&
+        now.year == time.year) {
       return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
     }
     return '${time.day}/${time.month} ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 }
-

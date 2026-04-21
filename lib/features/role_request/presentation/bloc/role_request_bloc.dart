@@ -4,7 +4,7 @@ import 'role_request_event.dart';
 import 'role_request_state.dart';
 
 class RoleRequestBloc extends Bloc<RoleRequestEvent, RoleRequestState> {
-    final RoleRequestUseCases useCases;
+  final RoleRequestUseCases useCases;
 
   RoleRequestBloc({required this.useCases}) : super(RoleRequestInitial()) {
     on<CreateRoleRequestEvent>(_onCreateRoleRequest);
@@ -31,7 +31,7 @@ class RoleRequestBloc extends Bloc<RoleRequestEvent, RoleRequestState> {
 
       emit(
         RoleRequestSuccess(
-          roleRequest,
+          roleRequest: roleRequest,
           message: 'Role request submitted successfully',
         ),
       );

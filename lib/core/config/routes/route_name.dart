@@ -1,4 +1,3 @@
-// lib/core/config/routes/route_name.dart
 
 class RouteName {
   // Auth & Onboarding
@@ -28,8 +27,8 @@ class RouteName {
 
   // Product Management (UI Routes)
   static const String createProduct = '/create-product';
-  static const String productDetails = '/product-details/:id'; // With parameter
-  static const String editProduct = '/edit-product/:id'; // With parameter
+  static const String productDetails = '/product-details/:id'; 
+  static const String editProduct = '/edit-product/:id'; 
   static const String productList = '/product-list';
 
   // AI & Profile
