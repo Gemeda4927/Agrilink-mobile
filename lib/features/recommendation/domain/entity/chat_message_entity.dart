@@ -13,6 +13,7 @@ class ChatMessage {
   final DateTime timestamp;
   final bool isError;
   final ChatResponseEntity? responseEntity;
+  final Map<String, dynamic>? errorInfo;
 
   ChatMessage({
     required this.isUser,
@@ -20,5 +21,6 @@ class ChatMessage {
     required this.timestamp,
     this.isError = false,
     this.responseEntity,
+    this.errorInfo,
   });
 }
