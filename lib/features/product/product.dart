@@ -35,6 +35,7 @@ class _ProductPageState extends State<ProductPage> {
   Set<String> _categories = {'All'};
 
   bool _isProcessing = false;
+  bool _isInitialLoading = true;
 
   @override
   void initState() {
@@ -66,46 +67,50 @@ class _ProductPageState extends State<ProductPage> {
       _isProcessing = true;
     });
 
-    List<ProductModel> filtered = _allProducts.where((product) {
-      final matchesSearch =
-          _searchQuery.isEmpty ||
-          product.name.toLowerCase().contains(_searchQuery) ||
-          (product.farmerEmail?.toLowerCase().contains(_searchQuery) ??
-              false) ||
-          (product.categoryName?.toLowerCase().contains(_searchQuery) ?? false);
+    // Use Future.delayed to avoid blocking UI
+    Future.delayed(Duration.zero, () {
+      if (!mounted) return;
+      
+      List<ProductModel> filtered = _allProducts.where((product) {
+        final matchesSearch =
+            _searchQuery.isEmpty ||
+            product.name.toLowerCase().contains(_searchQuery) ||
+            (product.farmerEmail?.toLowerCase().contains(_searchQuery) ?? false) ||
+            (product.categoryName?.toLowerCase().contains(_searchQuery) ?? false);
 
-      final matchesCategory =
-          _selectedCategory == 'All' ||
-          (product.categoryName?.toLowerCase() ==
-              _selectedCategory.toLowerCase());
+        final matchesCategory =
+            _selectedCategory == 'All' ||
+            (product.categoryName?.toLowerCase() ==
+                _selectedCategory.toLowerCase());
 
-      return matchesSearch && matchesCategory;
-    }).toList();
+        return matchesSearch && matchesCategory;
+      }).toList();
 
-    // Apply sorting
-    switch (_sortBy) {
-      case 'name':
-        filtered.sort((a, b) => a.name.compareTo(b.name));
-        break;
-      case 'price_asc':
-        filtered.sort(
-          (a, b) => (double.tryParse(a.price) ?? 0).compareTo(
-            double.tryParse(b.price) ?? 0,
-          ),
-        );
-        break;
-      case 'price_desc':
-        filtered.sort(
-          (a, b) => (double.tryParse(b.price) ?? 0).compareTo(
-            double.tryParse(a.price) ?? 0,
-          ),
-        );
-        break;
-    }
+      // Apply sorting
+      switch (_sortBy) {
+        case 'name':
+          filtered.sort((a, b) => a.name.compareTo(b.name));
+          break;
+        case 'price_asc':
+          filtered.sort(
+            (a, b) => (double.tryParse(a.price) ?? 0).compareTo(
+              double.tryParse(b.price) ?? 0,
+            ),
+          );
+          break;
+        case 'price_desc':
+          filtered.sort(
+            (a, b) => (double.tryParse(b.price) ?? 0).compareTo(
+              double.tryParse(a.price) ?? 0,
+            ),
+          );
+          break;
+      }
 
-    setState(() {
-      _filteredProducts = filtered;
-      _isProcessing = false;
+      setState(() {
+        _filteredProducts = filtered;
+        _isProcessing = false;
+      });
     });
   }
 
@@ -396,24 +401,80 @@ class _ProductPageState extends State<ProductPage> {
       ),
       body: BlocBuilder<ProductBloc, ProductState>(
         builder: (context, state) {
+          // Show loading indicator while initial loading
           if (state is ProductLoading && _allProducts.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading products...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
 
           if (state is ProductError && _allProducts.isEmpty) {
             return Center(
-              child: ElevatedButton(
-                onPressed: () =>
-                    context.read<ProductBloc>().add(LoadProducts()),
-                child: const Text("Retry"),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 60,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Failed to load products',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.message,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isInitialLoading = true;
+                      });
+                      context.read<ProductBloc>().add(LoadProducts());
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             );
           }
 
           if (state is ProductLoaded) {
-            // Update products when loaded - using WidgetsBinding to avoid build-time setState
+            // Update products when loaded
             if (_allProducts != state.products) {
               _allProducts = state.products.cast<ProductModel>();
+              _isInitialLoading = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
                   _extractCategories(_allProducts);
@@ -423,8 +484,29 @@ class _ProductPageState extends State<ProductPage> {
             }
 
             final paginatedProducts = _getPaginatedProducts();
-            final totalPages = (_filteredProducts.length / _itemsPerPage)
-                .ceil();
+            final totalPages = (_filteredProducts.length / _itemsPerPage).ceil();
+
+            // Show loading overlay when filtering
+            if (_isProcessing) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Filtering products...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
 
             if (_filteredProducts.isEmpty && !_isProcessing) {
               return Center(
@@ -453,6 +535,7 @@ class _ProductPageState extends State<ProductPage> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
                         ),
                         child: const Text('Clear Search'),
                       ),
@@ -602,7 +685,9 @@ class _ProductPageState extends State<ProductPage> {
                             height: 120,
                             color: Colors.grey[200],
                             child: const Center(
-                              child: CircularProgressIndicator(),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
                             ),
                           ),
                           errorWidget: (context, url, error) => Container(
@@ -633,6 +718,7 @@ class _ProductPageState extends State<ProductPage> {
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -861,6 +947,8 @@ class _ProductPageState extends State<ProductPage> {
       SnackBar(
         content: Text('Added $amount item(s) to cart'),
         backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -870,6 +958,8 @@ class _ProductPageState extends State<ProductPage> {
       SnackBar(
         content: Text('Chat about ${product.name}'),
         backgroundColor: Colors.blue,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
