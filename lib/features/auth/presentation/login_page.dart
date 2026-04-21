@@ -54,6 +54,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       email: "gemedatechnology@gmail.com",
       password: "securepass",
     ),
+     DebugUser(
+      role: "Buyer",
+      email: "caalaaturee1@gmail.com",
+      password: "Gammee",
+    ),
   ];
 
   @override
@@ -206,12 +211,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     languageName,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: isSelected
-                          ? Colors.green.shade700
-                          : Colors.black87,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.green.shade700 : Colors.black87,
                     ),
                   ),
                   Text(
@@ -283,7 +284,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         ),
                         Row(
                           children: [
-                            // Notification Test Button (Debug)
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.white,
@@ -359,8 +359,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
     final tokenStatus = token != null ? '✅' : '❌';
 
-    final permissionStatus =
-        permissions.authorizationStatus == AuthorizationStatus.authorized
+    final permissionStatus = permissions.authorizationStatus == AuthorizationStatus.authorized
         ? '✅'
         : '❌';
 
@@ -385,7 +384,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               const SizedBox(height: 20),
 
               _buildDiagnosticRow('FCM Token', tokenStatus, safeTokenPreview),
-
               _buildDiagnosticRow(
                 'Permission',
                 permissionStatus,
@@ -437,7 +435,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ),
 
               const SizedBox(height: 10),
-
               Text(
                 'Note: FCM token is registered after login and synced with backend.',
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
@@ -646,9 +643,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   hintText: localizations.passwordHint,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
                       color: Colors.green,
                     ),
                     onPressed: () {
@@ -730,21 +725,54 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               BlocListener<AuthBloc, AuthState>(
                 listener: (context, state) {
                   if (state is AuthSuccess) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          localizations.welcomeMessage(
-                            state.authResponse.user.email,
+                    final user = state.authResponse.user;
+                    final userStatus = user.status;
+                    
+                    debugPrint('✅ Login successful!');
+                    debugPrint('   User Email: ${user.email}');
+                    debugPrint('   User Status: $userStatus');
+                    debugPrint('   User Role: ${user.role}');
+                    
+                    // Check if user is ACTIVE
+                    if (userStatus == 'ACTIVE') {
+                      // User is active - go to profile
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            localizations.welcomeMessage(user.email),
+                          ),
+                          backgroundColor: Colors.green.shade700,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        backgroundColor: Colors.green.shade700,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                      );
+                      context.goNamed(RouteName.profile);
+                    } else {
+                      // User is NOT active (PENDING, INACTIVE, etc.) - go to OTP verification
+                      debugPrint('⚠️ User is not active (Status: $userStatus). Redirecting to OTP verification...');
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Please verify your account to continue.'),
+                          backgroundColor: Colors.orange.shade700,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                      ),
-                    );
-                    context.goNamed(RouteName.profile);
+                      );
+                      
+                      // Navigate to OTP verification page
+                      context.goNamed(
+                        RouteName.verifyOtp,
+                        extra: {
+                          "identifier": user.email,
+                          "purpose": "VERIFICATION",
+                        },
+                      );
+                    }
                   }
                   if (state is AuthFailure) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -779,11 +807,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 ? null
                                 : () {
                                     if (_formKey.currentState!.validate()) {
-                                      final input = _identifierController.text
-                                          .trim();
+                                      final input = _identifierController.text.trim();
                                       final Map<String, dynamic> data = {
-                                        "password": _passwordController.text
-                                            .trim(),
+                                        "password": _passwordController.text.trim(),
                                       };
 
                                       if (input.contains('@')) {
@@ -822,14 +848,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               child: Divider(color: Colors.grey.shade400),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
                               child: Text(
                                 localizations.orDivider,
-                                style: const TextStyle(
-                                  color: Color(0xFF5E6D5C),
-                                ),
+                                style: const TextStyle(color: Color(0xFF5E6D5C)),
                               ),
                             ),
                             Expanded(
