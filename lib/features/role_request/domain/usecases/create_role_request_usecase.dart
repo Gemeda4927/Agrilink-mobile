@@ -9,6 +9,7 @@ class RoleRequestUseCases {
   Future<RoleRequest> createRoleRequest({
     required String kebeleId,
     required bool experienceInAgriculture,
+    required String requestedRole,
     required String currentRole,
     required String educationLevel,
     required bool digitalSkills,
@@ -18,6 +19,7 @@ class RoleRequestUseCases {
     return await repository.createRoleRequest(
       kebeleId: kebeleId,
       experienceInAgriculture: experienceInAgriculture,
+      requestedRole: requestedRole,
       currentRole: currentRole,
       educationLevel: educationLevel,
       digitalSkills: digitalSkills,

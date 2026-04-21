@@ -3,6 +3,7 @@ abstract class RoleRequestEvent {}
 class CreateRoleRequestEvent extends RoleRequestEvent {
   final String kebeleId;
   final bool experienceInAgriculture;
+  final String requestedRole;
   final String currentRole;
   final String educationLevel;
   final bool digitalSkills;
@@ -12,6 +13,7 @@ class CreateRoleRequestEvent extends RoleRequestEvent {
   CreateRoleRequestEvent({
     required this.kebeleId,
     required this.experienceInAgriculture,
+    required this.requestedRole,
     required this.currentRole,
     required this.educationLevel,
     required this.digitalSkills,
@@ -20,4 +22,4 @@ class CreateRoleRequestEvent extends RoleRequestEvent {
   });
 }
 
-class GetMyRoleRequestsEvent extends RoleRequestEvent {}
+class ClearRoleRequestErrorEvent extends RoleRequestEvent {}
