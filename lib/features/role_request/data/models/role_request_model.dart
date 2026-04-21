@@ -5,12 +5,12 @@ class RoleRequestModel {
   final String? userId;
   final String kebeleId;
   final bool experienceInAgriculture;
+  final String requestedRole;
   final String currentRole;
   final String educationLevel;
   final bool digitalSkills;
   final bool governmentAssigned;
   final List<String>? files;
-  final String? requestedRole;
   final String? status;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -20,12 +20,12 @@ class RoleRequestModel {
     this.userId,
     required this.kebeleId,
     required this.experienceInAgriculture,
+    required this.requestedRole,
     required this.currentRole,
     required this.educationLevel,
     required this.digitalSkills,
     required this.governmentAssigned,
     this.files,
-    this.requestedRole,
     this.status,
     this.createdAt,
     this.updatedAt,
@@ -36,13 +36,13 @@ class RoleRequestModel {
       id: json['id'],
       userId: json['userId'],
       kebeleId: json['kebeleId'],
-      experienceInAgriculture: json['experienceInAgriculture'],
-      currentRole: json['currentRole'],
-      educationLevel: json['educationLevel'],
-      digitalSkills: json['digitalSkills'],
-      governmentAssigned: json['governmentAssigned'],
+      experienceInAgriculture: json['experienceInAgriculture'] ?? false,
+      requestedRole: json['requestedRole'] ?? 'AGENT',
+      currentRole: json['currentRole'] ?? 'DA_OFFICER',
+      educationLevel: json['educationLevel'] ?? 'NONE',
+      digitalSkills: json['digitalSkills'] ?? false,
+      governmentAssigned: json['governmentAssigned'] ?? false,
       files: json['files'] != null ? List<String>.from(json['files']) : null,
-      requestedRole: json['requestedRole'],
       status: json['status'],
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
@@ -53,10 +53,12 @@ class RoleRequestModel {
     return {
       'kebeleId': kebeleId,
       'experienceInAgriculture': experienceInAgriculture,
+      'requestedRole': requestedRole,
       'currentRole': currentRole,
       'educationLevel': educationLevel,
       'digitalSkills': digitalSkills,
       'governmentAssigned': governmentAssigned,
+      if (files != null && files!.isNotEmpty) 'files': files,
     };
   }
 
@@ -66,12 +68,12 @@ class RoleRequestModel {
       userId: userId ?? '',
       kebeleId: kebeleId,
       experienceInAgriculture: experienceInAgriculture,
+      requestedRole: requestedRole,
       currentRole: currentRole,
       educationLevel: educationLevel,
       digitalSkills: digitalSkills,
       governmentAssigned: governmentAssigned,
       files: files,
-      requestedRole: requestedRole,
       status: status,
       createdAt: createdAt,
       updatedAt: updatedAt,

@@ -13,6 +13,7 @@ class RoleRequestService {
   Future<RoleRequestModel> createRoleRequest({
     required String kebeleId,
     required bool experienceInAgriculture,
+    required String requestedRole,
     required String currentRole,
     required String educationLevel,
     required bool digitalSkills,
@@ -21,6 +22,7 @@ class RoleRequestService {
   }) async {
     final missingFields = <String>[];
     if (kebeleId.isEmpty) missingFields.add('kebeleId');
+    if (requestedRole.isEmpty) missingFields.add('requestedRole');
     if (currentRole.isEmpty) missingFields.add('currentRole');
     if (educationLevel.isEmpty) missingFields.add('educationLevel');
 
@@ -31,10 +33,11 @@ class RoleRequestService {
     final formData = FormData.fromMap({
       'kebeleId': kebeleId,
       'experienceInAgriculture': experienceInAgriculture,
-      'digitalSkills': digitalSkills,
-      'governmentAssigned': governmentAssigned,
+      'requestedRole': requestedRole,
       'currentRole': currentRole,
       'educationLevel': educationLevel,
+      'digitalSkills': digitalSkills,
+      'governmentAssigned': governmentAssigned,
     });
 
     if (filePaths != null && filePaths.isNotEmpty) {

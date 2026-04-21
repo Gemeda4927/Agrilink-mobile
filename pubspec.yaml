@@ -65,6 +65,7 @@ dependencies:
 
   # SMS
   sms_autofill: ^2.4.1
+  file_picker: ^8.0.0 
 
 dev_dependencies:
   flutter_test:

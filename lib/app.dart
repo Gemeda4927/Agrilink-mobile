@@ -132,15 +132,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           },
         ),
 
-        BlocProvider<RoleRequestBloc>(
-          create: (_) {
-            final bloc = sl<RoleRequestBloc>();
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              bloc.add(GetMyRoleRequestsEvent());
-            });
-            return bloc;
-          },
-        ),
+        BlocProvider<RoleRequestBloc>(create: (_) => sl<RoleRequestBloc>()),
 
         BlocProvider<ProfileBloc>(create: (_) => sl<ProfileBloc>()),
         BlocProvider<ChatBloc>(create: (_) => sl<ChatBloc>()),

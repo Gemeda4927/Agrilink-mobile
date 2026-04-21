@@ -91,17 +91,36 @@ import 'package:agrilink/features/recommendation/data/service/chat_service.dart'
 import 'package:agrilink/features/recommendation/domain/repository/chat_repository.dart';
 import 'package:agrilink/features/recommendation/domain/usecase/send_chat_message_usecase.dart';
 import 'package:agrilink/features/recommendation/presentation/bloc/chat_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final sl = GetIt.instance;
 
 Future<void> initInjector() async {
-  // ================= FIREBASE =================
+  // ==================================================
+  // ================= INITIALIZE ASYNC FIRST =========
+  // ==================================================
+
+  // Initialize Firebase
   await Firebase.initializeApp();
+
+  // Initialize SharedPreferences FIRST (Critical for RoleRequest)
+  final sharedPreferences = await SharedPreferences.getInstance();
+  sl.registerSingleton<SharedPreferences>(sharedPreferences);
+
+  // Initialize TokenManager
+  final tokenManager = await TokenManager.getInstance();
+  sl.registerSingleton<TokenManager>(tokenManager);
+
+  // ==================================================
+  // ================= FIREBASE SERVICES ==============
+  // ==================================================
   sl.registerSingleton<FirebaseAuth>(FirebaseAuth.instance);
   sl.registerSingleton<GoogleSignIn>(GoogleSignIn());
   sl.registerLazySingleton<NotificationService>(() => NotificationService());
 
-  // ================= CORE =================
+  // ==================================================
+  // ================= CORE ===========================
+  // ==================================================
   sl.registerLazySingleton<Logger>(
     () => Logger(
       printer: PrettyPrinter(
@@ -115,11 +134,11 @@ Future<void> initInjector() async {
     ),
   );
 
-  final tokenManager = await TokenManager.getInstance();
-  sl.registerSingleton<TokenManager>(tokenManager);
   sl.registerSingleton<DioClient>(DioClient(tokenManager: sl<TokenManager>()));
 
-  // ================= LOCALIZATION =================
+  // ==================================================
+  // ================= LOCALIZATION ===================
+  // ==================================================
   sl.registerLazySingleton<LocaleProvider>(() => LocaleProvider());
   sl.registerLazySingleton<LanguageBloc>(() => LanguageBloc());
 
@@ -205,7 +224,10 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= ROLE REQUEST FEATURE ==========
   // ==================================================
-  sl.registerSingleton<RoleRequestService>(RoleRequestService(sl<DioClient>()));
+  // SharedPreferences is already registered above ✓
+  sl.registerSingleton<RoleRequestService>(
+    RoleRequestService(sl<DioClient>(), sl<SharedPreferences>()),
+  );
 
   sl.registerSingleton<RoleRequestRepository>(
     RoleRequestRepositoryImpl(sl<RoleRequestService>()),
@@ -216,7 +238,7 @@ Future<void> initInjector() async {
   );
 
   sl.registerFactory<RoleRequestBloc>(
-    () => RoleRequestBloc(sl<RoleRequestUseCases>()),
+    () => RoleRequestBloc(useCases: sl<RoleRequestUseCases>()),
   );
   // ==================================================
   // ================= PROFILE FEATURE ================
@@ -247,46 +269,35 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= PRODUCT FEATURE ================
   // ==================================================
-  // Services
   sl.registerSingleton<ProductService>(
     ProductService(dioClient: sl<DioClient>()),
   );
 
-  // Repositories
   sl.registerSingleton<ProductRepository>(
     ProductRepositoryImpl(sl<ProductService>()),
   );
 
-  // Use Cases
   sl.registerSingleton<GetProducts>(GetProducts(sl<ProductRepository>()));
-
   sl.registerSingleton<CreateProduct>(CreateProduct(sl<ProductRepository>()));
-
   sl.registerSingleton<GetMyProductsUseCase>(
     GetMyProductsUseCase(sl<ProductRepository>()),
   );
-
   sl.registerSingleton<GetProductByIdUseCase>(
     GetProductByIdUseCase(sl<ProductRepository>()),
   );
-
   sl.registerSingleton<UpdateProductUseCase>(
     UpdateProductUseCase(sl<ProductRepository>()),
   );
-
   sl.registerSingleton<DeleteProductUseCase>(
     DeleteProductUseCase(sl<ProductRepository>()),
   );
-
   sl.registerSingleton<GetProductsByCategoryUseCase>(
     GetProductsByCategoryUseCase(sl<ProductRepository>()),
   );
-
   sl.registerSingleton<SearchProductsUseCase>(
     SearchProductsUseCase(sl<ProductRepository>()),
   );
 
-  // BLoC
   sl.registerFactory<ProductBloc>(
     () => ProductBloc(
       getProducts: sl<GetProducts>(),
@@ -303,12 +314,9 @@ Future<void> initInjector() async {
   // ==================================================
   // ================= CART & PAYMENT FEATURE =========
   // ==================================================
-
-  // SERVICES & REPOSITORIES
   sl.registerSingleton<CartService>(CartService(sl<DioClient>()));
   sl.registerSingleton<CartRepository>(CartRepositoryImpl(sl<CartService>()));
 
-  // CART USE CASES
   sl.registerSingleton<GetCartUseCase>(GetCartUseCase(sl<CartRepository>()));
   sl.registerSingleton<AddToCartUseCase>(
     AddToCartUseCase(sl<CartRepository>()),
@@ -325,8 +333,6 @@ Future<void> initInjector() async {
   sl.registerSingleton<GetCartTotalUseCase>(
     GetCartTotalUseCase(sl<CartRepository>()),
   );
-
-  // PAYMENT USE CASES
   sl.registerSingleton<CheckoutUseCase>(CheckoutUseCase(sl<CartRepository>()));
   sl.registerSingleton<VerifyPaymentUseCase>(
     VerifyPaymentUseCase(sl<CartRepository>()),
@@ -341,7 +347,6 @@ Future<void> initInjector() async {
     GetOrderDetailsUseCase(sl<CartRepository>()),
   );
 
-  // CART BLOC
   sl.registerFactory<CartBloc>(
     () => CartBloc(
       getCartUseCase: sl<GetCartUseCase>(),
