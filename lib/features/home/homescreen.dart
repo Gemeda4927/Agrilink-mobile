@@ -74,7 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       {
         'title': 'Weather Alert',
-        'body': 'Rain expected in your area tomorrow. Plan your farming activities.',
+        'body':
+            'Rain expected in your area tomorrow. Plan your farming activities.',
         'time': '5 hours ago',
         'icon': '⛈️',
       },
@@ -117,7 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.green.shade50,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(25),
+              ),
             ),
             child: Row(
               children: [
@@ -127,7 +130,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.green.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(Icons.notifications_active, color: Colors.green.shade700),
+                  child: Icon(
+                    Icons.notifications_active,
+                    color: Colors.green.shade700,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -153,11 +159,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.notifications_off, size: 80, color: Colors.grey.shade400),
+                    Icon(
+                      Icons.notifications_off,
+                      size: 80,
+                      color: Colors.grey.shade400,
+                    ),
                     const SizedBox(height: 16),
-                    Text('No notifications yet', style: TextStyle(fontSize: 18, color: Colors.grey.shade600)),
+                    Text(
+                      'No notifications yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('We\'ll notify you when something important happens', style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+                    Text(
+                      'We\'ll notify you when something important happens',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -175,7 +197,9 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_notifications.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.grey.shade200))),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              ),
               child: TextButton(
                 onPressed: () {
                   setState(() {
@@ -183,11 +207,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     _notificationCount = 0;
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('All notifications cleared'), behavior: SnackBarBehavior.floating),
+                    const SnackBar(
+                      content: Text('All notifications cleared'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
                   );
                   Navigator.pop(context);
                 },
-                child: Text('Clear All', style: TextStyle(color: Colors.red.shade400)),
+                child: Text(
+                  'Clear All',
+                  style: TextStyle(color: Colors.red.shade400),
+                ),
               ),
             ),
         ],
@@ -214,7 +244,10 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
-              child: Text(notification['icon'] ?? '📢', style: const TextStyle(fontSize: 24)),
+              child: Text(
+                notification['icon'] ?? '📢',
+                style: const TextStyle(fontSize: 24),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -222,15 +255,34 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(notification['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(
+                  notification['title']!,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(notification['body']!, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                Text(
+                  notification['body']!,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
                 const SizedBox(height: 4),
-                Text(notification['time']!, style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
+                Text(
+                  notification['time']!,
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+                ),
               ],
             ),
           ),
-          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+          ),
         ],
       ),
     );
@@ -275,18 +327,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         // AI Chatbot Floating Button - Positioned above bottom navigation
-        const Positioned(
-          bottom: 80, // Adjusted to sit above bottom nav bar
-          right: 20,
-          child: AIChatbotFAB(),
-        ),
+        const Positioned(bottom: 80, right: 20, child: AIChatbotFAB()),
       ],
     );
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context, AppLocalizations t) {
     return AppBar(
-      title: Text(t.appTitle, style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+      title: Text(
+        t.appTitle,
+        style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+      ),
       centerTitle: true,
       elevation: 0,
       actions: [
@@ -306,11 +357,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 top: 8,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
                   child: Text(
                     '$_notificationCount',
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -351,7 +412,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMainContent(BuildContext context, AuthSuccess authState, AppLocalizations t) {
+  Widget _buildMainContent(
+    BuildContext context,
+    AuthSuccess authState,
+    AppLocalizations t,
+  ) {
     final user = authState.authResponse.user;
     final greeting = _getTimeBasedGreeting(context);
     final emoji = _getGreetingEmoji();
@@ -395,7 +460,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.green.shade200, blurRadius: 10, offset: const Offset(0, 5)),
+          BoxShadow(
+            color: Colors.green.shade200,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
         ],
       ),
       child: Column(
@@ -408,25 +477,50 @@ class _HomeScreenState extends State<HomeScreen> {
               Flexible(
                 child: Text(
                   greeting,
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(user.email, style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9)), overflow: TextOverflow.ellipsis),
+          Text(
+            user.email,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white.withOpacity(0.9),
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-            child: Text(user.role, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              user.role,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context, AppLocalizations t, String role) {
+  Widget _buildQuickActions(
+    BuildContext context,
+    AppLocalizations t,
+    String role,
+  ) {
     final isFarmer = _isPrivilegedRole(role);
 
     return Column(
@@ -436,13 +530,24 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(12)),
-              child: Icon(Icons.flash_on, color: Colors.orange.shade800, size: _iconSize),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.flash_on,
+                color: Colors.orange.shade800,
+                size: _iconSize,
+              ),
             ),
             const SizedBox(width: _standardSpacing),
             Text(
               t.quickActions ?? 'Quick Actions',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800]),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
             ),
           ],
         ),
@@ -477,6 +582,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 label: t.myOrders ?? 'My Orders',
                 color: Colors.deepOrange,
                 onTap: () => context.pushNamed(RouteName.myOrders),
+              ),
+              const SizedBox(width: _standardSpacing),
+              // ================= MARKET INSIGHT QUICK ACTION =================
+              _buildQuickActionCard(
+                context: context,
+                icon: Icons.trending_up,
+                label: 'Market Prices',
+                color: Colors.green,
+                onTap: () => context.pushNamed(RouteName.market),
               ),
               const SizedBox(width: _standardSpacing),
               if (isFarmer) ...[
@@ -518,7 +632,13 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(_borderRadius),
-          boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -526,14 +646,20 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 4),
             Flexible(
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w500,
+                ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -550,11 +676,25 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(12)),
-          child: Icon(Icons.category, color: Colors.green.shade800, size: _iconSize),
+          decoration: BoxDecoration(
+            color: Colors.green.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.category,
+            color: Colors.green.shade800,
+            size: _iconSize,
+          ),
         ),
         const SizedBox(width: _standardSpacing),
-        Text(t.exploreCategories, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
+        Text(
+          t.exploreCategories,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
       ],
     );
   }
@@ -567,26 +707,38 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.green)),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                ),
                 SizedBox(height: 16),
                 Text('Loading amazing categories...'),
               ],
             ),
           );
         }
-        if (state is CategoryLoaded) return _buildModernCategoryGrid(context, state);
-        if (state is SubCategoryLoaded) return _buildModernSubCategoryList(context, state);
+        if (state is CategoryLoaded)
+          return _buildModernCategoryGrid(context, state);
+        if (state is SubCategoryLoaded)
+          return _buildModernSubCategoryList(context, state);
         if (state is CategoryError) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 60, color: Colors.orange.shade700),
+                Icon(
+                  Icons.error_outline,
+                  size: 60,
+                  color: Colors.orange.shade700,
+                ),
                 const SizedBox(height: 16),
-                Text(state.message, style: TextStyle(color: Colors.grey.shade700, fontSize: 16)),
+                Text(
+                  state.message,
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+                ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => context.read<CategoryBloc>().add(LoadCategories()),
+                  onPressed: () =>
+                      context.read<CategoryBloc>().add(LoadCategories()),
                   child: const Text('Retry'),
                 ),
               ],
@@ -619,7 +771,11 @@ class _HomeScreenState extends State<HomeScreen> {
           [Colors.pink.shade600, Colors.pinkAccent],
         ];
         final gradientColors = colors[index % colors.length];
-        return _buildCategoryCard(context: context, category: category, gradientColors: gradientColors);
+        return _buildCategoryCard(
+          context: context,
+          category: category,
+          gradientColors: gradientColors,
+        );
       },
     );
   }
@@ -630,7 +786,8 @@ class _HomeScreenState extends State<HomeScreen> {
     required List<Color> gradientColors,
   }) {
     return GestureDetector(
-      onTap: () => context.read<CategoryBloc>().add(LoadSubCategories(category.id)),
+      onTap: () =>
+          context.read<CategoryBloc>().add(LoadSubCategories(category.id)),
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -639,7 +796,13 @@ class _HomeScreenState extends State<HomeScreen> {
             colors: [gradientColors[0], gradientColors[1]],
           ),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: gradientColors[0].withOpacity(0.2), blurRadius: 6, offset: const Offset(0, 3))],
+          boxShadow: [
+            BoxShadow(
+              color: gradientColors[0].withOpacity(0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Center(
           child: Padding(
@@ -649,13 +812,24 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-                  child: Icon(_getCategoryIcon(category.name), color: Colors.white, size: 28),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _getCategoryIcon(category.name),
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   category.name,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -668,7 +842,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildModernSubCategoryList(BuildContext context, SubCategoryLoaded state) {
+  Widget _buildModernSubCategoryList(
+    BuildContext context,
+    SubCategoryLoaded state,
+  ) {
     final t = AppLocalizations.of(context)!;
     final subs = state.subCategories;
 
@@ -683,16 +860,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [Colors.green.shade600, Colors.green.shade800]),
+                    gradient: LinearGradient(
+                      colors: [Colors.green.shade600, Colors.green.shade800],
+                    ),
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.green.shade200, blurRadius: 8, offset: const Offset(0, 4))],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.shade200,
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: const Icon(Icons.arrow_back, color: Colors.white),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(t.backToCategories, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87)),
+                child: Text(
+                  t.backToCategories,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
               ),
             ],
           ),
@@ -703,11 +895,21 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Icon(Icons.grid_view, color: Colors.orange.shade700),
               ),
               const SizedBox(width: 12),
-              Text('Available Subcategories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade800)),
+              Text(
+                'Available Subcategories',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
             ],
           ),
         ),
@@ -731,7 +933,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       [Colors.pink, Colors.pinkAccent],
                     ];
                     final gradientColors = colors[index % colors.length];
-                    return _buildSubCategoryCard(context: context, subCategory: sub, gradientColors: gradientColors);
+                    return _buildSubCategoryCard(
+                      context: context,
+                      subCategory: sub,
+                      gradientColors: gradientColors,
+                    );
                   },
                 ),
         ),
@@ -754,7 +960,13 @@ class _HomeScreenState extends State<HomeScreen> {
             colors: [gradientColors[0], gradientColors[1]],
           ),
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(color: gradientColors[0].withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: gradientColors[0].withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Center(
           child: Padding(
@@ -764,13 +976,24 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-                  child: Icon(_getSubCategoryIcon(subCategory.name), color: Colors.white, size: 22),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    _getSubCategoryIcon(subCategory.name),
+                    color: Colors.white,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   subCategory.name,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.white),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -813,9 +1036,15 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(Icons.category_outlined, size: 80, color: Colors.grey.shade400),
           const SizedBox(height: 16),
-          Text('No subcategories available', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+          Text(
+            'No subcategories available',
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+          ),
           const SizedBox(height: 8),
-          Text('Check back later for more options', style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+          Text(
+            'Check back later for more options',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+          ),
         ],
       ),
     );
@@ -846,16 +1075,66 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.zero,
           children: [
             _buildDrawerHeader(t),
-            _buildDrawerItem(context: context, icon: Icons.home, title: t.home, route: RouteName.home, color: Colors.green),
-            _buildDrawerItem(context: context, icon: Icons.store, title: t.products, route: RouteName.product, color: Colors.orange),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.home,
+              title: t.home,
+              route: RouteName.home,
+              color: Colors.green,
+            ),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.store,
+              title: t.products,
+              route: RouteName.product,
+              color: Colors.orange,
+            ),
+            // ================= MARKET INSIGHT DRAWER ITEM =================
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.trending_up,
+              title: 'Market Insights',
+              route: RouteName.market,
+              color: Colors.green,
+            ),
             if (isFarmer) ...[
-              _buildDrawerItem(context: context, icon: Icons.inventory_2, title: t.myProducts, route: RouteName.myProducts, color: Colors.blue.shade700),
-              _buildDrawerItem(context: context, icon: Icons.add_box, title: t.postProduct, route: RouteName.createProduct, color: Colors.green.shade700),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.inventory_2,
+                title: t.myProducts,
+                route: RouteName.myProducts,
+                color: Colors.blue.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.add_box,
+                title: t.postProduct,
+                route: RouteName.createProduct,
+                color: Colors.green.shade700,
+              ),
             ],
-            _buildDrawerItem(context: context, icon: Icons.shopping_cart, title: t.myOrders ?? 'My Orders', route: RouteName.myOrders, color: Colors.deepOrange.shade700),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.shopping_cart,
+              title: t.myOrders ?? 'My Orders',
+              route: RouteName.myOrders,
+              color: Colors.deepOrange.shade700,
+            ),
             if (isFarmer)
-              _buildDrawerItem(context: context, icon: Icons.receipt_long, title: t.ordersReceived ?? 'Orders Received', route: RouteName.myOrders, color: Colors.teal),
-            _buildDrawerItem(context: context, icon: Icons.chat_bubble_outline, title: 'AI Chatbot', route: RouteName.aiRecommendation, color: Colors.green.shade600),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.receipt_long,
+                title: t.ordersReceived ?? 'Orders Received',
+                route: RouteName.myOrders,
+                color: Colors.teal,
+              ),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.chat_bubble_outline,
+              title: 'AI Chatbot',
+              route: RouteName.aiRecommendation,
+              color: Colors.green.shade600,
+            ),
             const Divider(),
             _buildRoleRequestSection(context, t, role, userId),
           ],
@@ -867,7 +1146,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDrawerHeader(AppLocalizations t) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [Colors.green.shade700, Colors.green.shade500]),
+        gradient: LinearGradient(
+          colors: [Colors.green.shade700, Colors.green.shade500],
+        ),
       ),
       child: DrawerHeader(
         decoration: const BoxDecoration(color: Colors.transparent),
@@ -877,9 +1158,22 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Icon(Icons.agriculture, color: Colors.white, size: 40),
             const SizedBox(height: 8),
-            Text(t.appTitle, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+            Text(
+              t.appTitle,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(t.farmingCompanion, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
+            Text(
+              t.farmingCompanion,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 14,
+              ),
+            ),
           ],
         ),
       ),
@@ -904,7 +1198,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRoleRequestSection(BuildContext context, AppLocalizations t, String role, String userId) {
+  Widget _buildRoleRequestSection(
+    BuildContext context,
+    AppLocalizations t,
+    String role,
+    String userId,
+  ) {
     if (role == 'AGENT') {
       return _buildStatusCard(
         icon: Icons.handshake,
@@ -919,18 +1218,27 @@ class _HomeScreenState extends State<HomeScreen> {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(color: Colors.blue.shade100, borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+          color: Colors.blue.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: const Row(
           children: [
             Icon(Icons.admin_panel_settings, color: Colors.blue),
             SizedBox(width: 12),
-            Expanded(child: Text('Administrator Access', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+            Expanded(
+              child: Text(
+                'Administrator Access',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+            ),
             Icon(Icons.verified, color: Colors.blue, size: 20),
           ],
         ),
       );
     }
-    if (_cachedRequestStatus == 'PENDING') return _buildPendingStatusCard(context, t);
+    if (_cachedRequestStatus == 'PENDING')
+      return _buildPendingStatusCard(context, t);
     if (_cachedRequestStatus == 'APPROVED') {
       return _buildStatusCard(
         icon: Icons.check_circle,
@@ -941,7 +1249,8 @@ class _HomeScreenState extends State<HomeScreen> {
         statusColor: Colors.green,
       );
     }
-    if (_cachedRequestStatus == 'REJECTED') return _buildRejectedStatusCard(context, t);
+    if (_cachedRequestStatus == 'REJECTED')
+      return _buildRejectedStatusCard(context, t);
     return _buildRequestButton(context, t, userId);
   }
 
@@ -956,16 +1265,34 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
           Icon(icon, color: iconColor),
           const SizedBox(width: 12),
-          Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(color: statusColor, borderRadius: BorderRadius.circular(12)),
-            child: Text(statusLabel, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              statusLabel,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -976,7 +1303,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
           const Icon(Icons.pending, color: Colors.orange),
@@ -985,15 +1315,34 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(t.roleRequestPending ?? 'Role Request Pending', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                Text('${t.statusLabel ?? 'Status'}: PENDING', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                Text(
+                  t.roleRequestPending ?? 'Role Request Pending',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  '${t.statusLabel ?? 'Status'}: PENDING',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                ),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12)),
-            child: const Text('PENDING', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'PENDING',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -1004,7 +1353,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1012,7 +1364,15 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const Icon(Icons.cancel, color: Colors.red, size: 20),
               const SizedBox(width: 12),
-              Expanded(child: Text(t.roleRequestRejected ?? 'Request Rejected', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+              Expanded(
+                child: Text(
+                  t.roleRequestRejected ?? 'Request Rejected',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -1027,8 +1387,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   context.pushNamed(RouteName.roleRequest, extra: user);
                 }
               },
-              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 30)),
-              child: Text(t.reapply ?? 'Reapply', style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.w600)),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 30),
+              ),
+              child: Text(
+                t.reapply ?? 'Reapply',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.green.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],
@@ -1036,13 +1406,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRequestButton(BuildContext context, AppLocalizations t, String userId) {
+  Widget _buildRequestButton(
+    BuildContext context,
+    AppLocalizations t,
+    String userId,
+  ) {
     if (userId.isEmpty) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         leading: Icon(Icons.handshake, color: Colors.green.shade700),
-        title: Text(t.requestAgentRole ?? 'Request Agent Role', style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87)),
+        title: Text(
+          t.requestAgentRole ?? 'Request Agent Role',
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
         trailing: Icon(Icons.arrow_forward, color: Colors.green.shade700),
         onTap: () {
           final authState = context.read<AuthBloc>().state;

@@ -1,5 +1,6 @@
 import 'package:agrilink/core/services/notification_service.dart';
 import 'package:agrilink/features/cart/data/repository/cartRemoteDataSourceImpl.dart';
+import 'package:agrilink/features/insight/data/services/marketService.dart';
 import 'package:agrilink/features/product/domain/usecases/delete_product.dart';
 import 'package:agrilink/features/product/domain/usecases/get_my_products.dart';
 import 'package:agrilink/features/product/domain/usecases/get_product_by_id.dart';
@@ -91,6 +92,13 @@ import 'package:agrilink/features/recommendation/data/service/chat_service.dart'
 import 'package:agrilink/features/recommendation/domain/repository/chat_repository.dart';
 import 'package:agrilink/features/recommendation/domain/usecase/send_chat_message_usecase.dart';
 import 'package:agrilink/features/recommendation/presentation/bloc/chat_bloc.dart';
+
+// ================= MARKET INSIGHT =================
+import 'package:agrilink/features/insight/data/repository/market_repository_impl.dart';
+import 'package:agrilink/features/insight/domain/repository/i_market_repository.dart';
+import 'package:agrilink/features/insight/domain/usecase/market_usecases.dart';
+import 'package:agrilink/features/insight/presentation/bloc/market_bloc.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 final sl = GetIt.instance;
@@ -240,6 +248,7 @@ Future<void> initInjector() async {
   sl.registerFactory<RoleRequestBloc>(
     () => RoleRequestBloc(useCases: sl<RoleRequestUseCases>()),
   );
+
   // ==================================================
   // ================= PROFILE FEATURE ================
   // ==================================================
@@ -435,6 +444,52 @@ Future<void> initInjector() async {
   );
   sl.registerFactory<ChatBloc2>(
     () => ChatBloc2(sendMessageUseCase: sl<SendChatMessageUseCase2>()),
+  );
+
+  // ==================================================
+  // ================= MARKET INSIGHT FEATURE =========
+  // ==================================================
+
+  // Register Service
+  sl.registerLazySingleton<MarketService>(
+    () => MarketService(dioClient: sl<DioClient>()),
+  );
+
+  // Register Repository
+  sl.registerLazySingleton<IMarketRepository>(
+    () => MarketRepositoryImpl(marketService: sl<MarketService>()),
+  );
+
+  // Register Use Cases
+  sl.registerLazySingleton<GetAllProductsUseCase>(
+    () => GetAllProductsUseCase(sl<IMarketRepository>()),
+  );
+
+  sl.registerLazySingleton<SubmitMarketPriceUseCase>(
+    () => SubmitMarketPriceUseCase(sl<IMarketRepository>()),
+  );
+
+  sl.registerLazySingleton<GetAllMarketPricesUseCase>(
+    () => GetAllMarketPricesUseCase(sl<IMarketRepository>()),
+  );
+
+  sl.registerLazySingleton<GetApprovedMarketPricesUseCase>(
+    () => GetApprovedMarketPricesUseCase(sl<IMarketRepository>()),
+  );
+
+  sl.registerLazySingleton<UpdateMarketPriceUseCase>(
+    () => UpdateMarketPriceUseCase(sl<IMarketRepository>()),
+  );
+
+  // Register BLoC
+  sl.registerFactory<MarketBloc>(
+    () => MarketBloc(
+      getAllProductsUseCase: sl<GetAllProductsUseCase>(),
+      submitMarketPriceUseCase: sl<SubmitMarketPriceUseCase>(),
+      getAllMarketPricesUseCase: sl<GetAllMarketPricesUseCase>(),
+      getApprovedMarketPricesUseCase: sl<GetApprovedMarketPricesUseCase>(),
+      updateMarketPriceUseCase: sl<UpdateMarketPriceUseCase>(),
+    ),
   );
 }
 

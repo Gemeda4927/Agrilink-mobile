@@ -13,6 +13,9 @@ import 'package:agrilink/features/cart/presentation/checkout_screen.dart';
 import 'package:agrilink/features/cart/presentation/order_confirmation_screen.dart';
 import 'package:agrilink/features/chat/presentation/chat.dart';
 import 'package:agrilink/features/home/homescreen.dart';
+import 'package:agrilink/features/insight/presentation/screens/market_screen.dart';
+import 'package:agrilink/features/insight/presentation/screens/submit_price_screen.dart';
+import 'package:agrilink/features/insight/presentation/screens/approved_prices_screen.dart';
 import 'package:agrilink/features/my_product/presentation/my_products_screen.dart';
 import 'package:agrilink/features/order/presentation/screens/my_orders_screen.dart';
 import 'package:agrilink/features/product/FarmerProfilePage.dart';
@@ -30,6 +33,8 @@ import 'package:agrilink/features/role_request/presentation/role_request_screen.
 import 'package:agrilink/injector.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../features/insight/data/model/market_insight.dart';
 
 // ================= PLACEHOLDER SCREEN =================
 class PlaceholderScreen extends StatelessWidget {
@@ -168,6 +173,33 @@ final GoRouter appRouter = GoRouter(
       path: RouteName.myOrders,
       name: RouteName.myOrders,
       builder: (context, state) => const MyOrdersScreen(),
+    ),
+
+    // ================= MARKET INSIGHT ROUTES (Public) =================
+
+    // Market Screen Route
+    GoRoute(
+      path: RouteName.market,
+      name: RouteName.market,
+      builder: (context, state) => const MarketScreen(),
+    ),
+
+    // Submit Price Route
+    GoRoute(
+      path: RouteName.submitPrice,
+      name: RouteName.submitPrice,
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final preSelectedProduct = extra?['preSelectedProduct'] as Product?;
+        return SubmitPriceScreen(preSelectedProduct: preSelectedProduct);
+      },
+    ),
+
+    // Approved Prices Route
+    GoRoute(
+      path: RouteName.approvedPrices,
+      name: RouteName.approvedPrices,
+      builder: (context, state) => const ApprovedPricesScreen(),
     ),
 
     // ================= MAIN APP SHELL (Authenticated Routes) =================
