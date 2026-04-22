@@ -2,6 +2,8 @@ import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/core/localization/language_bloc.dart';
 import 'package:agrilink/core/services/notification_service.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
+import 'package:agrilink/features/insight/presentation/bloc/market_bloc.dart';
+import 'package:agrilink/features/insight/presentation/bloc/market_event.dart';
 import 'package:agrilink/features/notification/presentation/notification_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_event.dart';
@@ -103,6 +105,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             return bloc;
           },
         ),
+
         BlocProvider<ProductBloc>(
           create: (_) {
             final bloc = sl<ProductBloc>();
@@ -112,6 +115,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             return bloc;
           },
         ),
+
         BlocProvider<RegistrationBloc>(
           create: (_) {
             final bloc = sl<RegistrationBloc>();
@@ -121,6 +125,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             return bloc;
           },
         ),
+
         // Buyer Orders
         BlocProvider<OrderBloc>(
           create: (_) {
@@ -133,14 +138,27 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ),
 
         BlocProvider<RoleRequestBloc>(create: (_) => sl<RoleRequestBloc>()),
-
         BlocProvider<ProfileBloc>(create: (_) => sl<ProfileBloc>()),
         BlocProvider<ChatBloc>(create: (_) => sl<ChatBloc>()),
+
         BlocProvider<CartBloc>(
           create: (_) {
             final bloc = sl<CartBloc>();
             WidgetsBinding.instance.addPostFrameCallback((_) {
               bloc.add(LoadCart());
+            });
+            return bloc;
+          },
+        ),
+
+        // ================= MARKET INSIGHT BLoC =================
+        BlocProvider<MarketBloc>(
+          create: (_) {
+            final bloc = sl<MarketBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              // Load initial data when market screen is accessed
+              // You can optionally load products here if needed
+              // bloc.add(GetAllProductsEvent());
             });
             return bloc;
           },

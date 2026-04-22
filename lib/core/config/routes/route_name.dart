@@ -1,4 +1,3 @@
-
 class RouteName {
   // Auth & Onboarding
   static const String splash = '/splash';
@@ -27,8 +26,8 @@ class RouteName {
 
   // Product Management (UI Routes)
   static const String createProduct = '/create-product';
-  static const String productDetails = '/product-details/:id'; 
-  static const String editProduct = '/edit-product/:id'; 
+  static const String productDetails = '/product-details/:id';
+  static const String editProduct = '/edit-product/:id';
   static const String productList = '/product-list';
 
   // AI & Profile
@@ -37,6 +36,11 @@ class RouteName {
   static const String viewProfile = '/view-profile';
   static const String updateProfile = '/update-profile';
   static const String farmerProfile = '/farmerProfile';
+
+  // Market Insight Routes
+  static const String market = '/market';
+  static const String submitPrice = '/submit-price';
+  static const String approvedPrices = '/approved-prices';
 
   // Other screens
   static const String todo = '/todo';
