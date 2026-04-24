@@ -9,6 +9,9 @@ class AppLocalizationsAm extends AppLocalizations {
   AppLocalizationsAm([String locale = 'am']) : super(locale);
 
   @override
+  String get appTitle => 'አግሪሊንክ';
+
+  @override
   String get welcomeBack => 'እንኳን ደህና መጡ';
 
   @override
@@ -69,9 +72,6 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get selectLanguage => 'ቋንቋ ይምረጡ';
-
-  @override
-  String get appTitle => 'አግሪሊንክ';
 
   @override
   String get goodMorning => 'እንደምን አደሩ';

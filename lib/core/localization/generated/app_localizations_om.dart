@@ -9,6 +9,9 @@ class AppLocalizationsOm extends AppLocalizations {
   AppLocalizationsOm([String locale = 'om']) : super(locale);
 
   @override
+  String get appTitle => 'AgriLink';
+
+  @override
   String get welcomeBack => 'Baga nagaan dhuftan!';
 
   @override
@@ -73,16 +76,13 @@ class AppLocalizationsOm extends AppLocalizations {
   String get selectLanguage => 'Afaan filadhu';
 
   @override
-  String get appTitle => 'AgriLink';
-
-  @override
   String get goodMorning => 'Akkam bulte';
 
   @override
   String get goodAfternoon => 'Akkam ooltan';
 
   @override
-  String get goodEvening => 'Akkam galgaloofte';
+  String get goodEvening => 'Akkam ooltan';
 
   @override
   String get logout => 'Ba\'i';

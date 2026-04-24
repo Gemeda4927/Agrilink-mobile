@@ -1075,20 +1075,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.zero,
           children: [
             _buildDrawerHeader(t),
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.home,
-              title: t.home,
-              route: RouteName.home,
-              color: Colors.green,
-            ),
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.store,
-              title: t.products,
-              route: RouteName.product,
-              color: Colors.orange,
-            ),
+
             // ================= MARKET INSIGHT DRAWER ITEM =================
             _buildDrawerItem(
               context: context,
