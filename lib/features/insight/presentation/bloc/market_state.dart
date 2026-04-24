@@ -30,6 +30,16 @@ class MarketPriceUpdated extends MarketState {
   MarketPriceUpdated(this.response);
 }
 
+class MarketPriceApproved extends MarketState {
+  final MarketPriceResponse response;
+  MarketPriceApproved(this.response);
+}
+
+class MarketPriceRejected extends MarketState {
+  final MarketPriceResponse response;
+  MarketPriceRejected(this.response);
+}
+
 // Error State
 class MarketError extends MarketState {
   final String message;

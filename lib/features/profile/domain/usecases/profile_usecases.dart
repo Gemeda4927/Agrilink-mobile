@@ -15,6 +15,8 @@ class CreateProfileUseCase {
         fullName: params.fullName.trim(),
         kebeleId: params.kebeleId,
         image: params.image,
+        latitude: params.latitude,
+        longitude: params.longitude,
       );
 
       print('✅ Profile created');
@@ -40,6 +42,8 @@ class UpdateProfileUseCase {
         fullName: params.fullName.trim(),
         kebeleId: params.kebeleId,
         image: params.image,
+        latitude: params.latitude,
+        longitude: params.longitude,
       );
 
       print('✅ Profile updated');
@@ -77,11 +81,15 @@ class CreateProfileParams {
   final String fullName;
   final String kebeleId;
   final File? image;
+  final double? latitude;
+  final double? longitude;
 
   CreateProfileParams({
     required this.fullName,
     required this.kebeleId,
     this.image,
+    this.latitude,
+    this.longitude,
   });
 }
 
@@ -89,10 +97,14 @@ class UpdateProfileParams {
   final String fullName;
   final String kebeleId;
   final File? image;
+  final double? latitude;
+  final double? longitude;
 
   UpdateProfileParams({
     required this.fullName,
     required this.kebeleId,
     this.image,
+    this.latitude,
+    this.longitude,
   });
 }

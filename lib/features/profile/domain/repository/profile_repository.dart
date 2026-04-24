@@ -6,12 +6,16 @@ abstract class ProfileRepository {
     required String fullName,
     required String kebeleId, 
     File? image,
+    double? latitude,
+    double? longitude,
   });
 
   Future<UpdateProfileModel> updateProfile({
     required String fullName,
     required String kebeleId, 
     File? image,
+    double? latitude,
+    double? longitude,
   });
 
   Future<GetProfileModel> getProfile(String userId);

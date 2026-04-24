@@ -1,4 +1,3 @@
-// features/insight/presentation/screens/approved_prices_screen.dart
 import 'package:agrilink/features/insight/data/model/market_insight.dart';
 import 'package:agrilink/features/insight/presentation/bloc/market_event.dart';
 import 'package:agrilink/features/insight/presentation/bloc/market_state.dart';
@@ -18,6 +17,10 @@ class _ApprovedPricesScreenState extends State<ApprovedPricesScreen> {
   @override
   void initState() {
     super.initState();
+    _loadApprovedPrices();
+  }
+
+  void _loadApprovedPrices() {
     context.read<MarketBloc>().add(GetApprovedMarketPricesEvent());
   }
 
@@ -29,9 +32,7 @@ class _ApprovedPricesScreenState extends State<ApprovedPricesScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<MarketBloc>().add(GetApprovedMarketPricesEvent());
-            },
+            onPressed: _loadApprovedPrices,
           ),
         ],
       ),
@@ -41,18 +42,7 @@ class _ApprovedPricesScreenState extends State<ApprovedPricesScreen> {
             return const Center(child: CircularProgressIndicator());
           } else if (state is MarketPricesLoaded) {
             if (state.marketPrices.isEmpty) {
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.check_circle, size: 64, color: Colors.green),
-                    SizedBox(height: 16),
-                    Text('No approved prices yet'),
-                    SizedBox(height: 8),
-                    Text('Submitted prices will appear here once approved'),
-                  ],
-                ),
-              );
+              return _buildEmptyState();
             }
             return ListView.builder(
               padding: const EdgeInsets.all(8),
@@ -62,33 +52,46 @@ class _ApprovedPricesScreenState extends State<ApprovedPricesScreen> {
                 return MarketPriceCard(
                   marketPrice: price,
                   showStatus: true,
-                  onTap: () {
-                    _showPriceDetails(price);
-                  },
+                  onTap: () => _showPriceDetails(price),
                 );
               },
             );
           } else if (state is MarketError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Error: ${state.message}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<MarketBloc>().add(
-                        GetApprovedMarketPricesEvent(),
-                      );
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
+            return _buildErrorState(state.message);
           }
           return const Center(child: Text('No data available'));
         },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.check_circle, size: 64, color: Colors.green),
+          SizedBox(height: 16),
+          Text('No approved prices yet'),
+          SizedBox(height: 8),
+          Text('Submitted prices will appear here once approved'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Error: $message'),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadApprovedPrices,
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }
@@ -102,17 +105,15 @@ class _ApprovedPricesScreenState extends State<ApprovedPricesScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Product: ${price.product?.name ?? 'N/A'}'),
-            const SizedBox(height: 8),
-            Text('Price: ${price.price} ETB'),
-            const SizedBox(height: 8),
-            Text('Woreda: ${price.woreda?.name ?? 'N/A'}'),
-            const SizedBox(height: 8),
-            Text('Date: ${price.date.split('T')[0]}'),
-            const SizedBox(height: 8),
-            Text('Status: ${price.status}'),
-            const SizedBox(height: 8),
-            Text('Location: ${price.latitude}, ${price.longitude}'),
+            _buildDetailRow('Product', price.product?.name ?? 'N/A'),
+            _buildDetailRow('Price', '${price.price} ETB'),
+            _buildDetailRow('Woreda', price.woreda?.name ?? 'N/A'),
+            _buildDetailRow('Date', price.date.split('T')[0]),
+            _buildDetailRow('Status', price.status),
+            _buildDetailRow(
+              'Location',
+              '${price.latitude}, ${price.longitude}',
+            ),
           ],
         ),
         actions: [
@@ -120,6 +121,27 @@ class _ApprovedPricesScreenState extends State<ApprovedPricesScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(value),
         ],
       ),
     );

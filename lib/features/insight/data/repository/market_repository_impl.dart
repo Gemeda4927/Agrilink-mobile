@@ -18,6 +18,15 @@ class MarketRepositoryImpl implements IMarketRepository {
   }
 
   @override
+  Future<AllProductsResponse> getPublicProducts() async {
+    try {
+      return await marketService.getPublicProducts();
+    } catch (e) {
+      throw Exception('Failed to get public products: $e');
+    }
+  }
+
+  @override
   Future<MarketPriceResponse> submitMarketPrice(
     MarketPriceRequest request,
   ) async {
@@ -47,6 +56,15 @@ class MarketRepositoryImpl implements IMarketRepository {
   }
 
   @override
+  Future<List<MarketPriceResponse>> getMyMarketPrices() async {
+    try {
+      return await marketService.getMyMarketPrices();
+    } catch (e) {
+      throw Exception('Failed to get my market prices: $e');
+    }
+  }
+
+  @override
   Future<MarketPriceResponse> updateMarketPrice(
     String id,
     MarketPriceRequest request,
@@ -55,6 +73,24 @@ class MarketRepositoryImpl implements IMarketRepository {
       return await marketService.updateMarketPrice(id, request);
     } catch (e) {
       throw Exception('Failed to update market price: $e');
+    }
+  }
+
+  @override
+  Future<MarketPriceResponse> approveMarketPrice(String id) async {
+    try {
+      return await marketService.approveMarketPrice(id);
+    } catch (e) {
+      throw Exception('Failed to approve market price: $e');
+    }
+  }
+
+  @override
+  Future<MarketPriceResponse> rejectMarketPrice(String id) async {
+    try {
+      return await marketService.rejectMarketPrice(id);
+    } catch (e) {
+      throw Exception('Failed to reject market price: $e');
     }
   }
 }

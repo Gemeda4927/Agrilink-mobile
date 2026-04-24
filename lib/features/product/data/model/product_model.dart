@@ -23,10 +23,17 @@ class ProductModel extends ProductEntity {
     super.woredaName,
     super.zoneName,
     super.regionName,
-    this.isAvailable = true, // Add this field
+    this.city,
+    this.withDelivery,
+    this.farmerLatitude,
+    this.farmerLongitude,
   });
 
-  final bool isAvailable; // Add this field
+  // Additional fields from the response
+  final String? city;
+  final bool? withDelivery;
+  final String? farmerLatitude;
+  final String? farmerLongitude;
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     // Safely extract nested subCategory data
@@ -53,7 +60,11 @@ class ProductModel extends ProductEntity {
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      isAvailable: json['isAvailable'] ?? true, // Parse from JSON
+      city: json['city'],
+      withDelivery: json['withDelivery'] ?? false,
+      farmerLatitude: profile?['latitude']?.toString(),
+      farmerLongitude: profile?['longitude']?.toString(),
+      
       // SubCategory data
       subCategoryName: subCategory?['name'],
       categoryId: subCategory?['categoryId'],
@@ -87,8 +98,8 @@ class ProductModel extends ProductEntity {
       'description': description,
       'image': image,
       'createdAt': createdAt.toIso8601String(),
-      'isAvailable': isAvailable, // Add to JSON
-      // Optional nested data (for sending back to API if needed)
+      'city': city,
+      'withDelivery': withDelivery,
       'subCategoryName': subCategoryName,
       'categoryId': categoryId,
       'categoryName': categoryName,
@@ -97,12 +108,17 @@ class ProductModel extends ProductEntity {
       'farmerRole': farmerRole,
       'farmerFullName': farmerFullName,
       'farmerImageUrl': farmerImageUrl,
+      'farmerLatitude': farmerLatitude,
+      'farmerLongitude': farmerLongitude,
       'kebeleName': kebeleName,
       'woredaName': woredaName,
       'zoneName': zoneName,
       'regionName': regionName,
     };
   }
+
+  // Helper method to check if product is available
+  bool get isAvailable => amount > 0;
 
   // Helper method to get formatted location string
   String getFormattedLocation() {
@@ -124,5 +140,38 @@ class ProductModel extends ProductEntity {
       return farmerEmail!.split('@').first;
     }
     return 'Farmer';
+  }
+
+  // Helper method to get farmer coordinates as doubles
+  (double?, double?) getFarmerCoordinates() {
+    double? lat;
+    double? lng;
+    
+    if (farmerLatitude != null && farmerLatitude!.isNotEmpty) {
+      lat = double.tryParse(farmerLatitude!);
+    }
+    if (farmerLongitude != null && farmerLongitude!.isNotEmpty) {
+      lng = double.tryParse(farmerLongitude!);
+    }
+    
+    return (lat, lng);
+  }
+
+  // Helper method to check if farmer has valid coordinates
+  bool get hasValidCoordinates {
+    final (lat, lng) = getFarmerCoordinates();
+    return lat != null && lng != null && lat != 0 && lng != 0;
+  }
+
+  // Helper method to get full address
+  String getFullAddress() {
+    final parts = <String>[];
+    if (city != null && city!.isNotEmpty) parts.add(city!);
+    if (kebeleName != null && kebeleName!.isNotEmpty) parts.add(kebeleName!);
+    if (woredaName != null && woredaName!.isNotEmpty) parts.add(woredaName!);
+    if (zoneName != null && zoneName!.isNotEmpty) parts.add(zoneName!);
+    if (regionName != null && regionName!.isNotEmpty) parts.add(regionName!);
+    
+    return parts.isNotEmpty ? parts.join(', ') : 'Address not available';
   }
 }

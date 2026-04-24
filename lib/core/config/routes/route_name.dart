@@ -37,10 +37,31 @@ class RouteName {
   static const String updateProfile = '/update-profile';
   static const String farmerProfile = '/farmerProfile';
 
-  // Market Insight Routes
+  // ================= MARKET INSIGHT ROUTES =================
   static const String market = '/market';
-  static const String submitPrice = '/submit-price';
+  static const String submitMarketPrice = '/submit-market-price';
   static const String approvedPrices = '/approved-prices';
+  static const String myPriceSubmissions = '/my-price-submissions';
+  static const String priceVerification = '/price-verification';
+  static const String marketAnalytics = '/market-analytics';
+  static const String priceDetails = '/price-details/:id';
+
+  // ================= ADMIN ROUTES =================
+  static const String adminPanel = '/admin-panel';
+  static const String roleRequests = '/role-requests';
+  static const String userManagement = '/user-management';
+  static const String systemSettings = '/system-settings';
+  static const String reports = '/reports';
+
+  // ================= AGENT ROUTES =================
+  static const String agentDashboard = '/agent-dashboard';
+  static const String pendingApprovals = '/pending-approvals';
+  static const String verificationHistory = '/verification-history';
+
+  // ================= DATA CONTRIBUTOR ROUTES =================
+  static const String contributorDashboard = '/contributor-dashboard';
+  static const String priceHistory = '/price-history';
+  static const String submitBatchPrices = '/submit-batch-prices';
 
   // Other screens
   static const String todo = '/todo';
@@ -49,5 +70,5 @@ class RouteName {
   static const String chat = '/chat';
 
   // Role Request
-  static const String roleRequest = "/role-request";
+  static const String roleRequest = '/role-request';
 }

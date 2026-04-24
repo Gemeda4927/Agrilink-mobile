@@ -110,6 +110,8 @@ class ProfileData {
   final String fullName;
   final String kebeleId;
   final String? imageUrl;
+  final double? latitude;
+  final double? longitude;
   final KebeleData? kebele;
 
   ProfileData({
@@ -118,6 +120,8 @@ class ProfileData {
     required this.fullName,
     required this.kebeleId,
     this.imageUrl,
+    this.latitude,
+    this.longitude,
     this.kebele,
   });
 
@@ -128,11 +132,28 @@ class ProfileData {
       fullName: (json['fullName'] ?? '').toString().trim(),
       kebeleId: (json['kebeleId'] ?? '').toString(),
       imageUrl: json['imageUrl'] as String?,
+      latitude: _parseDouble(json['latitude']),
+      longitude: _parseDouble(json['longitude']),
       kebele: json['kebele'] != null
           ? KebeleData.fromJson(json['kebele'])
           : null,
     );
   }
+}
+
+double? _parseDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    try {
+      return double.parse(value);
+    } catch (e) {
+      print('Error parsing double from string "$value": $e');
+      return null;
+    }
+  }
+  return null;
 }
 
 /// ================= KEBELE DATA =================
@@ -180,9 +201,7 @@ class WoredaData {
       id: (json['id'] ?? '').toString(),
       name: (json['name'] ?? '').toString().trim(),
       zoneId: (json['zoneId'] ?? '').toString(),
-      zone: json['zone'] != null
-          ? ZoneData.fromJson(json['zone'])
-          : null,
+      zone: json['zone'] != null ? ZoneData.fromJson(json['zone']) : null,
     );
   }
 }
@@ -218,10 +237,7 @@ class RegionData {
   final String id;
   final String name;
 
-  RegionData({
-    required this.id,
-    required this.name,
-  });
+  RegionData({required this.id, required this.name});
 
   factory RegionData.fromJson(Map<String, dynamic> json) {
     return RegionData(

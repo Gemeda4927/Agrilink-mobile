@@ -9,11 +9,12 @@ class ProfileService {
 
   ProfileService({required this.dioClient});
 
-  /// ================= CREATE PROFILE =================
   Future<CreateProfileModel> createProfile({
     required String fullName,
     required String kebeleId,
     File? image,
+    double? latitude,
+    double? longitude,
   }) async {
     print('🔵 ===== CREATE PROFILE STARTED =====');
 
@@ -26,6 +27,8 @@ class ProfileService {
             image.path,
             filename: image.path.split('/').last,
           ),
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
       });
 
       final response = await dioClient.post(
@@ -51,11 +54,12 @@ class ProfileService {
     }
   }
 
-  /// ================= UPDATE PROFILE =================
   Future<UpdateProfileModel> updateProfile({
     required String fullName,
     required String kebeleId,
     File? image,
+    double? latitude,
+    double? longitude,
   }) async {
     print('🔵 ===== UPDATE PROFILE STARTED =====');
 
@@ -68,6 +72,8 @@ class ProfileService {
             image.path,
             filename: image.path.split('/').last,
           ),
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
       });
 
       final response = await dioClient.patch(
@@ -93,7 +99,6 @@ class ProfileService {
     }
   }
 
-  /// ================= GET PROFILE =================
   Future<GetProfileModel> getProfile(String userId) async {
     print('🔵 ===== GET PROFILE STARTED =====');
 

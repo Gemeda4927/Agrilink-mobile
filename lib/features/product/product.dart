@@ -70,13 +70,15 @@ class _ProductPageState extends State<ProductPage> {
     // Use Future.delayed to avoid blocking UI
     Future.delayed(Duration.zero, () {
       if (!mounted) return;
-      
+
       List<ProductModel> filtered = _allProducts.where((product) {
         final matchesSearch =
             _searchQuery.isEmpty ||
             product.name.toLowerCase().contains(_searchQuery) ||
-            (product.farmerEmail?.toLowerCase().contains(_searchQuery) ?? false) ||
-            (product.categoryName?.toLowerCase().contains(_searchQuery) ?? false);
+            (product.farmerEmail?.toLowerCase().contains(_searchQuery) ??
+                false) ||
+            (product.categoryName?.toLowerCase().contains(_searchQuery) ??
+                false);
 
         final matchesCategory =
             _selectedCategory == 'All' ||
@@ -413,10 +415,7 @@ class _ProductPageState extends State<ProductPage> {
                   SizedBox(height: 16),
                   Text(
                     'Loading products...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                 ],
               ),
@@ -428,26 +427,16 @@ class _ProductPageState extends State<ProductPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 60,
-                    color: Colors.grey[400],
-                  ),
+                  Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
                     'Failed to load products',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     state.message,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
@@ -484,7 +473,8 @@ class _ProductPageState extends State<ProductPage> {
             }
 
             final paginatedProducts = _getPaginatedProducts();
-            final totalPages = (_filteredProducts.length / _itemsPerPage).ceil();
+            final totalPages = (_filteredProducts.length / _itemsPerPage)
+                .ceil();
 
             // Show loading overlay when filtering
             if (_isProcessing) {
@@ -498,10 +488,7 @@ class _ProductPageState extends State<ProductPage> {
                     SizedBox(height: 16),
                     Text(
                       'Filtering products...',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -652,7 +639,11 @@ class _ProductPageState extends State<ProductPage> {
   Widget _buildProductCard(ProductModel product, bool canAddToCart) {
     return GestureDetector(
       onTap: () {
-        context.goNamed(RouteName.productDetails, extra: product);
+        context.pushNamed(
+          RouteName.productDetails,
+          pathParameters: {'id': product.id}, 
+          extra: product,
+        );
       },
       child: Container(
         decoration: BoxDecoration(
@@ -685,9 +676,7 @@ class _ProductPageState extends State<ProductPage> {
                             height: 120,
                             color: Colors.grey[200],
                             child: const Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           ),
                           errorWidget: (context, url, error) => Container(

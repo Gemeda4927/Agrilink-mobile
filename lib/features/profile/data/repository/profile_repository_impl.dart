@@ -3,18 +3,18 @@ import 'package:agrilink/features/profile/data/model/ProfileModel.dart';
 import 'package:agrilink/features/profile/domain/repository/profile_repository.dart';
 import '../services/profile_service.dart';
 
-/// ================= PROFILE REPOSITORY IMPLEMENTATION =================
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileService profileService;
 
   ProfileRepositoryImpl({required this.profileService});
 
-  /// Create profile with optional image
   @override
   Future<CreateProfileModel> createProfile({
     required String fullName,
     required String kebeleId,
     File? image,
+    double? latitude,
+    double? longitude,
   }) async {
     print('📦 ===== CREATE PROFILE REPOSITORY =====');
 
@@ -23,6 +23,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
         fullName: fullName.trim(),
         kebeleId: kebeleId,
         image: image,
+        latitude: latitude,
+        longitude: longitude,
       );
 
       print('✅ Profile created');
@@ -34,12 +36,13 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
-  /// Update profile with optional image
   @override
   Future<UpdateProfileModel> updateProfile({
     required String fullName,
     required String kebeleId,
     File? image,
+    double? latitude,
+    double? longitude,
   }) async {
     print('📦 ===== UPDATE PROFILE REPOSITORY =====');
 
@@ -48,6 +51,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
         fullName: fullName.trim(),
         kebeleId: kebeleId,
         image: image,
+        latitude: latitude,
+        longitude: longitude,
       );
 
       print('✅ Profile updated');
@@ -59,7 +64,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
-  /// Get profile by userId
   @override
   Future<GetProfileModel> getProfile(String userId) async {
     print('📦 ===== GET PROFILE REPOSITORY =====');

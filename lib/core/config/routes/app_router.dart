@@ -27,7 +27,6 @@ import 'package:agrilink/features/profile/presentation/view_profile.dart';
 import 'package:agrilink/features/profile/presentation/update_profile_screen.dart';
 import 'package:agrilink/features/profile/data/model/ProfileModel.dart';
 import 'package:agrilink/features/recommendation/presentation/ai_chatbot_floating_button.dart';
-
 import 'package:agrilink/features/registration/presentation/screen/register_page.dart';
 import 'package:agrilink/features/role_request/presentation/role_request_screen.dart';
 import 'package:agrilink/injector.dart';
@@ -97,7 +96,6 @@ final GoRouter appRouter = GoRouter(
         final extra = state.extra as Map<String, dynamic>? ?? {};
         final identifier = extra['identifier'] ?? '';
         final purpose = extra['purpose'] ?? 'SIGNUP';
-
         return VerifyOtpPage(identifier: identifier, purpose: purpose);
       },
     ),
@@ -111,15 +109,14 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
+    // Role Request Route
     GoRoute(
       path: RouteName.roleRequest,
       name: RouteName.roleRequest,
-      builder: (context, state) {
-        return const RoleRequestScreen();
-      },
+      builder: (context, state) => const RoleRequestScreen(),
     ),
 
-    // Product Routes (Public)
+    // Product Routes
     GoRoute(
       path: RouteName.createProduct,
       name: RouteName.createProduct,
@@ -132,17 +129,14 @@ final GoRouter appRouter = GoRouter(
       name: RouteName.chat,
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-
         if (extra == null || extra['receiverId'] == null) {
           return const Scaffold(
             body: Center(child: Text("Receiver ID not provided")),
           );
         }
-
         final receiverId = extra['receiverId'].toString();
         final receiverName = extra['receiverName']?.toString();
         final conversationId = extra['conversationId']?.toString();
-
         return ChatScreen(
           receiverId: receiverId,
           receiverName: receiverName,
@@ -157,37 +151,32 @@ final GoRouter appRouter = GoRouter(
       name: RouteName.farmerProfile,
       builder: (context, state) {
         final farmerId = state.extra as String?;
-
         if (farmerId == null || farmerId.isEmpty) {
           return const Scaffold(
             body: Center(child: Text("Farmer ID not provided")),
           );
         }
-
         return FarmerProfilePage(farmerId: farmerId);
       },
     ),
 
-    // Buyer Orders Route
+    // My Orders Route
     GoRoute(
       path: RouteName.myOrders,
       name: RouteName.myOrders,
       builder: (context, state) => const MyOrdersScreen(),
     ),
 
-    // ================= MARKET INSIGHT ROUTES (Public) =================
-
-    // Market Screen Route
+    // ================= MARKET INSIGHT ROUTES =================
     GoRoute(
       path: RouteName.market,
       name: RouteName.market,
       builder: (context, state) => const MarketScreen(),
     ),
 
-    // Submit Price Route
     GoRoute(
-      path: RouteName.submitPrice,
-      name: RouteName.submitPrice,
+      path: RouteName.submitMarketPrice,
+      name: RouteName.submitMarketPrice,
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         final preSelectedProduct = extra?['preSelectedProduct'] as Product?;
@@ -195,7 +184,6 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    // Approved Prices Route
     GoRoute(
       path: RouteName.approvedPrices,
       name: RouteName.approvedPrices,
@@ -272,7 +260,7 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: RouteName.aiRecommendation,
           name: RouteName.aiRecommendation,
-          builder: (context, state) => AIChatbotFAB(),
+          builder: (context, state) => const AIChatbotFAB(),
         ),
 
         // Profile Creation Route
@@ -282,6 +270,7 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const CreateProfileScreen(),
         ),
 
+        // My Products Route
         GoRoute(
           path: RouteName.myProducts,
           name: RouteName.myProducts,
@@ -340,7 +329,36 @@ final GoRouter appRouter = GoRouter(
           },
         ),
 
-        // Item Details Route
+        // Placeholder Routes (for routes without screens yet)
+        GoRoute(
+          path: RouteName.farmerOrders,
+          name: RouteName.farmerOrders,
+          builder: (context, state) =>
+              const PlaceholderScreen(title: "Farmer Orders"),
+        ),
+
+        GoRoute(
+          path: RouteName.editProduct,
+          name: RouteName.editProduct,
+          builder: (context, state) {
+            final productId = state.pathParameters['id'];
+            return PlaceholderScreen(title: "Edit Product: $productId");
+          },
+        ),
+
+        GoRoute(
+          path: RouteName.productList,
+          name: RouteName.productList,
+          builder: (context, state) =>
+              const PlaceholderScreen(title: "Product List"),
+        ),
+
+        GoRoute(
+          path: RouteName.todo,
+          name: RouteName.todo,
+          builder: (context, state) => const PlaceholderScreen(title: "Todo"),
+        ),
+
         GoRoute(
           path: RouteName.itemDetails,
           name: RouteName.itemDetails,
@@ -348,7 +366,6 @@ final GoRouter appRouter = GoRouter(
               const PlaceholderScreen(title: "Item Details"),
         ),
 
-        // Category Details Route
         GoRoute(
           path: RouteName.categoryDetails,
           name: RouteName.categoryDetails,

@@ -450,6 +450,10 @@ Future<void> initInjector() async {
   // ================= MARKET INSIGHT FEATURE =========
   // ==================================================
 
+  // ==================================================
+  // ================= MARKET INSIGHT FEATURE =========
+  // ==================================================
+
   // Register Service
   sl.registerLazySingleton<MarketService>(
     () => MarketService(dioClient: sl<DioClient>()),
@@ -465,6 +469,10 @@ Future<void> initInjector() async {
     () => GetAllProductsUseCase(sl<IMarketRepository>()),
   );
 
+  sl.registerLazySingleton<GetPublicProductsUseCase>(
+    () => GetPublicProductsUseCase(sl<IMarketRepository>()),
+  );
+
   sl.registerLazySingleton<SubmitMarketPriceUseCase>(
     () => SubmitMarketPriceUseCase(sl<IMarketRepository>()),
   );
@@ -477,18 +485,36 @@ Future<void> initInjector() async {
     () => GetApprovedMarketPricesUseCase(sl<IMarketRepository>()),
   );
 
+  sl.registerLazySingleton<GetMyMarketPricesUseCase>(
+    () => GetMyMarketPricesUseCase(sl<IMarketRepository>()), 
+  );
+
   sl.registerLazySingleton<UpdateMarketPriceUseCase>(
     () => UpdateMarketPriceUseCase(sl<IMarketRepository>()),
+  );
+
+  sl.registerLazySingleton<ApproveMarketPriceUseCase>(
+    () => ApproveMarketPriceUseCase(sl<IMarketRepository>()), 
+  );
+
+  sl.registerLazySingleton<RejectMarketPriceUseCase>(
+    () => RejectMarketPriceUseCase(
+      sl<IMarketRepository>(),
+    ), 
   );
 
   // Register BLoC
   sl.registerFactory<MarketBloc>(
     () => MarketBloc(
       getAllProductsUseCase: sl<GetAllProductsUseCase>(),
+      getPublicProductsUseCase: sl<GetPublicProductsUseCase>(),
       submitMarketPriceUseCase: sl<SubmitMarketPriceUseCase>(),
       getAllMarketPricesUseCase: sl<GetAllMarketPricesUseCase>(),
       getApprovedMarketPricesUseCase: sl<GetApprovedMarketPricesUseCase>(),
+      getMyMarketPricesUseCase: sl<GetMyMarketPricesUseCase>(),
       updateMarketPriceUseCase: sl<UpdateMarketPriceUseCase>(),
+      approveMarketPriceUseCase: sl<ApproveMarketPriceUseCase>(),
+      rejectMarketPriceUseCase: sl<RejectMarketPriceUseCase>(), 
     ),
   );
 }

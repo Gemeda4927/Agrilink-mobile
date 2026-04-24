@@ -2,6 +2,7 @@ import 'package:agrilink/features/auth/presentation/bloc/auth_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
@@ -9,6 +10,8 @@ import 'package:agrilink/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:agrilink/features/profile/presentation/bloc/profile_event.dart';
 import 'package:agrilink/features/profile/presentation/bloc/profile_state.dart';
 import 'package:agrilink/features/profile/data/model/ProfileModel.dart';
+
+import 'map_viewer_screen.dart';
 
 class ViewProfileScreen extends StatefulWidget {
   const ViewProfileScreen({super.key});
@@ -44,12 +47,112 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
 
   void _navigateToUpdateProfile() {
     if (_currentProfile != null && _currentProfile!.profile != null) {
-   
-      context.pushNamed(
-        RouteName.updateProfile,
-        extra: _currentProfile,
-      );
+      context.pushNamed(RouteName.updateProfile, extra: _currentProfile);
     }
+  }
+
+  void _openMapWebView(double latitude, double longitude, String locationName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapViewerScreen(
+          latitude: latitude,
+          longitude: longitude,
+          locationName: locationName,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openExternalMap(double latitude, double longitude) async {
+    final Uri url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
+    );
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open map')));
+    }
+  }
+
+  void _showMapOptions(double latitude, double longitude, String locationName) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: const Text(
+                  'Choose Map Option',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.map,
+                    color: Colors.green.shade700,
+                    size: 20,
+                  ),
+                ),
+                title: const Text('Open in App Map'),
+                subtitle: const Text('View map with markers and controls'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openMapWebView(latitude, longitude, locationName);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.open_in_browser,
+                    color: Colors.blue.shade700,
+                    size: 20,
+                  ),
+                ),
+                title: const Text('Open in External Map'),
+                subtitle: const Text('Open in Google Maps app'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openExternalMap(latitude, longitude);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -58,6 +161,9 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
       appBar: AppBar(
         title: const Text('My Profile'),
         centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.green.shade700,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -90,7 +196,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
           } else if (state is ProfileLoaded) {
             final getProfileModel = state.profile;
 
-            // Check if profile data exists
             if (getProfileModel.profile == null) {
               return _buildNoProfileView();
             }
@@ -226,6 +331,68 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                           ),
                         ],
                       ],
+                      // GPS Location Section
+                      if (profileData.latitude != null &&
+                          profileData.longitude != null) ...[
+                        const Divider(height: 24),
+                        _buildInfoRow(
+                          icon: Icons.gps_fixed,
+                          label: 'GPS Coordinates',
+                          value:
+                              '${profileData.latitude!.toStringAsFixed(6)}, ${profileData.longitude!.toStringAsFixed(6)}',
+                          isMonospace: true,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () => _openMapWebView(
+                                  profileData.latitude!,
+                                  profileData.longitude!,
+                                  profileData.fullName,
+                                ),
+                                icon: const Icon(Icons.map, size: 18),
+                                label: const Text('View Map'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green.shade700,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => _showMapOptions(
+                                  profileData.latitude!,
+                                  profileData.longitude!,
+                                  profileData.fullName,
+                                ),
+                                icon: const Icon(Icons.more_horiz, size: 18),
+                                label: const Text('Options'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.green.shade700,
+                                  side: BorderSide(
+                                    color: Colors.green.shade300,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -235,7 +402,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                     title: 'Account Information',
                     icon: Icons.account_circle,
                     children: [
-                  
                       const Divider(height: 24),
                       _buildInfoRow(
                         icon: Icons.calendar_today,
@@ -268,6 +434,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade700,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -301,7 +468,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
               ),
             );
           } else if (state is ProfileError) {
-            // Check if error is because profile doesn't exist
             if (state.message.contains('type \'Null\' is not a subtype') ||
                 state.message.contains('profile is null')) {
               return _buildNoProfileView();
@@ -407,6 +573,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
