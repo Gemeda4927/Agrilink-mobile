@@ -710,7 +710,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text('Loading amazing categories...'),
               ],
             ),
@@ -1060,8 +1060,6 @@ class _HomeScreenState extends State<HomeScreen> {
       userId = authState.authResponse.user.id;
     }
 
-    final isFarmer = _isPrivilegedRole(role);
-
     return Drawer(
       child: Container(
         decoration: BoxDecoration(
@@ -1075,29 +1073,16 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.zero,
           children: [
             _buildDrawerHeader(t),
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.home,
-              title: t.home,
-              route: RouteName.home,
-              color: Colors.green,
-            ),
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.store,
-              title: t.products,
-              route: RouteName.product,
-              color: Colors.orange,
-            ),
-            // ================= MARKET INSIGHT DRAWER ITEM =================
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.trending_up,
-              title: 'Market Insights',
-              route: RouteName.market,
-              color: Colors.green,
-            ),
-            if (isFarmer) ...[
+
+            // ROLE-BASED DRAWER ITEMS
+            if (role == 'FARMER') ...[
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.add_box,
+                title: t.postProduct,
+                route: RouteName.createProduct,
+                color: Colors.green.shade700,
+              ),
               _buildDrawerItem(
                 context: context,
                 icon: Icons.inventory_2,
@@ -1107,20 +1092,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               _buildDrawerItem(
                 context: context,
-                icon: Icons.add_box,
-                title: t.postProduct,
-                route: RouteName.createProduct,
-                color: Colors.green.shade700,
+                icon: Icons.trending_up,
+                title: 'Market Insights',
+                route: RouteName.market,
+                color: Colors.green,
               ),
-            ],
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.shopping_cart,
-              title: t.myOrders ?? 'My Orders',
-              route: RouteName.myOrders,
-              color: Colors.deepOrange.shade700,
-            ),
-            if (isFarmer)
               _buildDrawerItem(
                 context: context,
                 icon: Icons.receipt_long,
@@ -1128,15 +1104,107 @@ class _HomeScreenState extends State<HomeScreen> {
                 route: RouteName.myOrders,
                 color: Colors.teal,
               ),
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.chat_bubble_outline,
-              title: 'AI Chatbot',
-              route: RouteName.aiRecommendation,
-              color: Colors.green.shade600,
-            ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.chat_bubble_outline,
+                title: 'AI Chatbot',
+                route: RouteName.aiRecommendation,
+                color: Colors.green.shade600,
+              ),
+            ],
+
+            if (role == 'BUYER') ...[
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.shopping_cart,
+                title: t.myOrders ?? 'My Orders',
+                route: RouteName.myOrders,
+                color: Colors.deepOrange.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.chat_bubble_outline,
+                title: 'AI Chatbot',
+                route: RouteName.aiRecommendation,
+                color: Colors.green.shade600,
+              ),
+            ],
+
+            if (role == 'AGENT') ...[
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.add_box,
+                title: t.postProduct,
+                route: RouteName.createProduct,
+                color: Colors.green.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.trending_up,
+                title: 'Market Insights',
+                route: RouteName.market,
+                color: Colors.green,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.chat_bubble_outline,
+                title: 'AI Chatbot',
+                route: RouteName.aiRecommendation,
+                color: Colors.green.shade600,
+              ),
+            ],
+
+            if (role == 'ADMIN') ...[
+              // Admin can see everything
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.add_box,
+                title: t.postProduct,
+                route: RouteName.createProduct,
+                color: Colors.green.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.inventory_2,
+                title: t.myProducts,
+                route: RouteName.myProducts,
+                color: Colors.blue.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.trending_up,
+                title: 'Market Insights',
+                route: RouteName.market,
+                color: Colors.green,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.receipt_long,
+                title: t.ordersReceived ?? 'Orders Received',
+                route: RouteName.myOrders,
+                color: Colors.teal,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.shopping_cart,
+                title: t.myOrders ?? 'My Orders',
+                route: RouteName.myOrders,
+                color: Colors.deepOrange.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.chat_bubble_outline,
+                title: 'AI Chatbot',
+                route: RouteName.aiRecommendation,
+                color: Colors.green.shade600,
+              ),
+            ],
+
             const Divider(),
-            _buildRoleRequestSection(context, t, role, userId),
+
+            // ROLE REQUEST SECTION (Only show for Farmer and Buyer who haven't requested yet)
+            if (role == 'FARMER' || role == 'BUYER')
+              _buildRoleRequestSection(context, t, role, userId),
           ],
         ),
       ),
@@ -1204,6 +1272,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String role,
     String userId,
   ) {
+    // Don't show role request section for Agent or Admin
     if (role == 'AGENT') {
       return _buildStatusCard(
         icon: Icons.handshake,
@@ -1214,6 +1283,7 @@ class _HomeScreenState extends State<HomeScreen> {
         statusColor: Colors.green,
       );
     }
+
     if (role == 'ADMIN') {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1237,6 +1307,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
+
+    // For Farmer and Buyer roles
     if (_cachedRequestStatus == 'PENDING')
       return _buildPendingStatusCard(context, t);
     if (_cachedRequestStatus == 'APPROVED') {
@@ -1251,6 +1323,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (_cachedRequestStatus == 'REJECTED')
       return _buildRejectedStatusCard(context, t);
+
+    // Show request button for Farmer and Buyer who haven't requested yet
     return _buildRequestButton(context, t, userId);
   }
 
