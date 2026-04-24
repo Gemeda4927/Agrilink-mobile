@@ -63,6 +63,8 @@ class CreateProductEvent extends ProductEvent {
     required this.description,
     required this.subCategoryId,
     required this.image,
+    String? city,
+    bool? withDelivery,
   });
 
   @override
