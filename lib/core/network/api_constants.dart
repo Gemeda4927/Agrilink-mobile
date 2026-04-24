@@ -75,8 +75,15 @@ class ApiConstants {
 
   // ================= MARKET INSIGHT ENDPOINTS =================
   static const String marketPrice = "$baseUrl/market-price";
-  static const String marketPriceApproved = "$baseUrl/market-price/approved/id";
-  
+  static const String marketPriceApproved = "$baseUrl/market-price/approved";
+  static const String marketPriceMyProduct = "$baseUrl/market-price/myproduct";
+  static String approveMarketPrice(String id) =>
+      "$baseUrl/market-price/approve/$id";
+  static String rejectMarketPrice(String id) =>
+      "$baseUrl/market-price/reject/$id";
+  static String getMarketPriceById(String id) => "$baseUrl/market-price/$id";
+  static String getApprovedPriceById(String id) =>
+      "$baseUrl/market-price/approved/$id";
 
   // ================= CROP ADVISOR ENDPOINTS =================
   static const String cropAdvisorChat = "$cropAdvisorBaseUrl/api/v1/chat";

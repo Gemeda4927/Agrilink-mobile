@@ -10,7 +10,8 @@ class MarketService {
 
   // ================= API METHODS =================
 
-  /// Fetch all products (GET)
+  /// Fetch all products (GET) - For privileged users (ADMIN, AGENT, DATA_CONTRIBUTOR)
+  /// Uses /all-product endpoint
   Future<AllProductsResponse> getAllProducts() async {
     try {
       final response = await dioClient.get(ApiConstants.allProduct);
@@ -19,6 +20,36 @@ class MarketService {
         return AllProductsResponse.fromJson(response.data);
       } else {
         throw Exception('Failed to load products: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Fetch public products (GET) - For BUYER/FARMER role
+  /// Uses /product endpoint (no 403 error)
+  Future<AllProductsResponse> getPublicProducts() async {
+    try {
+      final response = await dioClient.get(ApiConstants.product);
+
+      if (response.statusCode == 200) {
+        // Handle direct array response from /product endpoint
+        if (response.data is List) {
+          final products = (response.data as List)
+              .map((json) => Product.fromJson(json))
+              .toList();
+          return AllProductsResponse(
+            result: products.length,
+            products: products,
+          );
+        } else {
+          // Handle object response if needed
+          return AllProductsResponse.fromJson(response.data);
+        }
+      } else {
+        throw Exception(
+          'Failed to load public products: ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       throw _handleDioError(e);
@@ -47,7 +78,7 @@ class MarketService {
     }
   }
 
-  /// Fetch all market prices (GET)
+  /// Fetch all market prices (GET) - For privileged users
   Future<List<MarketPriceResponse>> getAllMarketPrices() async {
     try {
       final response = await dioClient.get(ApiConstants.marketPrice);
@@ -63,7 +94,7 @@ class MarketService {
     }
   }
 
-  /// Fetch approved market prices only (GET)
+  /// Fetch approved market prices only (GET) - For all users (public)
   Future<List<MarketPriceResponse>> getApprovedMarketPrices() async {
     try {
       final response = await dioClient.get(ApiConstants.marketPriceApproved);
@@ -74,6 +105,24 @@ class MarketService {
       } else {
         throw Exception(
           'Failed to load approved market prices: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Fetch my market prices (GET) - For DATA_CONTRIBUTOR to see their submissions
+  Future<List<MarketPriceResponse>> getMyMarketPrices() async {
+    try {
+      final response = await dioClient.get(ApiConstants.marketPriceMyProduct);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => MarketPriceResponse.fromJson(json)).toList();
+      } else {
+        throw Exception(
+          'Failed to load my market prices: ${response.statusCode}',
         );
       }
     } on DioException catch (e) {
@@ -95,6 +144,44 @@ class MarketService {
       } else {
         throw Exception(
           'Failed to update market price: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Approve market price (PATCH) - For ADMIN/AGENT
+  Future<MarketPriceResponse> approveMarketPrice(String id) async {
+    try {
+      final response = await dioClient.patch(
+        ApiConstants.approveMarketPrice(id),
+      );
+
+      if (response.statusCode == 200) {
+        return MarketPriceResponse.fromJson(response.data);
+      } else {
+        throw Exception(
+          'Failed to approve market price: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Reject market price (PATCH) - For ADMIN/AGENT
+  Future<MarketPriceResponse> rejectMarketPrice(String id) async {
+    try {
+      final response = await dioClient.patch(
+        ApiConstants.rejectMarketPrice(id),
+      );
+
+      if (response.statusCode == 200) {
+        return MarketPriceResponse.fromJson(response.data);
+      } else {
+        throw Exception(
+          'Failed to reject market price: ${response.statusCode}',
         );
       }
     } on DioException catch (e) {

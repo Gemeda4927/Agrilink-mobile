@@ -42,6 +42,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             fullName: event.fullName.trim(),
             kebeleId: event.kebeleId,
             image: event.image,
+            latitude: event.latitude,
+            longitude: event.longitude,
           ),
         );
 
@@ -63,6 +65,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             fullName: event.fullName.trim(),
             kebeleId: event.kebeleId,
             image: event.image,
+            latitude: event.latitude,
+            longitude: event.longitude,
           ),
         );
 

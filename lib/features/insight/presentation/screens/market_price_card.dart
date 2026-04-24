@@ -20,60 +20,76 @@ class MarketPriceCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
         onTap: onTap,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.currency_bitcoin, color: Colors.green),
-        ),
+        leading: _buildLeadingIcon(),
         title: Text(
           marketPrice.product?.name ?? 'Unknown Product',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Price: ${marketPrice.price} ETB'),
-            if (showStatus) ...[
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(marketPrice.status).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  marketPrice.status,
-                  style: TextStyle(
-                    color: _getStatusColor(marketPrice.status),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              marketPrice.date.split('T')[0],
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            if (marketPrice.woreda != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                marketPrice.woreda!.name,
-                style: const TextStyle(fontSize: 12),
-              ),
-            ],
-          ],
+        subtitle: _buildSubtitle(),
+        trailing: _buildTrailing(),
+      ),
+    );
+  }
+
+  Widget _buildLeadingIcon() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(Icons.currency_bitcoin, color: Colors.green),
+    );
+  }
+
+  Widget _buildSubtitle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Price: ${marketPrice.price} ETB'),
+        if (showStatus) ...[
+          const SizedBox(height: 4),
+          _buildStatusChip(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStatusChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: _getStatusColor(marketPrice.status).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        marketPrice.status,
+        style: TextStyle(
+          color: _getStatusColor(marketPrice.status),
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
         ),
       ),
+    );
+  }
+
+  Widget _buildTrailing() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          marketPrice.date.split('T')[0],
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        if (marketPrice.woreda != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            marketPrice.woreda!.name,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ],
     );
   }
 
