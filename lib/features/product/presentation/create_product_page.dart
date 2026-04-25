@@ -29,6 +29,9 @@ class _CreateProductPageState extends State<CreateProductPage> {
   final priceController = TextEditingController();
   final descController = TextEditingController();
 
+  // Controllers for optional fields
+  final cityController = TextEditingController();
+
   List<Category> categories = [];
   List<SubCategory> subCategories = [];
 
@@ -39,6 +42,9 @@ class _CreateProductPageState extends State<CreateProductPage> {
 
   bool isCategoryLoading = false;
   bool isSubCategoryLoading = false;
+
+  // Optional fields for product creation
+  bool? withDelivery;
 
   @override
   void initState() {
@@ -58,11 +64,13 @@ class _CreateProductPageState extends State<CreateProductPage> {
     amountController.clear();
     priceController.clear();
     descController.clear();
+    cityController.clear();
     setState(() {
       selectedCategoryId = null;
       selectedSubCategoryId = null;
       subCategories = [];
       image = null;
+      withDelivery = null;
     });
   }
 
@@ -204,6 +212,44 @@ class _CreateProductPageState extends State<CreateProductPage> {
     );
   }
 
+  Widget _buildOptionalFieldsCard() {
+    return buildCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 12),
+          TextField(
+            controller: cityController,
+            decoration: inputDecoration(
+              "City/Town",
+              "e.g. Addis Ababa",
+              Icons.location_city,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: CheckboxListTile(
+                  value: withDelivery ?? false,
+                  onChanged: (value) {
+                    setState(() {
+                      withDelivery = value;
+                    });
+                  },
+                  title: const Text("With Delivery"),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: Colors.green,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   void showReviewAndAgreement() {
     if (selectedSubCategoryId == null || image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -311,6 +357,26 @@ class _CreateProductPageState extends State<CreateProductPage> {
                               ),
                             ],
                           ),
+                          if (cityController.text.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(Icons.location_city, size: 18),
+                                const SizedBox(width: 6),
+                                Text("City: ${cityController.text}"),
+                              ],
+                            ),
+                          ],
+                          if (withDelivery != null && withDelivery!) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(Icons.delivery_dining, size: 18),
+                                const SizedBox(width: 6),
+                                const Text("Delivery Available: Yes"),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -332,8 +398,9 @@ class _CreateProductPageState extends State<CreateProductPage> {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            "I confirm that the product information is correct.",
+                            "I confirm that the product information is correct and complies with the marketplace guidelines.",
                           ),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Checkbox(
@@ -400,7 +467,6 @@ class _CreateProductPageState extends State<CreateProductPage> {
         centerTitle: true,
         backgroundColor: Colors.green,
       ),
-
       body: BlocListener<CategoryBloc, CategoryState>(
         listener: (context, state) {
           if (state is CategoryLoading) {
@@ -436,7 +502,6 @@ class _CreateProductPageState extends State<CreateProductPage> {
             );
           }
         },
-
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -474,7 +539,6 @@ class _CreateProductPageState extends State<CreateProductPage> {
                   ),
                 ),
               ),
-
               buildCard(
                 child: DropdownButtonFormField<String>(
                   value: selectedSubCategoryId,
@@ -501,7 +565,6 @@ class _CreateProductPageState extends State<CreateProductPage> {
                   ),
                 ),
               ),
-
               buildCard(
                 child: Column(
                   children: [
@@ -518,8 +581,8 @@ class _CreateProductPageState extends State<CreateProductPage> {
                       controller: amountController,
                       keyboardType: TextInputType.number,
                       decoration: inputDecoration(
-                        "Amount",
-                        "e.g. 10 kg",
+                        "Amount (in kg/units)",
+                        "e.g. 10",
                         Icons.scale,
                       ),
                     ),
@@ -528,8 +591,8 @@ class _CreateProductPageState extends State<CreateProductPage> {
                       controller: priceController,
                       keyboardType: TextInputType.number,
                       decoration: inputDecoration(
-                        "Price",
-                        "e.g. 500 ETB",
+                        "Price (in ETB)",
+                        "e.g. 500",
                         Icons.payments,
                       ),
                     ),
@@ -546,11 +609,9 @@ class _CreateProductPageState extends State<CreateProductPage> {
                   ],
                 ),
               ),
-
+              _buildOptionalFieldsCard(),
               buildCard(child: imagePickerTile()),
-
               const SizedBox(height: 10),
-
               BlocConsumer<ProductBloc, ProductState>(
                 listener: (context, state) {
                   if (state is ProductCreated) {
@@ -597,14 +658,47 @@ class _CreateProductPageState extends State<CreateProductPage> {
   }
 
   void submit() {
+    // Validate numeric inputs
+    final amount = int.tryParse(amountController.text.trim());
+    final price = int.tryParse(priceController.text.trim());
+
+    if (amount == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter a valid amount"),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (price == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter a valid price"),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Get city from controller (empty string if not provided)
+    final cityValue = cityController.text.trim().isEmpty
+        ? null
+        : cityController.text.trim();
+
     context.read<ProductBloc>().add(
       CreateProductEvent(
-        name: nameController.text,
-        amount: int.parse(amountController.text),
-        price: int.parse(priceController.text),
-        description: descController.text,
+        name: nameController.text.trim(),
+        amount: amount,
+        price: price,
+        description: descController.text.trim(),
         subCategoryId: selectedSubCategoryId!,
         image: image!,
+        city: cityValue,
+        withDelivery: withDelivery,
       ),
     );
   }
@@ -615,6 +709,7 @@ class _CreateProductPageState extends State<CreateProductPage> {
     amountController.dispose();
     priceController.dispose();
     descController.dispose();
+    cityController.dispose();
     super.dispose();
   }
 }
