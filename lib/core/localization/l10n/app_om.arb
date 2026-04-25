@@ -1,60 +1,85 @@
 {
   "@@locale": "om",
+
+  "appTitle": "AgriLink",
+
   "welcomeBack": "Baga nagaan dhuftan!",
   "signInSubtitle": "Akkaawuntii kee seenuuf galmaa'i",
+
   "emailOrPhone": "Imeelii ykn lakkoofsa bilbilaa",
   "emailOrPhoneHint": "Imeelii ykn lakkoofsa bilbilaa galchi",
   "emailOrPhoneRequired": "Maaloo imeelii ykn lakkoofsa bilbilaa galchi",
+
   "password": "Jecha icciitii",
   "passwordHint": "Jecha icciitii kee galchi",
   "passwordRequired": "Maaloo jecha icciitii galchi",
   "passwordMinLength": "Jechi icciitii yoo xiqqaate qubee 6 qabaachuu qaba",
+
   "login": "Seeni",
   "rememberMe": "Na yaadadhu",
   "forgotPassword": "Jecha icciitii irraanfatte?",
   "createAccount": "Akkaawuntii uumi",
   "noAccount": "Akkaawuntii hin qabduu?",
+
   "quickDebugLogin": "Seensa Qormaataa",
   "selectTestAccount": "Akkaawuntii filadhu",
   "orDivider": "Ykn",
   "signInWithGoogle": "Google'n seeni",
+
   "welcomeMessage": "Baga nagaan dhuftan {email}",
+  "@welcomeMessage": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+
   "selectLanguage": "Afaan filadhu",
-  "appTitle": "AgriLink",
+
   "goodMorning": "Akkam bulte",
   "goodAfternoon": "Akkam ooltan",
-  "goodEvening": "Akkam galgaloofte",
+  "goodEvening": "Akkam ooltan",
+
   "logout": "Ba'i",
   "noUserDataFound": "Odeeffannoon fayyadamaa hin argamne. Maaloo seeni.",
+
   "exploreCategories": "Ramaddiiwwan daawwadhu",
   "noCategoriesAvailable": "Ramaddiin hin jiru",
   "noSubcategories": "Ramaddii xiqqaan hin jiru",
   "backToCategories": "Gara ramaddiiwwaniitti deebi'i",
+
   "home": "Mana",
   "products": "Oomishoota",
   "myProducts": "Oomisha koo",
   "myOrders": "Ajaja koo",
   "postProduct": "Oomisha maxxansi",
+
   "aiAdvisory": "Gorsa AI",
   "farmingCompanion": "Hiriyaa qonnaa kee",
+
   "roleAgentActive": "Gaheen Agentii hojiirra jira",
   "activeStatus": "HOJIIRRA JIRA",
   "joinAsAgent": "Akka Agentitti makami",
   "requestAgentRole": "Gahee Agentii gaafadhu",
   "sendingRequest": "Gaafannaa ergaa jira...",
+
   "requestStatus": "Haala gaafannaa",
   "statusLabel": "Haala",
   "roleRequestPending": "Gaafannaan eegamaa jira",
   "roleRequestApproved": "Gaafannaan hayyamame!",
   "roleRequestRejected": "Gaafannaan didame",
+
   "active": "HOJIIRRA JIRA",
   "reapply": "Irra deebi'ii gaafadhu",
+
   "failedToLoadRequestStatus": "Haalli gaafannaa fe'amuu hin dandeenye",
   "retry": "Irra deebi'ii yaali",
+
   "requestSubmittedSuccessfully": "Gaafannaan milkaa'inaan ergame!",
+
   "administratorAccess": "Seensa Bulchiinsaa",
   "notifications": "Beeksisoota",
   "comingSoon": "Dhiheenya keessatti ni dhufa!",
+
   "marketplace": "Gabaa",
   "quickActions": "Tarkaanfii ariifachiisaa",
   "ordersReceived": "Ajaja ga'an"

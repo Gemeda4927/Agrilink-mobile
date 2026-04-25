@@ -1,9 +1,17 @@
 class ApiConstants {
   // ================= BASE URLS =================
   static const String baseUrl = "https://agrilink-1-x6ph.onrender.com";
+  
+  // Local development server IP (for device registration and local testing)
+  // static const String localBaseUrl = "http://10.50.89.199:3000";
+  
   static const String cropAdvisorBaseUrl =
       "https://senakebede-crop-advisor-backend.hf.space";
 
+  // ================= DEVICE REGISTRATION =================
+  static const String deviceRegister = "$baseUrl/devices/register";
+  static const String deviceUnregister = "$baseUrl/devices/unregister";
+  
   // ================= AUTH ENDPOINTS =================
   static const String signup = "$baseUrl/auth/signup";
   static const String signin = "$baseUrl/auth/signin";

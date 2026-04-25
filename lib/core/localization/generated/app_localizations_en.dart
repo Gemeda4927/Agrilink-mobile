@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get appTitle => 'AgriLink';
+
+  @override
   String get welcomeBack => 'Welcome Back!';
 
   @override
@@ -69,9 +72,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectLanguage => 'Select Language';
-
-  @override
-  String get appTitle => 'AgriLink';
 
   @override
   String get goodMorning => 'Good Morning';

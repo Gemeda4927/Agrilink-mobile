@@ -95,10 +95,16 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
-    Locale('en'),
     Locale('am'),
+    Locale('en'),
     Locale('om'),
   ];
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AgriLink'**
+  String get appTitle;
 
   /// No description provided for @welcomeBack.
   ///
@@ -219,12 +225,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select Language'**
   String get selectLanguage;
-
-  /// No description provided for @appTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'AgriLink'**
-  String get appTitle;
 
   /// No description provided for @goodMorning.
   ///
