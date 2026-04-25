@@ -41,6 +41,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late final NotificationService _notificationService;
+  final Logger _logger = sl<Logger>();
 
   @override
   void initState() {
@@ -57,41 +58,51 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _notificationService.clearBadge();
-    }
+ @override
+void didChangeAppLifecycleState(AppLifecycleState state) {
+  if (state == AppLifecycleState.resumed) {
+    _notificationService.clearBadge(); // Now this works!
   }
+}
 
   Future<void> _initializeNotifications() async {
-    await _notificationService.initialize();
+    try {
+      await _notificationService.initialize();
+      _logger.i("✅ Notification service initialized successfully");
 
-    NotificationService.navigateTo =
-        (String route, {Map<String, dynamic>? extra}) {
-          final context = rootNavigatorKey.currentState?.context;
-          if (context != null) {
+      NotificationService.navigateTo = (String route, {Map<String, dynamic>? extra}) {
+        final context = navigatorKey.currentState?.context;
+        if (context != null) {
+          try {
             final currentRoute = GoRouterState.of(context).uri.toString();
             if (currentRoute != route) {
+              _logger.i("📱 Navigating to: $route");
               context.pushNamed(route, extra: extra);
             }
+          } catch (e) {
+            _logger.e("Navigation error: $e");
+            context.pushNamed(route, extra: extra);
           }
-        };
+        }
+      };
+    } catch (e, stackTrace) {
+      _logger.e("Failed to initialize notifications", error: e, stackTrace: stackTrace);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        // Use injected LanguageBloc from GetIt (singleton instance)
         BlocProvider<LanguageBloc>(create: (_) => sl<LanguageBloc>()),
         BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>()),
 
-        // Notification BLoC
         BlocProvider<NotificationBloc>(
           create: (_) {
             final bloc = sl<NotificationBloc>();
-            bloc.add(InitializeNotifications());
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.add(InitializeNotifications());
+            });
             return bloc;
           },
         ),
@@ -126,7 +137,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           },
         ),
 
-        // Buyer Orders
         BlocProvider<OrderBloc>(
           create: (_) {
             final bloc = sl<OrderBloc>();
@@ -151,14 +161,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           },
         ),
 
-        // ================= MARKET INSIGHT BLoC =================
         BlocProvider<MarketBloc>(
           create: (_) {
             final bloc = sl<MarketBloc>();
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              // Load initial data when market screen is accessed
-              // You can optionally load products here if needed
-              // bloc.add(GetAllProductsEvent());
+              // Load initial market data when needed
             });
             return bloc;
           },
@@ -180,31 +187,31 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
-              // Fallback delegates for unsupported locales
               const OromoMaterialLocalizationsDelegate(),
               const OromoCupertinoLocalizationsDelegate(),
               const AmharicMaterialLocalizationsDelegate(),
               const AmharicCupertinoLocalizationsDelegate(),
             ],
             localeResolutionCallback: (locale, supportedLocales) {
-              // Handle locale resolution with proper fallback
               if (locale == null) {
                 return const Locale('en', 'US');
               }
-
-              // Check if the language code is supported
               final supportedLocale = supportedLocales.firstWhere(
                 (supported) => supported.languageCode == locale.languageCode,
                 orElse: () => const Locale('en', 'US'),
               );
-
               return supportedLocale;
             },
             theme: ThemeData(
               primarySwatch: Colors.green,
               useMaterial3: true,
               fontFamily: _getFontFamily(langState.locale.languageCode),
-              appBarTheme: const AppBarTheme(elevation: 0, centerTitle: true),
+              appBarTheme: const AppBarTheme(
+                elevation: 0,
+                centerTitle: true,
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
@@ -225,13 +232,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ),
             ),
             routerConfig: appRouter,
-            // Auth state listener for token registration
             builder: (context, child) {
               return BlocListener<AuthBloc, AuthState>(
                 listener: (context, state) {
+                  _logger.i("🔔 AuthState changed: ${state.runtimeType}");
+                  
                   if (state is AuthSuccess) {
+                    _logger.i("✅ AuthSuccess detected - Registering device token");
                     _registerDeviceTokenAndSubscribe(state);
-                  } else if (state is AuthInitial) {
+                  } 
+                  else if (state is AuthInitial) {
+                    _logger.i("🔴 AuthInitial detected - Unregistering device token");
+                    _unregisterDeviceToken();
+                  }
+                  else if (state is AuthFailure) {
+                    _logger.i("🔴 AuthFailure detected - Unregistering device token");
                     _unregisterDeviceToken();
                   }
                 },
@@ -245,51 +260,73 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _registerDeviceTokenAndSubscribe(AuthSuccess state) async {
+    _logger.i("📱 Starting device token registration for user: ${state.authResponse.user.email}");
+    
     try {
       final token = await _notificationService.getSavedToken();
+      _logger.i("📱 Retrieved FCM token: ${token != null ? "Present (${token.substring(0, token.length > 20 ? 20 : token.length)}...)" : "NULL"}");
 
       if (token != null && token.isNotEmpty) {
-        await _notificationService.registerDeviceToken(token);
+        _logger.i("📤 Registering device token with backend...");
+        final registered = await _notificationService.registerDeviceToken(token);
+        
+        if (registered) {
+          _logger.i("✅ Device token registered successfully!");
+        } else {
+          _logger.w("⚠️ Device token registration failed");
+        }
+      } else {
+        _logger.w("⚠️ No FCM token available - waiting for FCM to generate token");
+        Future.delayed(const Duration(seconds: 2), () async {
+          final retryToken = await _notificationService.getSavedToken();
+          if (retryToken != null && retryToken.isNotEmpty) {
+            _logger.i("📤 Retrying device token registration...");
+            await _notificationService.registerDeviceToken(retryToken);
+          }
+        });
       }
 
-      // Safe role extraction
       final user = state.authResponse.user;
       final role = user.role;
+      _logger.i("📱 User role: $role");
 
       if (role != null && role.toString().isNotEmpty) {
         final normalizedRole = role.toString().toLowerCase().trim();
-
+        
+        _logger.i("📤 Subscribing to topic: all_users");
         await _notificationService.subscribeToTopic('all_users');
+        
+        _logger.i("📤 Subscribing to topic: role_$normalizedRole");
         await _notificationService.subscribeToTopic('role_$normalizedRole');
+        
+        _logger.i("✅ Successfully subscribed to notification topics");
       } else {
-        // fallback subscription
+        _logger.w("⚠️ No role found - subscribing only to all_users");
         await _notificationService.subscribeToTopic('all_users');
       }
     } catch (e, stackTrace) {
-      // You should log this instead of silent fail in production
-      sl<Logger>().e(
-        'Failed to register device token and subscribe to topics',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logger.e('❌ Failed to register device token and subscribe to topics',
+          error: e,
+          stackTrace: stackTrace);
     }
   }
 
   Future<void> _unregisterDeviceToken() async {
     try {
+      _logger.i("📤 Unregistering device token...");
       await _notificationService.unregisterDeviceToken();
+      _logger.i("✅ Device token unregistered successfully");
     } catch (e) {
-      // Silent fail
+      _logger.w("⚠️ Failed to unregister device token: $e");
     }
   }
 
-  /// Get font family based on language code
   String _getFontFamily(String languageCode) {
     switch (languageCode) {
       case 'am':
         return 'NotoSansEthiopic';
       case 'om':
-        return 'Roboto'; // Oromo uses standard font
+        return 'Roboto';
       default:
         return 'Roboto';
     }
@@ -298,7 +335,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
 // ================= FALLBACK LOCALIZATION DELEGATES =================
 
-/// Material fallback: Maps Oromo ('om') requests to English Material translations
 class OromoMaterialLocalizationsDelegate
     extends LocalizationsDelegate<MaterialLocalizations> {
   const OromoMaterialLocalizationsDelegate();
@@ -317,7 +353,6 @@ class OromoMaterialLocalizationsDelegate
   bool shouldReload(OromoMaterialLocalizationsDelegate old) => false;
 }
 
-/// Cupertino fallback: Maps Oromo ('om') requests to English Cupertino translations
 class OromoCupertinoLocalizationsDelegate
     extends LocalizationsDelegate<CupertinoLocalizations> {
   const OromoCupertinoLocalizationsDelegate();
@@ -336,7 +371,6 @@ class OromoCupertinoLocalizationsDelegate
   bool shouldReload(OromoCupertinoLocalizationsDelegate old) => false;
 }
 
-/// Material fallback: Maps Amharic ('am') requests to English Material translations
 class AmharicMaterialLocalizationsDelegate
     extends LocalizationsDelegate<MaterialLocalizations> {
   const AmharicMaterialLocalizationsDelegate();

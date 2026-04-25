@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/core/localization/generated/app_localizations.dart';
+import 'package:agrilink/core/services/notification_service.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_bloc.dart';
@@ -21,23 +25,45 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   static const double _cardPadding = 20.0;
   static const double _standardSpacing = 12.0;
   static const double _largeSpacing = 24.0;
   static const double _borderRadius = 16.0;
   static const double _iconSize = 24.0;
 
+  bool _hasLoadedNotifications = false;
   bool _hasInitializedRoleRequest = false;
   String _cachedRequestStatus = 'NONE';
   int _notificationCount = 0;
-  List<Map<String, String>> _notifications = [];
+  List<Map<String, dynamic>> _notifications = [];
+  final Set<String> _processedNotificationIds = {};
+
+  late final NotificationService _notificationService;
+  late StreamSubscription<Map<String, dynamic>> _notificationSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _notificationService = NotificationService();
     _loadCachedRequestStatus();
-    _loadSampleNotifications();
+    _loadSavedNotifications();
+    _listenToNotifications();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _notificationSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshNotificationCount();
+    }
   }
 
   @override
@@ -58,35 +84,214 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _loadSampleNotifications() {
-    _notifications = [
-      {
-        'title': 'New Product Available!',
-        'body': 'Fresh organic vegetables just added to the marketplace',
-        'time': 'Just now',
-        'icon': '🆕',
+  void _listenToNotifications() {
+    _notificationSubscription = _notificationService.messageStream.listen(
+      (messageData) {
+        _addRealNotification(messageData);
       },
-      {
-        'title': 'Special Discount',
-        'body': 'Get 20% off on all grains this week only!',
-        'time': '2 hours ago',
-        'icon': '🎉',
+      onError: (error) {
+        debugPrint('Notification stream error: $error');
       },
-      {
-        'title': 'Weather Alert',
-        'body':
-            'Rain expected in your area tomorrow. Plan your farming activities.',
-        'time': '5 hours ago',
-        'icon': '⛈️',
-      },
-      {
-        'title': 'Order Update',
-        'body': 'Your order #12345 has been shipped successfully',
-        'time': 'Yesterday',
-        'icon': '📦',
-      },
-    ];
-    _notificationCount = _notifications.length;
+    );
+  }
+
+  String _generateNotificationId(Map<String, dynamic> messageData) {
+    final timestamp = messageData['timestamp'] ?? DateTime.now().toIso8601String();
+    final type = messageData['type'] ?? 'general';
+    return '$type-$timestamp';
+  }
+
+  void _addRealNotification(Map<String, dynamic> messageData) {
+    final notificationId = _generateNotificationId(messageData);
+
+    if (_processedNotificationIds.contains(notificationId)) {
+      return;
+    }
+
+    _processedNotificationIds.add(notificationId);
+
+    final title = messageData['title'] ?? 'Agrilink Update';
+    final body = messageData['body'] ?? 'You have a new notification';
+    final type = messageData['type'] ?? 'general';
+
+    final newNotification = {
+      'id': notificationId,
+      'title': title,
+      'body': body,
+      'time': _getTimeAgo(DateTime.now()),
+      'type': type,
+      'data': messageData,
+      'timestamp': DateTime.now().toIso8601String(),
+      'read': false,
+    };
+
+    setState(() {
+      _notifications.insert(0, newNotification);
+      _notificationCount = _notifications.length;
+    });
+
+    _saveNotificationsToStorage();
+
+    Future.delayed(const Duration(seconds: 5), () {
+      _processedNotificationIds.remove(notificationId);
+    });
+  }
+
+  Future<void> _saveNotificationsToStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final notificationsToSave = _notifications.map((n) {
+        return {
+          'id': n['id'],
+          'title': n['title'],
+          'body': n['body'],
+          'time': n['time'],
+          'type': n['type'],
+          'timestamp': n['timestamp'],
+          'read': n['read'],
+        };
+      }).toList();
+
+      await prefs.setString('home_notifications', jsonEncode(notificationsToSave));
+    } catch (e) {
+      debugPrint('Error saving notifications: $e');
+    }
+  }
+
+  Future<void> _loadSavedNotifications() async {
+    if (_hasLoadedNotifications) return;
+
+    try {
+      final saved = await _notificationService.getSavedNotifications();
+      setState(() {
+        _notifications = saved.map((item) {
+          return {
+            ...item,
+            'time': _getTimeAgo(DateTime.parse(item['timestamp'])),
+            'icon': _getIconForType(item['type'] ?? 'general'),
+          };
+        }).toList();
+        _notificationCount = _notifications.length;
+      });
+      _hasLoadedNotifications = true;
+    } catch (e) {
+      debugPrint('Error loading notifications: $e');
+    }
+  }
+
+  void _refreshNotificationCount() {
+    setState(() {
+      _notificationCount = _notifications.length;
+    });
+  }
+
+  IconData _getIconForType(String type) {
+    switch (type.toLowerCase()) {
+      case 'order':
+        return Icons.shopping_bag_outlined;
+      case 'chat':
+        return Icons.chat_bubble_outline;
+      case 'product':
+        return Icons.inventory_2_outlined;
+      case 'promotion':
+      case 'promo':
+        return Icons.local_offer_outlined;
+      case 'alert':
+      case 'weather':
+        return Icons.warning_amber_outlined;
+      default:
+        return Icons.notifications_none;
+    }
+  }
+
+  Color _getIconColorForType(String type) {
+    switch (type.toLowerCase()) {
+      case 'order':
+        return Colors.orange.shade700;
+      case 'chat':
+        return Colors.blue.shade700;
+      case 'product':
+        return Colors.purple.shade700;
+      case 'promotion':
+      case 'promo':
+        return Colors.red.shade700;
+      case 'alert':
+      case 'weather':
+        return Colors.amber.shade700;
+      default:
+        return Colors.green.shade700;
+    }
+  }
+
+  String _getTimeAgo(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+
+    if (difference.inSeconds < 60) return 'Just now';
+    if (difference.inMinutes < 60) return '${difference.inMinutes} min ago';
+    if (difference.inHours < 24) return '${difference.inHours} hours ago';
+    if (difference.inDays < 7) return '${difference.inDays} days ago';
+    return '${(difference.inDays / 7).floor()} weeks ago';
+  }
+
+  void _clearAllNotifications() async {
+    setState(() {
+      _notifications.clear();
+      _notificationCount = 0;
+      _processedNotificationIds.clear();
+    });
+    await _saveNotificationsToStorage();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All notifications cleared'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  void _markAsRead(int index) async {
+    setState(() {
+      _notifications[index]['read'] = true;
+    });
+    await _saveNotificationsToStorage();
+  }
+
+  void _markAllAsRead() async {
+    setState(() {
+      for (var i = 0; i < _notifications.length; i++) {
+        _notifications[i]['read'] = true;
+      }
+    });
+    await _saveNotificationsToStorage();
+  }
+
+  void _handleNotificationTap(Map<String, dynamic> notification) {
+    final index = _notifications.indexWhere(
+      (n) => n['id'] == notification['id'],
+    );
+    if (index != -1) {
+      _markAsRead(index);
+    }
+
+    final type = notification['type'] ?? 'general';
+
+    switch (type) {
+      case 'order':
+        context.pushNamed(RouteName.myOrders);
+        break;
+      case 'chat':
+        context.pushNamed(RouteName.aiRecommendation);
+        break;
+      case 'product':
+        context.pushNamed(RouteName.product);
+        break;
+      default:
+        break;
+    }
   }
 
   void _showNotificationDrawer() {
@@ -118,9 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.green.shade50,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(25),
-              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
             ),
             child: Row(
               children: [
@@ -130,10 +333,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.green.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.notifications_active,
-                    color: Colors.green.shade700,
-                  ),
+                  child: Icon(Icons.notifications_active, color: Colors.green.shade700),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -159,26 +359,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.notifications_off,
-                      size: 80,
-                      color: Colors.grey.shade400,
-                    ),
+                    Icon(Icons.notifications_off, size: 80, color: Colors.grey.shade400),
                     const SizedBox(height: 16),
                     Text(
                       'No notifications yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey.shade600,
-                      ),
+                      style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'We\'ll notify you when something important happens',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade500,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                     ),
                   ],
                 ),
@@ -190,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.all(16),
                 itemCount: _notifications.length,
                 itemBuilder: (context, index) {
-                  return _buildNotificationCard(_notifications[index]);
+                  return _buildNotificationCard(_notifications[index], index);
                 },
               ),
             ),
@@ -200,24 +390,20 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: Colors.grey.shade200)),
               ),
-              child: TextButton(
-                onPressed: () {
-                  setState(() {
-                    _notifications.clear();
-                    _notificationCount = 0;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('All notifications cleared'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  Navigator.pop(context);
-                },
-                child: Text(
-                  'Clear All',
-                  style: TextStyle(color: Colors.red.shade400),
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton.icon(
+                    onPressed: _clearAllNotifications,
+                    icon: Icon(Icons.delete_sweep, color: Colors.red.shade400, size: 20),
+                    label: Text('Clear All', style: TextStyle(color: Colors.red.shade400)),
+                  ),
+                  TextButton.icon(
+                    onPressed: _markAllAsRead,
+                    icon: Icon(Icons.done_all, color: Colors.green.shade600, size: 20),
+                    label: Text('Mark All Read', style: TextStyle(color: Colors.green.shade600)),
+                  ),
+                ],
               ),
             ),
         ],
@@ -225,65 +411,88 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNotificationCard(Map<String, String> notification) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.green.shade100,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                notification['icon'] ?? '📢',
-                style: const TextStyle(fontSize: 24),
+  Widget _buildNotificationCard(Map<String, dynamic> notification, int index) {
+    final isRead = notification['read'] == true;
+    final type = notification['type'] ?? 'general';
+    final icon = _getIconForType(type);
+    final iconColor = _getIconColorForType(type);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        _handleNotificationTap(notification);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isRead ? Colors.grey.shade50 : Colors.green.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isRead ? Colors.grey.shade200 : Colors.green.shade200,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isRead ? Colors.grey.shade200 : iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: isRead ? Colors.grey.shade600 : iconColor,
+                size: 24,
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  notification['title']!,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notification['title']!,
+                    style: TextStyle(
+                      fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
+                      fontSize: 14,
+                      color: isRead ? Colors.grey.shade700 : Colors.black87,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  notification['body']!,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  notification['time']!,
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    notification['body']!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isRead ? Colors.grey.shade500 : Colors.grey.shade700,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    notification['time']!,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isRead ? Colors.grey.shade400 : Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: Colors.green,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ],
+            if (!isRead)
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: iconColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -326,7 +535,6 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
-        // AI Chatbot Floating Button - Positioned above bottom navigation
         const Positioned(bottom: 80, right: 20, child: AIChatbotFAB()),
       ],
     );
@@ -343,13 +551,10 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         Stack(
           children: [
-            Container(
-              margin: const EdgeInsets.only(right: 4),
-              child: IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: _showNotificationDrawer,
-                tooltip: t.notifications ?? 'Notifications',
-              ),
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: _showNotificationDrawer,
+              tooltip: t.notifications ?? 'Notifications',
             ),
             if (_notificationCount > 0)
               Positioned(
@@ -361,10 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
+                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                   child: Text(
                     '$_notificationCount',
                     style: const TextStyle(
@@ -378,13 +580,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
           ],
         ),
-        Container(
-          margin: const EdgeInsets.only(right: 8),
-          child: IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.goNamed(RouteName.login),
-            tooltip: t.logout,
-          ),
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: () => context.goNamed(RouteName.login),
+          tooltip: t.logout,
         ),
       ],
     );
@@ -584,7 +783,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => context.pushNamed(RouteName.myOrders),
               ),
               const SizedBox(width: _standardSpacing),
-              // ================= MARKET INSIGHT QUICK ACTION =================
               _buildQuickActionCard(
                 context: context,
                 icon: Icons.trending_up,
@@ -716,10 +914,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         }
-        if (state is CategoryLoaded)
-          return _buildModernCategoryGrid(context, state);
-        if (state is SubCategoryLoaded)
-          return _buildModernSubCategoryList(context, state);
+        if (state is CategoryLoaded) return _buildModernCategoryGrid(context, state);
+        if (state is SubCategoryLoaded) return _buildModernSubCategoryList(context, state);
         if (state is CategoryError) {
           return Center(
             child: Column(
@@ -737,8 +933,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () =>
-                      context.read<CategoryBloc>().add(LoadCategories()),
+                  onPressed: () => context.read<CategoryBloc>().add(LoadCategories()),
                   child: const Text('Retry'),
                 ),
               ],
@@ -786,14 +981,13 @@ class _HomeScreenState extends State<HomeScreen> {
     required List<Color> gradientColors,
   }) {
     return GestureDetector(
-      onTap: () =>
-          context.read<CategoryBloc>().add(LoadSubCategories(category.id)),
+      onTap: () => context.read<CategoryBloc>().add(LoadSubCategories(category.id)),
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [gradientColors[0], gradientColors[1]],
+            colors: gradientColors,
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -957,7 +1151,7 @@ class _HomeScreenState extends State<HomeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [gradientColors[0], gradientColors[1]],
+            colors: gradientColors,
           ),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
@@ -1052,8 +1246,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Drawer _buildDrawer(BuildContext context, AppLocalizations t) {
     final authState = context.read<AuthBloc>().state;
-    String role = "";
-    String userId = "";
+    String role = '';
+    String userId = '';
 
     if (authState is AuthSuccess) {
       role = authState.authResponse.user.role;
@@ -1075,8 +1269,6 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.zero,
           children: [
             _buildDrawerHeader(t),
-
-            // ================= MARKET INSIGHT DRAWER ITEM =================
             _buildDrawerItem(
               context: context,
               icon: Icons.trending_up,
@@ -1224,8 +1416,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-    if (_cachedRequestStatus == 'PENDING')
-      return _buildPendingStatusCard(context, t);
+    if (_cachedRequestStatus == 'PENDING') return _buildPendingStatusCard(context, t);
     if (_cachedRequestStatus == 'APPROVED') {
       return _buildStatusCard(
         icon: Icons.check_circle,
@@ -1236,8 +1427,7 @@ class _HomeScreenState extends State<HomeScreen> {
         statusColor: Colors.green,
       );
     }
-    if (_cachedRequestStatus == 'REJECTED')
-      return _buildRejectedStatusCard(context, t);
+    if (_cachedRequestStatus == 'REJECTED') return _buildRejectedStatusCard(context, t);
     return _buildRequestButton(context, t, userId);
   }
 
