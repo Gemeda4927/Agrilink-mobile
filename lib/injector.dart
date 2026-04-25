@@ -1,6 +1,7 @@
 import 'package:agrilink/core/services/notification_service.dart';
 import 'package:agrilink/features/cart/data/repository/cartRemoteDataSourceImpl.dart';
 import 'package:agrilink/features/insight/data/services/marketService.dart';
+import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_bloc.dart';
 import 'package:agrilink/features/product/domain/usecases/delete_product.dart';
 import 'package:agrilink/features/product/domain/usecases/get_my_products.dart';
 import 'package:agrilink/features/product/domain/usecases/get_product_by_id.dart';
@@ -406,14 +407,19 @@ Future<void> initInjector() async {
   sl.registerLazySingleton<UpdateOrderStatusUseCase>(
     () => UpdateOrderStatusUseCase(sl<IFarmerOrderRepository>()),
   );
-  sl.registerLazySingleton<ConfirmOrderUseCase>(
-    () => ConfirmOrderUseCase(sl<IFarmerOrderRepository>()),
+  sl.registerLazySingleton<PatchProductUseCase>(
+    () => PatchProductUseCase(sl<IFarmerOrderRepository>()),
   );
-  sl.registerLazySingleton<MarkAsShippedUseCase>(
-    () => MarkAsShippedUseCase(sl<IFarmerOrderRepository>()),
-  );
-  sl.registerLazySingleton<MarkAsDeliveredUseCase>(
-    () => MarkAsDeliveredUseCase(sl<IFarmerOrderRepository>()),
+
+  // BLoC
+  sl.registerFactory<FarmerOrderBloc>(
+    () => FarmerOrderBloc(
+      getFarmerOrdersUseCase: sl(),
+      getPendingFarmerOrdersUseCase: sl(),
+      getFarmerOrderByIdUseCase: sl(),
+      updateOrderStatusUseCase: sl(),
+      patchProductUseCase: sl(),
+    ),
   );
 
   // ==================================================
@@ -486,7 +492,7 @@ Future<void> initInjector() async {
   );
 
   sl.registerLazySingleton<GetMyMarketPricesUseCase>(
-    () => GetMyMarketPricesUseCase(sl<IMarketRepository>()), 
+    () => GetMyMarketPricesUseCase(sl<IMarketRepository>()),
   );
 
   sl.registerLazySingleton<UpdateMarketPriceUseCase>(
@@ -494,13 +500,11 @@ Future<void> initInjector() async {
   );
 
   sl.registerLazySingleton<ApproveMarketPriceUseCase>(
-    () => ApproveMarketPriceUseCase(sl<IMarketRepository>()), 
+    () => ApproveMarketPriceUseCase(sl<IMarketRepository>()),
   );
 
   sl.registerLazySingleton<RejectMarketPriceUseCase>(
-    () => RejectMarketPriceUseCase(
-      sl<IMarketRepository>(),
-    ), 
+    () => RejectMarketPriceUseCase(sl<IMarketRepository>()),
   );
 
   // Register BLoC
@@ -514,7 +518,7 @@ Future<void> initInjector() async {
       getMyMarketPricesUseCase: sl<GetMyMarketPricesUseCase>(),
       updateMarketPriceUseCase: sl<UpdateMarketPriceUseCase>(),
       approveMarketPriceUseCase: sl<ApproveMarketPriceUseCase>(),
-      rejectMarketPriceUseCase: sl<RejectMarketPriceUseCase>(), 
+      rejectMarketPriceUseCase: sl<RejectMarketPriceUseCase>(),
     ),
   );
 }

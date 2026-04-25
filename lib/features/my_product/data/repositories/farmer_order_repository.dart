@@ -48,30 +48,32 @@ class FarmerOrderRepository implements IFarmerOrderRepository {
     }
   }
 
-  @override
-  Future<void> confirmOrder(String orderId) async {
+  // PATCH: Update product partially
+  Future<Map<String, dynamic>> patchProduct({
+    required String productId,
+    String? name,
+    int? amount,
+    double? price,
+    String? description,
+    String? city,
+    String? subCategoryId,
+    bool? withDelivery,
+    String? image,
+  }) async {
     try {
-      await _service.confirmOrder(orderId);
+      return await _service.patchProduct(
+        productId: productId,
+        name: name,
+        amount: amount,
+        price: price,
+        description: description,
+        city: city,
+        subCategoryId: subCategoryId,
+        withDelivery: withDelivery,
+        image: image,
+      );
     } catch (e) {
-      throw Exception('Failed to confirm order: $e');
-    }
-  }
-
-  @override
-  Future<void> markAsShipped(String orderId) async {
-    try {
-      await _service.markAsShipped(orderId);
-    } catch (e) {
-      throw Exception('Failed to mark order as shipped: $e');
-    }
-  }
-
-  @override
-  Future<void> markAsDelivered(String orderId) async {
-    try {
-      await _service.markAsDelivered(orderId);
-    } catch (e) {
-      throw Exception('Failed to mark order as delivered: $e');
+      throw Exception('Failed to update product: $e');
     }
   }
 }

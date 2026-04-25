@@ -1,10 +1,9 @@
-// lib/features/product/presentation/widgets/product_card.dart
-
-import 'package:agrilink/features/product/data/model/product_model.dart';
 import 'package:flutter/material.dart';
 
+import '../../product/domain/entities/product_entities.dart';
+
 class ProductCard extends StatelessWidget {
-  final ProductModel product;
+  final ProductEntity product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -26,10 +25,7 @@ class ProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildImageSection(),
-          _buildContentSection(),
-        ],
+        children: [_buildImageSection(), _buildContentSection()],
       ),
     );
   }
@@ -38,12 +34,12 @@ class ProductCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       child: SizedBox(
-        height: 120,
+        height: 90,
         width: double.infinity,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            product.image.isNotEmpty
+            product.hasImage
                 ? Image.network(
                     product.image,
                     fit: BoxFit.cover,
@@ -56,11 +52,7 @@ class ProductCard extends StatelessWidget {
                     },
                   )
                 : _buildPlaceholderImage(),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: _buildStockBadge(),
-            ),
+            Positioned(top: 6, right: 6, child: _buildStockBadge()),
           ],
         ),
       ),
@@ -73,7 +65,7 @@ class ProductCard extends StatelessWidget {
       child: Center(
         child: Icon(
           Icons.image_outlined,
-          size: 40,
+          size: 30,
           color: Colors.grey.shade400,
         ),
       ),
@@ -84,8 +76,13 @@ class ProductCard extends StatelessWidget {
     return Container(
       color: Colors.grey.shade100,
       child: const Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Color(0xFF2E7D32),
+          ),
         ),
       ),
     );
@@ -93,7 +90,7 @@ class ProductCard extends StatelessWidget {
 
   Widget _buildContentSection() {
     return Padding(
-      padding: const EdgeInsets.all(10.0),
+      padding: const EdgeInsets.all(8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -102,7 +99,7 @@ class ProductCard extends StatelessWidget {
           Text(
             product.name,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1A1A1A),
               height: 1.2,
@@ -110,49 +107,47 @@ class ProductCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
 
           // Category Badge
-          if (product.categoryName != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2E7D32).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                product.categoryName!,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF2E7D32),
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2E7D32).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
             ),
-            const SizedBox(height: 8),
-          ],
+            child: Text(
+              product.getCategoryDisplay(),
+              style: const TextStyle(
+                fontSize: 9,
+                color: Color(0xFF2E7D32),
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 6),
 
           // Price and Stock row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Price with ETB currency
+              // Price
               Expanded(
                 child: Row(
                   children: [
                     Icon(
                       Icons.payments_rounded,
-                      size: 14,
+                      size: 11,
                       color: const Color(0xFF2E7D32),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 2),
                     Flexible(
                       child: Text(
-                        'ETB ${product.price}',
+                        product.formattedPrice,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF2E7D32),
                         ),
@@ -167,7 +162,27 @@ class ProductCard extends StatelessWidget {
               _buildStockInfo(),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
+
+          // Delivery Badge (optional)
+          if (product.withDelivery == true)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.local_shipping_rounded,
+                    size: 8,
+                    color: Colors.grey.shade500,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    'Delivery',
+                    style: TextStyle(fontSize: 8, color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+            ),
 
           // Action Buttons
           _buildActionButtons(),
@@ -180,8 +195,8 @@ class ProductCard extends StatelessWidget {
     final stockColor = product.amount == 0
         ? const Color(0xFFD32F2F)
         : product.amount < 10
-            ? const Color(0xFFF57C00)
-            : const Color(0xFF2E7D32);
+        ? const Color(0xFFF57C00)
+        : const Color(0xFF2E7D32);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -190,14 +205,14 @@ class ProductCard extends StatelessWidget {
           product.amount == 0
               ? Icons.inventory_2_outlined
               : Icons.inventory_rounded,
-          size: 12,
+          size: 10,
           color: stockColor,
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 2),
         Text(
-          '${product.amount}',
+          product.formattedAmount,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: FontWeight.w600,
             color: stockColor,
           ),
@@ -212,20 +227,20 @@ class ProductCard extends StatelessWidget {
 
     if (product.amount == 0) {
       backgroundColor = const Color(0xFFD32F2F);
-      text = 'Out of Stock';
+      text = 'Out';
     } else if (product.amount < 10) {
       backgroundColor = const Color(0xFFF57C00);
-      text = 'Low Stock';
+      text = 'Low';
     } else {
       backgroundColor = const Color(0xFF2E7D32);
-      text = 'In Stock';
+      text = 'In';
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
             color: backgroundColor.withOpacity(0.3),
@@ -237,7 +252,7 @@ class ProductCard extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(
-          fontSize: 10,
+          fontSize: 9,
           color: Colors.white,
           fontWeight: FontWeight.w600,
         ),
@@ -253,12 +268,12 @@ class ProductCard extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: onEdit,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1976D2).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -266,13 +281,13 @@ class ProductCard extends StatelessWidget {
                     Icon(
                       Icons.edit_outlined,
                       color: Color(0xFF1976D2),
-                      size: 14,
+                      size: 11,
                     ),
-                    SizedBox(width: 4),
+                    SizedBox(width: 2),
                     Text(
                       'Edit',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF1976D2),
                       ),
@@ -283,18 +298,18 @@ class ProductCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Expanded(
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: onDelete,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFD32F2F).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -302,13 +317,13 @@ class ProductCard extends StatelessWidget {
                     Icon(
                       Icons.delete_outline_rounded,
                       color: Color(0xFFD32F2F),
-                      size: 14,
+                      size: 11,
                     ),
-                    SizedBox(width: 4),
+                    SizedBox(width: 2),
                     Text(
                       'Delete',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFFD32F2F),
                       ),

@@ -1,17 +1,14 @@
 class ApiConstants {
   // ================= BASE URLS =================
   static const String baseUrl = "https://agrilink-1-x6ph.onrender.com";
-  
-  // Local development server IP (for device registration and local testing)
-  // static const String localBaseUrl = "http://10.50.89.199:3000";
-  
+
   static const String cropAdvisorBaseUrl =
       "https://senakebede-crop-advisor-backend.hf.space";
 
   // ================= DEVICE REGISTRATION =================
   static const String deviceRegister = "$baseUrl/devices/register";
   static const String deviceUnregister = "$baseUrl/devices/unregister";
-  
+
   // ================= AUTH ENDPOINTS =================
   static const String signup = "$baseUrl/auth/signup";
   static const String signin = "$baseUrl/auth/signin";
@@ -19,11 +16,9 @@ class ApiConstants {
   static const String verifyOtp = "$baseUrl/auth/verify-otp";
   static const String forgotPassword = "$baseUrl/auth/forgot-password";
   static const String resetPassword = "$baseUrl/auth/reset-password";
-  static const String register =
-      "$baseUrl/auth/signup"; // Legacy - use signup instead
+  static const String register = "$baseUrl/auth/signup";
 
   // ================= ROLE-SPECIFIC ENDPOINTS =================
-  // Note: Only farmer creation endpoint exists. The role field in body is ignored.
   static const String createFarmer = "$baseUrl/auth/create-farmer";
 
   // ================= CATEGORY ENDPOINTS =================
@@ -37,8 +32,9 @@ class ApiConstants {
   static String getProductById(String id) => "$baseUrl/product/$id";
   static String updateProduct(String id) => "$baseUrl/product/$id";
   static String deleteProduct(String id) => "$baseUrl/product/$id";
+  static String patchProduct(String id) => "$baseUrl/product/$id";
 
-  // ================= LOCATION ENDPOINTS (ETHIOPIA) =================
+  // ================= LOCATION ENDPOINTS =================
   static const String regions = "$baseUrl/regions";
   static const String zones = "$baseUrl/zones";
   static const String zonesByRegion = "$baseUrl/zones/by-region";
@@ -76,6 +72,8 @@ class ApiConstants {
       "$baseUrl/orders/farmer-orders/pending";
   static String verifyOrder(String orderId) =>
       "$baseUrl/orders/verify/$orderId";
+  static String updateOrderStatus(String orderId) =>
+      "$baseUrl/orders/farmer-orders/$orderId/status"; // ADDED
 
   // ================= PAYMENT ENDPOINTS =================
   static const String checkout = "$baseUrl/orders/checkout";
@@ -97,14 +95,12 @@ class ApiConstants {
   static const String cropAdvisorChat = "$cropAdvisorBaseUrl/api/v1/chat";
 
   // ================= ENUMS / OPTIONS =================
-  // Current Role Options
   static const List<String> currentRoleOptions = [
     'DA_OFFICER',
     'FARMER',
     'OTHER',
   ];
 
-  // Education Level Options
   static const List<String> educationLevelOptions = [
     'NONE',
     'PRIMARY',
@@ -115,7 +111,6 @@ class ApiConstants {
     'PHD',
   ];
 
-  // Request Status Options
   static const List<String> requestStatusOptions = [
     'PENDING',
     'APPROVED',

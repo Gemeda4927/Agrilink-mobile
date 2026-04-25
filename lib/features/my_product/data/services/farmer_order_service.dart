@@ -67,7 +67,7 @@ class FarmerOrderService {
     }
   }
 
-  /// Update order status (for farmer to confirm/ship)
+  /// Update order status
   Future<void> updateOrderStatus(String orderId, String status) async {
     try {
       final response = await _dioClient.patch(
@@ -87,18 +87,44 @@ class FarmerOrderService {
     }
   }
 
-  /// Confirm order (mark as confirmed by farmer)
-  Future<void> confirmOrder(String orderId) async {
-    await updateOrderStatus(orderId, 'CONFIRMED');
-  }
+  /// PATCH: Partially update a product
+  Future<Map<String, dynamic>> patchProduct({
+    required String productId,
+    String? name,
+    int? amount,
+    double? price,
+    String? description,
+    String? city,
+    String? subCategoryId,
+    bool? withDelivery,
+    String? image,
+  }) async {
+    try {
+      final Map<String, dynamic> data = {};
+      
+      if (name != null) data['name'] = name;
+      if (amount != null) data['amount'] = amount;
+      if (price != null) data['price'] = price;
+      if (description != null) data['description'] = description;
+      if (city != null) data['city'] = city;
+      if (subCategoryId != null) data['subCategoryId'] = subCategoryId;
+      if (withDelivery != null) data['withDelivery'] = withDelivery;
+      if (image != null) data['image'] = image;
 
-  /// Mark order as shipped
-  Future<void> markAsShipped(String orderId) async {
-    await updateOrderStatus(orderId, 'SHIPPED');
-  }
+      final response = await _dioClient.patch(
+        ApiConstants.patchProduct(productId),
+        data: data,
+      );
 
-  /// Mark order as delivered
-  Future<void> markAsDelivered(String orderId) async {
-    await updateOrderStatus(orderId, 'DELIVERED');
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to update product: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
   }
 }
