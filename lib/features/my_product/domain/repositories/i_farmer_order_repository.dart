@@ -15,12 +15,16 @@ abstract class IFarmerOrderRepository {
   /// Update order status
   Future<void> updateOrderStatus(String orderId, String status);
 
-  /// Confirm order
-  Future<void> confirmOrder(String orderId);
-
-  /// Mark order as shipped
-  Future<void> markAsShipped(String orderId);
-
-  /// Mark order as delivered
-  Future<void> markAsDelivered(String orderId);
+  /// PATCH: Partially update a product
+  Future<Map<String, dynamic>> patchProduct({
+    required String productId,
+    String? name,
+    int? amount,
+    double? price,
+    String? description,
+    String? city,
+    String? subCategoryId,
+    bool? withDelivery,
+    String? image,
+  });
 }

@@ -4,6 +4,8 @@ import 'package:agrilink/core/services/notification_service.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
 import 'package:agrilink/features/insight/presentation/bloc/market_bloc.dart';
 import 'package:agrilink/features/insight/presentation/bloc/market_event.dart';
+import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_bloc.dart';
+import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_events.dart';
 import 'package:agrilink/features/notification/presentation/notification_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_event.dart';
@@ -58,35 +60,40 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
- @override
-void didChangeAppLifecycleState(AppLifecycleState state) {
-  if (state == AppLifecycleState.resumed) {
-    _notificationService.clearBadge(); // Now this works!
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _notificationService.clearBadge(); // Now this works!
+    }
   }
-}
 
   Future<void> _initializeNotifications() async {
     try {
       await _notificationService.initialize();
       _logger.i("✅ Notification service initialized successfully");
 
-      NotificationService.navigateTo = (String route, {Map<String, dynamic>? extra}) {
-        final context = navigatorKey.currentState?.context;
-        if (context != null) {
-          try {
-            final currentRoute = GoRouterState.of(context).uri.toString();
-            if (currentRoute != route) {
-              _logger.i("📱 Navigating to: $route");
-              context.pushNamed(route, extra: extra);
+      NotificationService.navigateTo =
+          (String route, {Map<String, dynamic>? extra}) {
+            final context = navigatorKey.currentState?.context;
+            if (context != null) {
+              try {
+                final currentRoute = GoRouterState.of(context).uri.toString();
+                if (currentRoute != route) {
+                  _logger.i("📱 Navigating to: $route");
+                  context.pushNamed(route, extra: extra);
+                }
+              } catch (e) {
+                _logger.e("Navigation error: $e");
+                context.pushNamed(route, extra: extra);
+              }
             }
-          } catch (e) {
-            _logger.e("Navigation error: $e");
-            context.pushNamed(route, extra: extra);
-          }
-        }
-      };
+          };
     } catch (e, stackTrace) {
-      _logger.e("Failed to initialize notifications", error: e, stackTrace: stackTrace);
+      _logger.e(
+        "Failed to initialize notifications",
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -142,6 +149,16 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
             final bloc = sl<OrderBloc>();
             WidgetsBinding.instance.addPostFrameCallback((_) {
               bloc.add(GetMyOrdersEvent());
+            });
+            return bloc;
+          },
+        ),
+
+        BlocProvider<FarmerOrderBloc>(
+          create: (_) {
+            final bloc = sl<FarmerOrderBloc>();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.add(LoadFarmerOrdersEvent());
             });
             return bloc;
           },
@@ -236,17 +253,21 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
               return BlocListener<AuthBloc, AuthState>(
                 listener: (context, state) {
                   _logger.i("🔔 AuthState changed: ${state.runtimeType}");
-                  
+
                   if (state is AuthSuccess) {
-                    _logger.i("✅ AuthSuccess detected - Registering device token");
+                    _logger.i(
+                      "✅ AuthSuccess detected - Registering device token",
+                    );
                     _registerDeviceTokenAndSubscribe(state);
-                  } 
-                  else if (state is AuthInitial) {
-                    _logger.i("🔴 AuthInitial detected - Unregistering device token");
+                  } else if (state is AuthInitial) {
+                    _logger.i(
+                      "🔴 AuthInitial detected - Unregistering device token",
+                    );
                     _unregisterDeviceToken();
-                  }
-                  else if (state is AuthFailure) {
-                    _logger.i("🔴 AuthFailure detected - Unregistering device token");
+                  } else if (state is AuthFailure) {
+                    _logger.i(
+                      "🔴 AuthFailure detected - Unregistering device token",
+                    );
                     _unregisterDeviceToken();
                   }
                 },
@@ -260,23 +281,31 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
   }
 
   Future<void> _registerDeviceTokenAndSubscribe(AuthSuccess state) async {
-    _logger.i("📱 Starting device token registration for user: ${state.authResponse.user.email}");
-    
+    _logger.i(
+      "📱 Starting device token registration for user: ${state.authResponse.user.email}",
+    );
+
     try {
       final token = await _notificationService.getSavedToken();
-      _logger.i("📱 Retrieved FCM token: ${token != null ? "Present (${token.substring(0, token.length > 20 ? 20 : token.length)}...)" : "NULL"}");
+      _logger.i(
+        "📱 Retrieved FCM token: ${token != null ? "Present (${token.substring(0, token.length > 20 ? 20 : token.length)}...)" : "NULL"}",
+      );
 
       if (token != null && token.isNotEmpty) {
         _logger.i("📤 Registering device token with backend...");
-        final registered = await _notificationService.registerDeviceToken(token);
-        
+        final registered = await _notificationService.registerDeviceToken(
+          token,
+        );
+
         if (registered) {
           _logger.i("✅ Device token registered successfully!");
         } else {
           _logger.w("⚠️ Device token registration failed");
         }
       } else {
-        _logger.w("⚠️ No FCM token available - waiting for FCM to generate token");
+        _logger.w(
+          "⚠️ No FCM token available - waiting for FCM to generate token",
+        );
         Future.delayed(const Duration(seconds: 2), () async {
           final retryToken = await _notificationService.getSavedToken();
           if (retryToken != null && retryToken.isNotEmpty) {
@@ -292,22 +321,24 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
 
       if (role != null && role.toString().isNotEmpty) {
         final normalizedRole = role.toString().toLowerCase().trim();
-        
+
         _logger.i("📤 Subscribing to topic: all_users");
         await _notificationService.subscribeToTopic('all_users');
-        
+
         _logger.i("📤 Subscribing to topic: role_$normalizedRole");
         await _notificationService.subscribeToTopic('role_$normalizedRole');
-        
+
         _logger.i("✅ Successfully subscribed to notification topics");
       } else {
         _logger.w("⚠️ No role found - subscribing only to all_users");
         await _notificationService.subscribeToTopic('all_users');
       }
     } catch (e, stackTrace) {
-      _logger.e('❌ Failed to register device token and subscribe to topics',
-          error: e,
-          stackTrace: stackTrace);
+      _logger.e(
+        '❌ Failed to register device token and subscribe to topics',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 

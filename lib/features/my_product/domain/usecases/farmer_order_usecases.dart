@@ -147,69 +147,54 @@ class UpdateOrderStatusUseCase
   }
 }
 
-// ================= 5. CONFIRM ORDER USE CASE =================
-class ConfirmOrderUseCase implements UseCase<void, String> {
-  final IFarmerOrderRepository repository;
+// ================= 5. PATCH PRODUCT USE CASE =================
+class PatchProductParams {
+  final String productId;
+  final String? name;
+  final int? amount;
+  final double? price;
+  final String? description;
+  final String? city;
+  final String? subCategoryId;
+  final bool? withDelivery;
+  final String? image;
 
-  ConfirmOrderUseCase(this.repository);
-
-  @override
-  Future<Either<Failure, void>> call(String orderId) async {
-    try {
-      await repository.confirmOrder(orderId);
-      return const Right(null);
-    } catch (e) {
-      return Left(_handleError(e));
-    }
-  }
-
-  Failure _handleError(dynamic error) {
-    if (error.toString().contains('Network')) {
-      return NetworkFailure(
-        'Network connection failed. Please check your internet.',
-      );
-    }
-    return ServerFailure(error.toString());
-  }
+  PatchProductParams({
+    required this.productId,
+    this.name,
+    this.amount,
+    this.price,
+    this.description,
+    this.city,
+    this.subCategoryId,
+    this.withDelivery,
+    this.image,
+  });
 }
 
-// ================= 6. MARK AS SHIPPED USE CASE =================
-class MarkAsShippedUseCase implements UseCase<void, String> {
+class PatchProductUseCase
+    implements UseCase<Map<String, dynamic>, PatchProductParams> {
   final IFarmerOrderRepository repository;
 
-  MarkAsShippedUseCase(this.repository);
+  PatchProductUseCase(this.repository);
 
   @override
-  Future<Either<Failure, void>> call(String orderId) async {
+  Future<Either<Failure, Map<String, dynamic>>> call(
+    PatchProductParams params,
+  ) async {
     try {
-      await repository.markAsShipped(orderId);
-      return const Right(null);
-    } catch (e) {
-      return Left(_handleError(e));
-    }
-  }
-
-  Failure _handleError(dynamic error) {
-    if (error.toString().contains('Network')) {
-      return NetworkFailure(
-        'Network connection failed. Please check your internet.',
+      final result = await repository.patchProduct(
+        productId: params.productId,
+        name: params.name,
+        amount: params.amount,
+        price: params.price,
+        description: params.description,
+        city: params.city,
+        subCategoryId: params.subCategoryId,
+        withDelivery: params.withDelivery,
+        image: params.image,
       );
-    }
-    return ServerFailure(error.toString());
-  }
-}
-
-// ================= 7. MARK AS DELIVERED USE CASE =================
-class MarkAsDeliveredUseCase implements UseCase<void, String> {
-  final IFarmerOrderRepository repository;
-
-  MarkAsDeliveredUseCase(this.repository);
-
-  @override
-  Future<Either<Failure, void>> call(String orderId) async {
-    try {
-      await repository.markAsDelivered(orderId);
-      return const Right(null);
+      return Right(result);
     } catch (e) {
       return Left(_handleError(e));
     }
