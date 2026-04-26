@@ -27,7 +27,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
-  
+
   File? _selectedImage;
   String? _existingImageUrl;
   final ImagePicker _picker = ImagePicker();
@@ -65,13 +65,13 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
   void _populateExistingData() {
     final profile = widget.existingProfile.profile!;
-    
+
     _nameController.text = profile.fullName;
     _existingImageUrl = profile.imageUrl;
-    
+
     _latitude = profile.latitude;
     _longitude = profile.longitude;
-    
+
     if (_latitude != null && _longitude != null) {
       _latitudeController.text = _latitude!.toString();
       _longitudeController.text = _longitude!.toString();
@@ -79,13 +79,13 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
     if (profile.kebele != null) {
       selectedKebele = profile.kebele!.id;
-      
+
       if (profile.kebele!.woreda != null) {
         selectedWoreda = profile.kebele!.woreda!.id;
-        
+
         if (profile.kebele!.woreda!.zone != null) {
           selectedZone = profile.kebele!.woreda!.zone!.id;
-          
+
           if (profile.kebele!.woreda!.zone!.region != null) {
             selectedRegion = profile.kebele!.woreda!.zone!.region!.id;
           }
@@ -128,12 +128,12 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
     try {
       PermissionStatus permission = await Permission.location.request();
-      
+
       if (permission.isGranted) {
         Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
         );
-        
+
         setState(() {
           _latitude = position.latitude;
           _longitude = position.longitude;
@@ -142,22 +142,26 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           _useManualInput = false;
           _isGettingLocation = false;
         });
-        
+
         _showSuccessSnackBar(
-          'Location captured: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}'
+          'Location captured: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}',
         );
-        
+
         print('📍 Current location: $_latitude, $_longitude');
       } else if (permission.isDenied) {
         setState(() {
           _isGettingLocation = false;
         });
-        _showErrorSnackBar('Location permission denied. Please enable location access.');
+        _showErrorSnackBar(
+          'Location permission denied. Please enable location access.',
+        );
       } else if (permission.isPermanentlyDenied) {
         setState(() {
           _isGettingLocation = false;
         });
-        _showErrorSnackBar('Location permission permanently denied. Please enable from settings.');
+        _showErrorSnackBar(
+          'Location permission permanently denied. Please enable from settings.',
+        );
         await openAppSettings();
       }
     } catch (e) {
@@ -165,19 +169,21 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         _isGettingLocation = false;
       });
       print('❌ Error getting location: $e');
-      _showErrorSnackBar('Failed to get location. Please check GPS is enabled.');
+      _showErrorSnackBar(
+        'Failed to get location. Please check GPS is enabled.',
+      );
     }
   }
 
   void _applyManualLocation() {
     try {
-      double? lat = _latitudeController.text.isNotEmpty 
-          ? double.parse(_latitudeController.text) 
+      double? lat = _latitudeController.text.isNotEmpty
+          ? double.parse(_latitudeController.text)
           : null;
-      double? lng = _longitudeController.text.isNotEmpty 
-          ? double.parse(_longitudeController.text) 
+      double? lng = _longitudeController.text.isNotEmpty
+          ? double.parse(_longitudeController.text)
           : null;
-      
+
       if (lat != null && lng != null) {
         setState(() {
           _latitude = lat;
@@ -647,7 +653,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
             style: TextStyle(fontSize: 13, color: textGrey),
           ),
           const SizedBox(height: 16),
-          
+
           // Manual Input Section
           Container(
             margin: const EdgeInsets.only(bottom: 16),
@@ -667,9 +673,15 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: primaryGreen, width: 2),
+                            borderSide: const BorderSide(
+                              color: primaryGreen,
+                              width: 2,
+                            ),
                           ),
-                          prefixIcon: const Icon(Icons.gps_fixed, color: primaryGreen),
+                          prefixIcon: const Icon(
+                            Icons.gps_fixed,
+                            color: primaryGreen,
+                          ),
                           filled: true,
                           fillColor: softGrey,
                         ),
@@ -688,9 +700,15 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: primaryGreen, width: 2),
+                            borderSide: const BorderSide(
+                              color: primaryGreen,
+                              width: 2,
+                            ),
                           ),
-                          prefixIcon: const Icon(Icons.map, color: primaryGreen),
+                          prefixIcon: const Icon(
+                            Icons.map,
+                            color: primaryGreen,
+                          ),
                           filled: true,
                           fillColor: softGrey,
                         ),
@@ -721,10 +739,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               ],
             ),
           ),
-          
+
           const Divider(),
           const SizedBox(height: 16),
-          
+
           // Auto Location Section
           if (_latitude != null && _longitude != null) ...[
             Container(
@@ -754,8 +772,16 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Latitude:', style: TextStyle(fontSize: 12, color: textGrey)),
-                            Text(_latitude!.toStringAsFixed(6), style: const TextStyle(fontWeight: FontWeight.w500)),
+                            const Text(
+                              'Latitude:',
+                              style: TextStyle(fontSize: 12, color: textGrey),
+                            ),
+                            Text(
+                              _latitude!.toStringAsFixed(6),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -763,8 +789,16 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Longitude:', style: TextStyle(fontSize: 12, color: textGrey)),
-                            Text(_longitude!.toStringAsFixed(6), style: const TextStyle(fontWeight: FontWeight.w500)),
+                            const Text(
+                              'Longitude:',
+                              style: TextStyle(fontSize: 12, color: textGrey),
+                            ),
+                            Text(
+                              _longitude!.toStringAsFixed(6),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -780,10 +814,16 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                               ? const SizedBox(
                                   height: 16,
                                   width: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Icon(Icons.refresh, size: 18),
-                          label: Text(_isGettingLocation ? 'Updating...' : 'Update from GPS'),
+                          label: Text(
+                            _isGettingLocation
+                                ? 'Updating...'
+                                : 'Update from GPS',
+                          ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: primaryGreen,
                             side: BorderSide(color: primaryGreen),
@@ -824,11 +864,17 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Icon(Icons.my_location),
-                label: Text(_isGettingLocation ? 'Getting Location...' : 'Use Current Location'),
+                label: Text(
+                  _isGettingLocation
+                      ? 'Getting Location...'
+                      : 'Use Current Location',
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   foregroundColor: Colors.white,

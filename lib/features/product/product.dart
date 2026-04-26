@@ -1,4 +1,5 @@
 import 'package:agrilink/core/config/routes/route_name.dart';
+import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_event.dart';
 import 'package:agrilink/features/cart/presentation/bloc/cart_state.dart';
@@ -177,6 +178,8 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   void _showSortBottomSheet() {
+    final localizations = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -195,9 +198,9 @@ class _ProductPageState extends State<ProductPage> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Sort Products',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            localizations.sortProducts,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ListTile(
@@ -205,7 +208,7 @@ class _ProductPageState extends State<ProductPage> {
               Icons.sort_by_alpha,
               color: _sortBy == 'name' ? Colors.green : Colors.grey,
             ),
-            title: const Text('By Name'),
+            title: Text(localizations.byName),
             trailing: _sortBy == 'name'
                 ? const Icon(Icons.check, color: Colors.green)
                 : null,
@@ -216,7 +219,7 @@ class _ProductPageState extends State<ProductPage> {
               Icons.trending_up,
               color: _sortBy == 'price_asc' ? Colors.green : Colors.grey,
             ),
-            title: const Text('Price: Low to High'),
+            title: Text(localizations.priceLowToHigh),
             trailing: _sortBy == 'price_asc'
                 ? const Icon(Icons.check, color: Colors.green)
                 : null,
@@ -227,7 +230,7 @@ class _ProductPageState extends State<ProductPage> {
               Icons.trending_down,
               color: _sortBy == 'price_desc' ? Colors.green : Colors.grey,
             ),
-            title: const Text('Price: High to Low'),
+            title: Text(localizations.priceHighToLow),
             trailing: _sortBy == 'price_desc'
                 ? const Icon(Icons.check, color: Colors.green)
                 : null,
@@ -240,6 +243,8 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   void _showFilterBottomSheet() {
+    final localizations = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -258,9 +263,9 @@ class _ProductPageState extends State<ProductPage> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Filter by Category',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            localizations.filterByCategory,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ..._categories.map(
@@ -271,7 +276,9 @@ class _ProductPageState extends State<ProductPage> {
                     ? Colors.green
                     : Colors.grey,
               ),
-              title: Text(category),
+              title: Text(
+                category == 'All' ? localizations.allCategories : category,
+              ),
               trailing: _selectedCategory == category
                   ? const Icon(Icons.check, color: Colors.green)
                   : null,
@@ -286,11 +293,13 @@ class _ProductPageState extends State<ProductPage> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         elevation: 0,
-        title: const Text("Products"),
+        title: Text(localizations.products),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         actions: [
@@ -345,7 +354,7 @@ class _ProductPageState extends State<ProductPage> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search products...',
+                        hintText: localizations.searchProducts,
                         prefixIcon: const Icon(Icons.search, size: 20),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
@@ -375,7 +384,7 @@ class _ProductPageState extends State<ProductPage> {
                   child: IconButton(
                     icon: const Icon(Icons.sort),
                     onPressed: _showSortBottomSheet,
-                    tooltip: 'Sort',
+                    tooltip: localizations.sort,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -393,7 +402,7 @@ class _ProductPageState extends State<ProductPage> {
                       child: const Icon(Icons.filter_list),
                     ),
                     onPressed: _showFilterBottomSheet,
-                    tooltip: 'Filter',
+                    tooltip: localizations.filter,
                   ),
                 ),
               ],
@@ -405,17 +414,17 @@ class _ProductPageState extends State<ProductPage> {
         builder: (context, state) {
           // Show loading indicator while initial loading
           if (state is ProductLoading && _allProducts.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(
+                  const CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
-                    'Loading products...',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    localizations.loadingProducts,
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                 ],
               ),
@@ -430,7 +439,7 @@ class _ProductPageState extends State<ProductPage> {
                   Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
-                    'Failed to load products',
+                    localizations.failedToLoadProducts,
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
@@ -448,7 +457,7 @@ class _ProductPageState extends State<ProductPage> {
                       context.read<ProductBloc>().add(LoadProducts());
                     },
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
+                    label: Text(localizations.retry),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -478,17 +487,17 @@ class _ProductPageState extends State<ProductPage> {
 
             // Show loading overlay when filtering
             if (_isProcessing) {
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(
+                    const CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
-                      'Filtering products...',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      localizations.filteringProducts,
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -503,14 +512,14 @@ class _ProductPageState extends State<ProductPage> {
                     Icon(Icons.search_off, size: 80, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     Text(
-                      'No products found',
+                      localizations.noProductsFound,
                       style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _searchQuery.isNotEmpty
-                          ? 'Try a different search term'
-                          : 'Check back later for new products',
+                          ? localizations.tryDifferentSearchTerm
+                          : localizations.checkBackLater,
                       style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                     ),
                     const SizedBox(height: 20),
@@ -524,7 +533,7 @@ class _ProductPageState extends State<ProductPage> {
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
                         ),
-                        child: const Text('Clear Search'),
+                        child: Text(localizations.clearSearch),
                       ),
                   ],
                 ),
@@ -543,7 +552,7 @@ class _ProductPageState extends State<ProductPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '${_filteredProducts.length} products found',
+                        localizations.productsFound(_filteredProducts.length),
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                       if (_selectedCategory != 'All')
@@ -608,7 +617,7 @@ class _ProductPageState extends State<ProductPage> {
                         ),
                         const SizedBox(width: 16),
                         Text(
-                          'Page ${_currentPage + 1} of $totalPages',
+                          localizations.pageOf(_currentPage + 1, totalPages),
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(width: 16),
@@ -637,11 +646,13 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   Widget _buildProductCard(ProductModel product, bool canAddToCart) {
+    final localizations = AppLocalizations.of(context)!;
+
     return GestureDetector(
       onTap: () {
         context.pushNamed(
           RouteName.productDetails,
-          pathParameters: {'id': product.id}, 
+          pathParameters: {'id': product.id},
           extra: product,
         );
       },
@@ -759,7 +770,7 @@ class _ProductPageState extends State<ProductPage> {
                     ),
                   const SizedBox(height: 4),
                   Text(
-                    "${product.amount} kg available",
+                    localizations.kgAvailable(product.amount),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
@@ -826,6 +837,7 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   void _showModernCartSheet(BuildContext context, ProductModel product) {
+    final localizations = AppLocalizations.of(context)!;
     int quantity = 1;
     final price = double.tryParse(product.price) ?? 0.0;
     final maxAmount = product.amount;
@@ -885,7 +897,7 @@ class _ProductPageState extends State<ProductPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "Total: ${(price * quantity).toStringAsFixed(2)} ETB",
+                  localizations.total(price * quantity),
                   style: const TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
@@ -906,7 +918,7 @@ class _ProductPageState extends State<ProductPage> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: const Text("Add to Cart"),
+                    child: Text(localizations.addToCart),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -929,12 +941,14 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   void _addToCart(BuildContext context, String productId, int amount) {
+    final localizations = AppLocalizations.of(context)!;
+
     context.read<CartBloc>().add(
       AddToCart(productId: productId, amount: amount),
     );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Added $amount item(s) to cart'),
+        content: Text(localizations.addedToCart(amount)),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
@@ -943,9 +957,11 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   void _openChat(BuildContext context, ProductModel product) {
+    final localizations = AppLocalizations.of(context)!;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Chat about ${product.name}'),
+        content: Text(localizations.chatAboutProduct(product.name)),
         backgroundColor: Colors.blue,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
