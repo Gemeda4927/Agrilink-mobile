@@ -1,60 +1,85 @@
 {
   "@@locale": "am",
-  "welcomeBack": "እንኳን ደህና መጡ!",
+
+  "appTitle": "አግሪሊንክ",
+
+  "welcomeBack": "እንኳን ደህና መጡ",
   "signInSubtitle": "ወደ መለያዎ ለመግባት ይግቡ",
+
   "emailOrPhone": "ኢሜይል ወይም ስልክ",
   "emailOrPhoneHint": "ኢሜይል ወይም ስልክ ያስገቡ",
   "emailOrPhoneRequired": "እባክዎ ኢሜይል ወይም ስልክ ያስገቡ",
+
   "password": "የይለፍ ቃል",
   "passwordHint": "የይለፍ ቃልዎን ያስገቡ",
   "passwordRequired": "እባክዎ የይለፍ ቃል ያስገቡ",
   "passwordMinLength": "የይለፍ ቃል ቢያንስ 6 ቁምፊዎች መሆን አለበት",
+
   "login": "ግባ",
   "rememberMe": "አስታውሰኝ",
   "forgotPassword": "የይለፍ ቃል ረሳሁ?",
   "createAccount": "መለያ ፍጠር",
   "noAccount": "መለያ የለዎትም?",
-  "quickDebugLogin": "ፈጣን የሙከራ ግቤት",
-  "selectTestAccount": "የሙከራ መለያ ይምረጡ",
+
+  "quickDebugLogin": "ፈጣን መግቢያ",
+  "selectTestAccount": "ሙከራ መለያ ይምረጡ",
   "orDivider": "ወይም",
   "signInWithGoogle": "በGoogle ይግቡ",
+
   "welcomeMessage": "እንኳን ደህና መጡ {email}",
+  "@welcomeMessage": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+
   "selectLanguage": "ቋንቋ ይምረጡ",
-  "appTitle": "አግሪሊንክ",
+
   "goodMorning": "እንደምን አደሩ",
   "goodAfternoon": "እንደምን ዋሉ",
   "goodEvening": "እንደምን አመሹ",
+
   "logout": "ውጣ",
-  "noUserDataFound": "ምንም የተጠቃሚ መረጃ አልተገኘም. እባክዎ ይግቡ.",
+  "noUserDataFound": "ምንም የተጠቃሚ መረጃ አልተገኘም እባክዎ ይግቡ",
+
   "exploreCategories": "ምድቦችን ያስሱ",
   "noCategoriesAvailable": "ምንም ምድቦች የሉም",
   "noSubcategories": "ምንም ንዑስ ምድቦች አልተገኙም",
-  "backToCategories": "ወደ ምድቦች ተመለስ",
+  "backToCategories": "ወደ ምድቦች ይመለሱ",
+
   "home": "መነሻ",
   "products": "ምርቶች",
-  "myProducts": "ምርቶቼ",
-  "myOrders": "ትዕዛዞቼ",
-  "postProduct": "ምርት ለጥፍ",
-  "aiAdvisory": "AI አማካሪ",
-  "farmingCompanion": "የእርሻ ጓደኛዎ",
-  "roleAgentActive": "የወኪል ሚና ንቁ",
+  "myProducts": "የእኔ ምርቶች",
+  "myOrders": "የእኔ ትዕዛዞች",
+  "postProduct": "ምርት ይለጥፉ",
+
+  "aiAdvisory": "የAI ምክር",
+  "farmingCompanion": "የእርሻ አጋርዎ",
+
+  "roleAgentActive": "የወኪል ሚና ንቁ ነው",
   "activeStatus": "ንቁ",
   "joinAsAgent": "እንደ ወኪል ይቀላቀሉ",
   "requestAgentRole": "የወኪል ሚና ጥያቄ",
   "sendingRequest": "ጥያቄ በመላክ ላይ...",
+
   "requestStatus": "የጥያቄ ሁኔታ",
   "statusLabel": "ሁኔታ",
   "roleRequestPending": "የሚና ጥያቄ በመጠባበቅ ላይ",
   "roleRequestApproved": "የሚና ጥያቄ ጸድቋል!",
   "roleRequestRejected": "ጥያቄ ውድቅ ተደርጓል",
+
   "active": "ንቁ",
   "reapply": "እንደገና አመልክት",
+
   "failedToLoadRequestStatus": "የጥያቄ ሁኔታ መጫን አልቻለም",
   "retry": "እንደገና ሞክር",
-  "requestSubmittedSuccessfully": "ጥያቄ በተሳካ ሁኔታ ተልኳል!",
-  "administratorAccess": "የአስተዳዳሪ መዳረሻ",
-  "notifications": "ማሳሰቢያዎች",
+
+  "requestSubmittedSuccessfully": "ጥያቄ በሚገባ ተልኳል!",
+
+  "administratorAccess": "አስተዳዳሪ መዳረሻ",
+  "notifications": "ማሳወቂያዎች",
   "comingSoon": "በቅርቡ ይመጣል!",
+
   "marketplace": "ገበያ",
   "quickActions": "ፈጣን ድርጊቶች",
   "ordersReceived": "የደረሱ ትዕዛዞች",

@@ -9,6 +9,9 @@ import 'package:agrilink/features/recommendation/presentation/bloc/chat_state.da
 import 'package:agrilink/features/recommendation/domain/entity/agent_breakdown_entity.dart';
 import 'package:agrilink/injector.dart' as di;
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:vibration/vibration.dart';
 
 class AIChatbotFAB extends StatefulWidget {
   const AIChatbotFAB({super.key});
@@ -233,15 +236,14 @@ class _PremiumRobotPainter extends CustomPainter {
     canvas.drawPath(antennaPath, strokePaint);
 
     final antennaBallPaint = Paint()
-      ..shader =
-          const RadialGradient(
-            colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(centerX, centerY - height * 0.4),
-              radius: width * 0.07,
-            ),
-          );
+      ..shader = const RadialGradient(
+        colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+      ).createShader(
+        Rect.fromCircle(
+          center: Offset(centerX, centerY - height * 0.4),
+          radius: width * 0.07,
+        ),
+      );
 
     canvas.drawCircle(
       Offset(centerX, centerY - height * 0.4),
@@ -414,7 +416,7 @@ class _RingPainter extends CustomPainter {
       progress != oldDelegate.progress;
 }
 
-// Chatbot Modal Bottom Sheet
+// Chatbot Modal Bottom Sheet with Two-Way Speech
 class AIChatbotModal extends StatefulWidget {
   const AIChatbotModal({super.key});
 
@@ -429,10 +431,235 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
   final List<ChatMessage> _messages = [];
   String? _lastUserMessage;
 
+  // Speech-to-Text variables
+  late stt.SpeechToText _speech;
+  bool _isListening = false;
+  bool _isSpeechAvailable = false;
+  String _listeningText = '';
+
+  // Text-to-Speech variables
+  late FlutterTts _flutterTts;
+  bool _isSpeaking = false;
+  bool _shouldAutoListenAfterSpeech = false;
+
+  // Track input method: true = speech, false = text
+  bool _lastInputWasSpeech = false;
+
   @override
   void initState() {
     super.initState();
+    _initSpeech();
+    _initTts();
     _addWelcomeMessage();
+  }
+
+  Future<void> _initSpeech() async {
+    _speech = stt.SpeechToText();
+    bool available = await _speech.initialize(
+      onStatus: (status) {
+        print('Speech status: $status');
+        setState(() {
+          if (status == 'done' || status == 'notListening') {
+            _isListening = false;
+            if (_controller.text.isNotEmpty && _listeningText.isNotEmpty) {
+              _sendMessage(isFromSpeech: true);
+            }
+          }
+        });
+      },
+      onError: (error) {
+        print('Speech error: ${error.errorMsg}');
+        setState(() {
+          _isListening = false;
+        });
+        _showErrorSnackBar('Microphone error: ${error.errorMsg}');
+      },
+    );
+
+    setState(() {
+      _isSpeechAvailable = available;
+    });
+  }
+
+  Future<void> _initTts() async {
+    _flutterTts = FlutterTts();
+
+    await _flutterTts.setLanguage("en-US");
+    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setPitch(1.0);
+    await _flutterTts.setVolume(1.0);
+
+    _flutterTts.setCompletionHandler(() {
+      print("TTS finished speaking");
+      setState(() {
+        _isSpeaking = false;
+      });
+
+      if (_shouldAutoListenAfterSpeech && mounted) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!_isListening && !_isSpeaking && mounted) {
+            _startListening();
+          }
+        });
+      }
+    });
+
+    _flutterTts.setErrorHandler((msg) {
+      print("TTS error: $msg");
+      setState(() {
+        _isSpeaking = false;
+      });
+    });
+
+    _flutterTts.setStartHandler(() {
+      print("TTS started speaking");
+      setState(() {
+        _isSpeaking = true;
+      });
+    });
+  }
+
+  Future<void> _speakResponse(String text) async {
+    // Only speak if the last input was from speech
+    if (!_lastInputWasSpeech) {
+      print("Skipping TTS - last input was text, not speech");
+      return;
+    }
+
+    if (text.isEmpty) return;
+
+    await _flutterTts.stop();
+    String cleanText = _cleanTextForSpeech(text);
+    await _flutterTts.speak(cleanText);
+  }
+
+  String _cleanTextForSpeech(String text) {
+    String cleaned = text
+        .replaceAll(RegExp(r'\*\*'), '')
+        .replaceAll(RegExp(r'\*'), '')
+        .replaceAll(RegExp(r'\[(.*?)\]\(.*?\)'), r'$1')
+        .replaceAll(RegExp(r'#+'), '')
+        .replaceAll(RegExp(r'`+'), '');
+
+    cleaned = cleaned
+        .replaceAll('🌱', 'plant')
+        .replaceAll('🌍', 'earth')
+        .replaceAll('🐛', 'pest')
+        .replaceAll('🌦️', 'weather')
+        .replaceAll('👋', 'hello')
+        .replaceAll('😊', 'smile');
+
+    return cleaned;
+  }
+
+  void _startListening() async {
+    if (_isSpeaking) {
+      _showErrorSnackBar('Please wait, AI is speaking...');
+      return;
+    }
+
+    if (!_isSpeechAvailable) {
+      _showErrorSnackBar('Speech recognition is not available on this device');
+      return;
+    }
+
+    if (_isSpeaking) {
+      await _flutterTts.stop();
+      setState(() {
+        _isSpeaking = false;
+      });
+    }
+
+    bool available = await _speech.initialize();
+
+    if (available) {
+      if (await Vibration.hasVibrator() ?? false) {
+        Vibration.vibrate(duration: 50);
+      }
+
+      setState(() {
+        _isListening = true;
+        _listeningText = '';
+      });
+
+      await _speech.listen(
+        onResult: (result) {
+          setState(() {
+            _listeningText = result.recognizedWords;
+            _controller.text = result.recognizedWords;
+          });
+
+          if (result.finalResult) {
+            _stopListeningAndSend();
+          }
+        },
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.dictation,
+          cancelOnError: true,
+          partialResults: true,
+          onDevice: false,
+        ),
+        pauseFor: const Duration(seconds: 2),
+        listenFor: const Duration(seconds: 15),
+      );
+    } else {
+      _showErrorSnackBar(
+        'Could not initialize speech recognition. Please check your internet connection.',
+      );
+    }
+  }
+
+  void _stopListening() {
+    _speech.stop();
+    setState(() {
+      _isListening = false;
+    });
+  }
+
+  void _stopListeningAndSend() async {
+    await _speech.stop();
+    setState(() {
+      _isListening = false;
+    });
+    if (_controller.text.isNotEmpty) {
+      _sendMessage(isFromSpeech: true);
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.mic_off, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -440,6 +667,8 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
     _controller.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
+    _speech.stop();
+    _flutterTts.stop();
     super.dispose();
   }
 
@@ -448,7 +677,7 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
       ChatMessage(
         isUser: false,
         text:
-            "👋 Hello! I'm your AI Crop Advisor. I can help you with:\n\n🌱 Crop recommendations\n🌍 Soil health advice\n🐛 Pest management\n🌦️ Weather planning\n\nWhat would you like to know?",
+            "👋 Hello! I'm your AI Crop Advisor. I can help you with:\n\n🌱 Crop recommendations\n🌍 Soil health advice\n🐛 Pest management\n🌦️ Weather planning\n\n🎤 Tap the microphone button and speak your question - I'll respond by voice!\n\n📝 Or type your question - I'll respond in text.\n\nWhat would you like to know?",
         timestamp: DateTime.now(),
       ),
     );
@@ -466,10 +695,19 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
     });
   }
 
-  void _sendMessage() {
+  void _sendMessage({bool isFromSpeech = false}) async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
+    if (_isListening) {
+      await _speech.stop();
+      setState(() {
+        _isListening = false;
+      });
+    }
+
+    // Store how the user sent this message
+    _lastInputWasSpeech = isFromSpeech;
     _lastUserMessage = text;
 
     setState(() {
@@ -488,8 +726,8 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
   void _retryLastMessage() {
     if (_lastUserMessage != null) {
       context.read<ChatBloc2>().add(
-        RetryLastMessageEvent(message: _lastUserMessage!),
-      );
+            RetryLastMessageEvent(message: _lastUserMessage!),
+          );
     }
   }
 
@@ -499,6 +737,18 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
       _addWelcomeMessage();
     });
     context.read<ChatBloc2>().add(ClearChatEvent());
+    _showSuccessSnackBar('Chat cleared');
+  }
+
+  void _toggleAutoListen() {
+    setState(() {
+      _shouldAutoListenAfterSpeech = !_shouldAutoListenAfterSpeech;
+    });
+    _showSuccessSnackBar(
+      _shouldAutoListenAfterSpeech
+          ? 'Auto-listen enabled. I will listen after speaking.'
+          : 'Auto-listen disabled',
+    );
   }
 
   Map<String, dynamic> _categorizeError(String errorMessage) {
@@ -573,21 +823,6 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
       };
     }
 
-    if (lowerError.contains('invalid') || lowerError.contains('validation')) {
-      return {
-        'icon': Icons.edit_note_rounded,
-        'title': 'Question Not Clear',
-        'message':
-            'I didn\'t quite understand that. Could you rephrase your question?',
-        'suggestions': [
-          'Try being more specific',
-          'Ask about crops, soil, pests, or weather',
-          'Use complete sentences',
-        ],
-        'color': Colors.blue,
-      };
-    }
-
     return {
       'icon': Icons.error_outline_rounded,
       'title': 'Oops! Something Went Wrong',
@@ -624,26 +859,29 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
           _buildHeader(),
           Expanded(
             child: BlocListener<ChatBloc2, ChatState2>(
-              listener: (context, state) {
+              listener: (context, state) async {
                 if (state is ChatLoaded) {
                   final lastMessage = _messages.isNotEmpty
                       ? _messages.last
                       : null;
-                  final isDuplicate =
-                      lastMessage != null &&
+                  final isDuplicate = lastMessage != null &&
                       !lastMessage.isUser &&
                       lastMessage.text == state.response.response;
 
                   if (!isDuplicate) {
-                    _messages.add(
-                      ChatMessage(
-                        isUser: false,
-                        text: state.response.response,
-                        timestamp: DateTime.now(),
-                        responseEntity: state.response,
-                      ),
+                    final aiMessage = ChatMessage(
+                      isUser: false,
+                      text: state.response.response,
+                      timestamp: DateTime.now(),
+                      responseEntity: state.response,
                     );
+                    _messages.add(aiMessage);
                     _scrollToBottom();
+                    setState(() {});
+
+                    // ONLY speak if the user used speech input
+                    await _speakResponse(state.response.response);
+
                     setState(() {});
                   }
                 } else if (state is ChatError) {
@@ -659,6 +897,11 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
                   );
                   _scrollToBottom();
                   setState(() {});
+
+                  // ONLY speak errors if the user used speech input
+                  if (_lastInputWasSpeech) {
+                    await _speakResponse(errorInfo['message']);
+                  }
                 }
               },
               child: BlocBuilder<ChatBloc2, ChatState2>(
@@ -674,164 +917,192 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
+Widget _buildHeader() {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), // Reduced horizontal padding
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+    ),
+    child: Column(
+      children: [
+        Container(
+          width: 40,
+          height: 4,
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(2),
           ),
-          Row(
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+        ),
+        Row(
+          children: [
+            // Robot Icon - Fixed size
+            Stack(
+              children: [
+                Container(
+                  width: 44, // Reduced from 48
+                  height: 44, // Reduced from 48
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1A8C3F).withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
                       ),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF1A8C3F).withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                    ],
+                  ),
+                  child: Center(
+                    child: CustomPaint(
+                      painter: _PremiumRobotPainter(),
+                      size: const Size(26, 26), // Reduced from 28
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 12, // Reduced from 14
+                    height: 12, // Reduced from 14
+                    decoration: BoxDecoration(
+                      color: _isSpeaking ? Colors.orange : const Color(0xFF4CAF50),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
                     ),
                     child: Center(
-                      child: CustomPaint(
-                        painter: _PremiumRobotPainter(),
-                        size: const Size(28, 28),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 500),
+                        width: _isSpeaking ? 8 : 5,
+                        height: _isSpeaking ? 8 : 5,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: _isSpeaking ? BoxShape.rectangle : BoxShape.circle,
+                          borderRadius: _isSpeaking ? BorderRadius.circular(1) : null,
+                        ),
                       ),
                     ),
                   ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4CAF50),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2.5),
-                      ),
-                      child: Center(
-                        child: Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 10), // Reduced from 14
+            // Title and status - Wrap in Expanded to take remaining space
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'AI Crop Advisor',
+                    style: TextStyle(
+                      fontSize: 16, // Reduced from 18
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  // Status row - Use Flexible to prevent overflow
+                  Row(
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 500),
+                        width: 6, // Reduced from 8
+                        height: 6, // Reduced from 8
+                        decoration: BoxDecoration(
+                          color: _isSpeaking ? Colors.orange : const Color(0xFF4CAF50),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: (_isSpeaking ? Colors.orange : const Color(0xFF4CAF50)).withOpacity(0.5),
+                              blurRadius: 4,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 4), // Reduced from 6
+                      Flexible(
+                        child: Text(
+                          _isSpeaking ? 'Speaking...' : 'Online • Voice Enabled',
+                          style: TextStyle(
+                            fontSize: 10, // Reduced from 12
+                            color: _isSpeaking ? Colors.orange.shade700 : Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'AI Crop Advisor',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4CAF50),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF4CAF50).withOpacity(0.5),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Online • Powered by AI',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            ),
+            // Action buttons - Reduced size
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(10),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: _clearChat,
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        color: Colors.grey.shade600,
-                        size: 22,
-                      ),
-                      tooltip: 'Clear chat',
-                      padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: _toggleAutoListen,
+                    icon: Icon(
+                      _shouldAutoListenAfterSpeech 
+                          ? Icons.auto_awesome_rounded
+                          : Icons.auto_awesome_mosaic_rounded,
+                      color: _shouldAutoListenAfterSpeech 
+                          ? const Color(0xFF4CAF50)
+                          : Colors.grey.shade600,
+                      size: 18, // Reduced from 20
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(
-                        Icons.close_rounded,
-                        color: Colors.grey.shade600,
-                        size: 22,
-                      ),
-                      tooltip: 'Close',
-                      padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(),
+                    tooltip: 'Auto-listen after response',
+                    padding: const EdgeInsets.all(6), // Reduced from 8
+                    constraints: const BoxConstraints(),
+                  ),
+                  IconButton(
+                    onPressed: _clearChat,
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.grey.shade600,
+                      size: 18, // Reduced from 22
                     ),
-                  ],
-                ),
+                    tooltip: 'Clear chat',
+                    padding: const EdgeInsets.all(6), // Reduced from 8
+                    constraints: const BoxConstraints(),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: Colors.grey.shade600,
+                      size: 18, // Reduced from 22
+                    ),
+                    tooltip: 'Close',
+                    padding: const EdgeInsets.all(6), // Reduced from 8
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+
 
   Widget _buildChatArea(ChatState2 state) {
     return ListView.builder(
@@ -848,9 +1119,7 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
   }
 
   Widget _buildMessageBubble(ChatMessage message) {
-    // Check if this is an error/apology message
-    final isErrorLike =
-        !message.isUser &&
+    final isErrorLike = !message.isUser &&
         (message.text.toLowerCase().contains('apologize') ||
             message.text.toLowerCase().contains('issue') ||
             message.text.toLowerCase().contains('error') ||
@@ -881,100 +1150,120 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
           if (message.responseEntity!.agentBreakdown.isNotEmpty)
             _buildAgentBreakdown(message.responseEntity!.agentBreakdown),
           if (message.responseEntity!.followUpQuestions.isNotEmpty)
-            _buildFollowUpQuestions(message.responseEntity!.followUpQuestions),
+            _buildFollowUpQuestions(
+              message.responseEntity!.followUpQuestions,
+            ),
         ],
       ],
     );
   }
 
-  Widget _buildRegularMessage(ChatMessage message) {
-    return Column(
-      crossAxisAlignment: message.isUser
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: message.isUser
-                ? const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-                  )
-                : null,
-            color: message.isUser ? null : Colors.grey.shade50,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(22),
-              topRight: const Radius.circular(22),
-              bottomLeft: Radius.circular(message.isUser ? 22 : 6),
-              bottomRight: Radius.circular(message.isUser ? 6 : 22),
-            ),
-            boxShadow: message.isUser
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF2E7D32).withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ]
-                : null,
-          ),
-          child: message.isUser
-              ? Text(
-                  message.text,
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    height: 1.45,
-                    color: Colors.white,
-                  ),
+ 
+
+
+Widget _buildRegularMessage(ChatMessage message) {
+  final screenWidth = MediaQuery.of(context).size.width;
+
+  return Column(
+    crossAxisAlignment:
+        message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+    children: [
+      Container(
+        constraints: BoxConstraints(
+          maxWidth: screenWidth * 0.75,
+          minWidth: 60,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: message.isUser
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
                 )
-              : MarkdownBody(
-                  data: message.text,
-                  styleSheet: MarkdownStyleSheet(
-                    p: const TextStyle(
-                      fontSize: 14.5,
-                      height: 1.45,
-                      color: Color(0xFF2C2C2C),
-                    ),
-                    h1: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                    h2: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                    h3: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                    strong: const TextStyle(fontWeight: FontWeight.bold),
-                    em: const TextStyle(fontStyle: FontStyle.italic),
-                    listBullet: const TextStyle(
-                      fontSize: 14.5,
-                      color: Color(0xFF2C2C2C),
-                    ),
-                  ),
-                ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 6, left: 10, right: 10),
-          child: Text(
-            _formatTime(message.timestamp),
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade400,
-              fontWeight: FontWeight.w500,
-            ),
+              : null,
+          color: message.isUser ? null : Colors.grey.shade50,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(22),
+            topRight: const Radius.circular(22),
+            bottomLeft: Radius.circular(message.isUser ? 22 : 6),
+            bottomRight: Radius.circular(message.isUser ? 6 : 22),
           ),
+          boxShadow: message.isUser
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF2E7D32).withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
-      ],
-    );
-  }
+
+        // 🔥 FIX STARTS HERE
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Expanded(
+              child: message.isUser
+                  ? Text(
+                      message.text,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        height: 1.45,
+                        color: Colors.white,
+                      ),
+                      softWrap: true,
+                      overflow: TextOverflow.clip,
+                    )
+                  : MarkdownBody(
+                      data: message.text,
+                      softLineBreak: true,
+                      styleSheet: MarkdownStyleSheet(
+                        p: const TextStyle(
+                          fontSize: 14.5,
+                          height: 1.45,
+                          color: Color(0xFF2C2C2C),
+                        ),
+                        h1: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                        h2: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                        h3: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                        strong:
+                            const TextStyle(fontWeight: FontWeight.bold),
+                        em: const TextStyle(fontStyle: FontStyle.italic),
+                        listBullet: const TextStyle(
+                          fontSize: 14.5,
+                          color: Color(0xFF2C2C2C),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+        // 🔥 FIX ENDS HERE
+      ),
+
+      // Optional spacing under message
+      Padding(
+        padding: const EdgeInsets.only(top: 6, left: 10, right: 10),
+        child: const SizedBox.shrink(),
+      ),
+    ],
+  );
+}
+
 
   Widget _buildErrorCard(ChatMessage message) {
     final errorInfo = message.errorInfo ?? _categorizeError('Unknown error');
@@ -1379,7 +1668,7 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
             (question) => GestureDetector(
               onTap: () {
                 _controller.text = question;
-                _sendMessage();
+                _sendMessage(isFromSpeech: false);
               },
               child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -1479,8 +1768,9 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
       curve: Curves.easeInOut,
       builder: (context, value, child) {
         final delay = index * 0.25;
-        final offset =
-            math.sin((value * 2 * math.pi) + (delay * 2 * math.pi)) * 0.4 + 0.6;
+        final offset = math.sin((value * 2 * math.pi) + (delay * 2 * math.pi)) *
+                0.4 +
+            0.6;
 
         return Transform.translate(
           offset: Offset(0, -3 * offset),
@@ -1541,45 +1831,172 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
                     focusNode: _focusNode,
                     maxLines: null,
                     textInputAction: TextInputAction.send,
-                    enabled: !isLoading,
+                    enabled: !isLoading && !_isSpeaking,
                     style: const TextStyle(
                       fontSize: 15,
                       color: Color(0xFF2C2C2C),
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Ask me anything...',
+                      hintText: _isListening
+                          ? '🎤 Listening... speak your question'
+                          : _isSpeaking
+                              ? '🔊 AI is speaking...'
+                              : 'Ask me anything...',
                       hintStyle: TextStyle(
                         fontSize: 15,
-                        color: Colors.grey.shade400,
+                        color: _isListening
+                            ? Colors.green.shade400
+                            : _isSpeaking
+                                ? Colors.orange.shade400
+                                : Colors.grey.shade400,
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 18,
                         vertical: 14,
                       ),
+                      prefixIcon: _isListening
+                          ? Container(
+                              margin: const EdgeInsets.all(10),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 500),
+                                      width: _isListening ? 20 : 12,
+                                      height: _isListening ? 20 : 12,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.red.shade400,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.red.withOpacity(0.5),
+                                            blurRadius: 8,
+                                            spreadRadius:
+                                                _isListening ? 4 : 0,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 300),
+                                      width: _isListening ? 8 : 4,
+                                      height: _isListening ? 8 : 4,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : null,
                     ),
-                    onSubmitted: (_) => _sendMessage(),
+                    onSubmitted: (_) => _sendMessage(isFromSpeech: false),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
+              // Microphone Button
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                child: GestureDetector(
+                  onTap: _isListening
+                      ? _stopListeningAndSend
+                      : (_isSpeaking ? null : _startListening),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: _isListening
+                          ? const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Colors.red, Colors.redAccent],
+                            )
+                          : (_isSpeaking
+                              ? const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [Colors.orange, Colors.deepOrange],
+                                )
+                              : const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF4CAF50),
+                                    Color(0xFF2E7D32)
+                                  ],
+                                )),
+                      shape: BoxShape.circle,
+                      boxShadow: _isListening
+                          ? [
+                              BoxShadow(
+                                color: Colors.red.withOpacity(0.4),
+                                blurRadius: 12,
+                                spreadRadius: 2,
+                              ),
+                            ]
+                          : (_isSpeaking
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.orange.withOpacity(0.4),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : [
+                                  BoxShadow(
+                                    color: const Color(0xFF2E7D32)
+                                        .withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]),
+                    ),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        _isListening
+                            ? Icons.mic
+                            : (_isSpeaking ? Icons.graphic_eq : Icons.mic_none),
+                        key: ValueKey(_isListening),
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Send Button
               GestureDetector(
-                onTap: isLoading ? null : _sendMessage,
+                onTap: (isLoading || _isListening || _isSpeaking)
+                    ? null
+                    : () => _sendMessage(isFromSpeech: false),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  width: 52,
-                  height: 52,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    gradient: isLoading
+                    gradient: (isLoading || _isListening || _isSpeaking)
                         ? null
                         : const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
                           ),
-                    color: isLoading ? Colors.grey.shade300 : null,
-                    borderRadius: BorderRadius.circular(26),
-                    boxShadow: isLoading
+                    color: (isLoading || _isListening || _isSpeaking)
+                        ? Colors.grey.shade300
+                        : null,
+                    shape: BoxShape.circle,
+                    boxShadow: (isLoading || _isListening || _isSpeaking)
                         ? []
                         : [
                             BoxShadow(
@@ -1591,8 +2008,10 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
                   ),
                   child: Icon(
                     Icons.send_rounded,
-                    color: isLoading ? Colors.grey.shade500 : Colors.white,
-                    size: 22,
+                    color: (isLoading || _isListening || _isSpeaking)
+                        ? Colors.grey.shade500
+                        : Colors.white,
+                    size: 20,
                   ),
                 ),
               ),
@@ -1629,4 +2048,39 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
     }
     return '${time.day}/${time.month} ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
+}
+
+// Waveform painter for speaking indicator
+class _WaveformPainter extends CustomPainter {
+  const _WaveformPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.green.shade400
+      ..style = PaintingStyle.fill;
+
+    final barWidth = size.width / 6;
+    final barCount = 4;
+
+    for (int i = 0; i < barCount; i++) {
+      final height = (math.sin(DateTime.now().millisecondsSinceEpoch / 200 + i) *
+                  4 +
+              6)
+          .clamp(3.0, 10.0);
+      final x = i * barWidth * 1.5;
+      final y = (size.height - height) / 2;
+
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x, y, barWidth, height),
+          Radius.circular(barWidth / 2),
+        ),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

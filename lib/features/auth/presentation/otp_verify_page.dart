@@ -9,17 +9,23 @@ import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
 import 'package:go_router/go_router.dart';
 import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:flutter/services.dart';
+import 'package:agrilink/core/services/notification_service.dart';
+import 'package:agrilink/injector.dart';
 
 class VerifyOtpPage extends StatefulWidget {
   final String identifier;
   final String purpose;
-  final Map<String, dynamic>? userData; // For registration data
+  final Map<String, dynamic>? userData;
+  final String? userRole;
+  final String? userId;
 
   const VerifyOtpPage({
     super.key,
     required this.identifier,
     this.purpose = "RESET",
     this.userData,
+    this.userRole,
+    this.userId,
   });
 
   @override
@@ -111,11 +117,10 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
 
     setState(() => _isVerifying = true);
 
-    // Map the purpose to what the backend expects
     String backendPurpose;
     switch (widget.purpose.toUpperCase()) {
       case "REGISTER":
-        backendPurpose = "SIGNUP"; // Backend might expect SIGNUP instead of REGISTER
+        backendPurpose = "SIGNUP";
         break;
       case "RESET":
         backendPurpose = "RESET";
@@ -127,7 +132,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
         backendPurpose = widget.purpose;
     }
 
-    print("🔐 Verifying OTP: $otp for ${widget.identifier} with purpose: $backendPurpose");
+    debugPrint("🔐 Verifying OTP: $otp for ${widget.identifier} with purpose: $backendPurpose");
 
     context.read<AuthBloc>().add(
       VerifyOtpEvent(
@@ -138,6 +143,62 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
         },
       ),
     );
+  }
+
+  // Register device AND subscribe to topics AFTER OTP verification
+  Future<void> _registerDeviceAndSubscribe(String role) async {
+    try {
+      final notificationService = sl<NotificationService>();
+      
+      // Get FCM token
+      final token = await notificationService.getSavedToken();
+      if (token == null || token.isEmpty) {
+        debugPrint('⚠️ No FCM token available');
+        return;
+      }
+
+      // 1. Register device token with backend
+      final registered = await notificationService.registerDeviceToken(token);
+      if (!registered) {
+        debugPrint('❌ Failed to register device token');
+        return;
+      }
+      debugPrint('✅ Device token registered successfully');
+
+      // 2. Subscribe to topics based on role
+      if (role.isNotEmpty) {
+        final normalizedRole = role.toLowerCase().trim();
+
+        await notificationService.subscribeToTopic('all_users');
+        await notificationService.subscribeToTopic('role_$normalizedRole');
+
+        switch (normalizedRole) {
+          case 'farmer':
+            await notificationService.subscribeToTopic('farmer_notifications');
+            break;
+          case 'agent':
+            await notificationService.subscribeToTopic('agent_notifications');
+            break;
+          case 'admin':
+            await notificationService.subscribeToTopic('admin_notifications');
+            break;
+          case 'buyer':
+            await notificationService.subscribeToTopic('buyer_notifications');
+            break;
+        }
+
+        debugPrint('✅ Subscribed to notification topics for role: $normalizedRole');
+        
+        if (mounted) {
+          _showSnackBar(
+            "Notifications enabled for $normalizedRole role",
+            isError: false,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in notification setup: $e');
+    }
   }
 
   void _skipVerification() {
@@ -203,29 +264,24 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
     setState(() {
       _canResend = false;
       _isVerifying = false;
-      _failedAttempts = 0; // Reset failed attempts on resend
+      _failedAttempts = 0;
     });
     _startTimer();
 
-    // Clear all OTP fields
     for (var controller in _controllers) {
       controller.clear();
     }
     _focusNodes[0].requestFocus();
 
-    // Use the appropriate event based on purpose
     if (widget.purpose == "REGISTER") {
-      // Resend OTP for registration
       context.read<AuthBloc>().add(
         SignUpEvent(
           data: {
             "email": widget.identifier,
-            // Add other registration data if needed
           },
         ),
       );
     } else {
-      // Resend OTP for password reset
       context.read<AuthBloc>().add(
         ForgotPasswordEvent(
           data: {"emailOrPhone": widget.identifier},
@@ -399,7 +455,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
           ],
         ),
         body: BlocListener<AuthBloc, AuthState>(
-          listener: (context, state) {
+          listener: (context, state) async {
             setState(() => _isVerifying = false);
 
             if (state is AuthSuccess) {
@@ -407,6 +463,14 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                 "OTP Verified Successfully!",
                 isError: false,
               );
+
+              // ✅ REGISTER DEVICE AND SUBSCRIBE AFTER OTP VERIFICATION
+              if (widget.purpose == "LOGIN") {
+                final userRole = state.authResponse.user.role;
+                if (userRole != null && userRole.isNotEmpty) {
+                  await _registerDeviceAndSubscribe(userRole);
+                }
+              }
 
               if (widget.purpose == "RESET") {
                 Future.delayed(const Duration(milliseconds: 500), () {
@@ -430,6 +494,21 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                     }
                   }
                 });
+              } else if (widget.purpose == "LOGIN") {
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  if (mounted) {
+                    final user = state.authResponse.user;
+                    if (user.status == 'ACTIVE') {
+                      if (user.role != null && user.role.isNotEmpty && user.role != 'USER') {
+                        context.goNamed(RouteName.home);
+                      } else {
+                        context.goNamed(RouteName.profile);
+                      }
+                    } else {
+                      context.goNamed(RouteName.home);
+                    }
+                  }
+                });
               } else {
                 context.goNamed(RouteName.home);
               }
@@ -442,7 +521,6 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
               
               _shake();
               
-              // Show more helpful error messages
               String errorMessage = state.error;
               if (errorMessage.contains("400") || errorMessage.contains("bad syntax")) {
                 errorMessage = "Invalid OTP code. Please check and try again.";
@@ -452,7 +530,6 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
               
               _showSnackBar(errorMessage, isError: true);
               
-              // Clear all fields on failure after 3 attempts
               if (_failedAttempts >= 3) {
                 for (var controller in _controllers) {
                   controller.clear();
@@ -472,7 +549,6 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  /// Animated Icon
                   ScaleTransition(
                     scale: _pulseAnimation,
                     child: Container(
@@ -502,10 +578,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
-                  /// Title
                   const Text(
                     "Verification Required",
                     style: TextStyle(
@@ -514,10 +587,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                       letterSpacing: -0.5,
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
-                  /// Subtitle
                   Text(
                     "Enter the 6-digit code sent to",
                     style: TextStyle(
@@ -549,10 +619,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
-                  /// OTP Boxes with Shake Animation
                   AnimatedBuilder(
                     animation: _shakeController,
                     builder: (context, child) {
@@ -567,10 +634,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                       children: List.generate(6, (index) => _buildOtpBox(index)),
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  /// Paste Button
                   TextButton.icon(
                     onPressed: _handlePaste,
                     icon: Icon(Icons.content_paste, size: 18, color: Colors.grey.shade600),
@@ -582,14 +646,10 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
-                  /// Verify Button
                   BlocBuilder<AuthBloc, AuthState>(
                     builder: (context, state) {
                       final isLoading = state is AuthLoading || _isVerifying;
-
                       return SizedBox(
                         width: double.infinity,
                         height: 56,
@@ -623,9 +683,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                       );
                     },
                   ),
-
                   const SizedBox(height: 16),
-
                   if (widget.purpose == "RESET")
                     TextButton(
                       onPressed: _skipVerification,
@@ -637,10 +695,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                         ),
                       ),
                     ),
-
                   const SizedBox(height: 24),
-
-                  /// Resend Section
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
@@ -720,10 +775,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  /// Help Text
                   Center(
                     child: GestureDetector(
                       onTap: _showHelpDialog,
