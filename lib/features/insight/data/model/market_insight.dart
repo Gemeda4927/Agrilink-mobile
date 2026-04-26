@@ -1,22 +1,26 @@
 class AllProductsResponse {
   final int result;
-  final List<Product> products;
+  final List<ProductInfo> products;
 
   AllProductsResponse({required this.result, required this.products});
 
+  // For Map response: { "result": 2, "product": [...] }
   factory AllProductsResponse.fromJson(Map<String, dynamic> json) {
-    // Format 1: { "result": 2, "product": [...] }
-    if (json.containsKey('product')) {
-      final productsList = json['product'] as List?;
-      return AllProductsResponse(
-        result: json['result'] ?? 0,
-        products:
-            productsList?.map((item) => Product.fromJson(item)).toList() ?? [],
-      );
-    }
+    final productsList = json['product'] as List?;
+    return AllProductsResponse(
+      result: json['result'] ?? 0,
+      products:
+          productsList?.map((item) => ProductInfo.fromJson(item)).toList() ??
+          [],
+    );
+  }
 
-    // Format 3: Empty or unknown format
-    return AllProductsResponse(result: 0, products: []);
+  // For List response: [{...}, {...}]
+  factory AllProductsResponse.fromList(List<dynamic> list) {
+    return AllProductsResponse(
+      result: list.length,
+      products: list.map((item) => ProductInfo.fromJson(item)).toList(),
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -27,243 +31,25 @@ class AllProductsResponse {
   }
 }
 
-// features/insight/data/model/market_insight.dart
-
-class Product {
+class ProductInfo {
   final String id;
   final String name;
-  final String? farmerId;
-  final String? subCategoryId;
-  final int amount;
-  final double price;
-  final String? description;
+  final double? price;
   final String? image;
-  final String? city;
-  final bool withDelivery;
-  final DateTime createdAt;
-  final SubCategoryInfo? subCategory;
-  final FarmerInfo? farmer;
-  final String? status; // APPROVED, PENDING, REJECTED
 
-  Product({
-    required this.id,
-    required this.name,
-    this.farmerId,
-    this.subCategoryId,
-    required this.amount,
-    required this.price,
-    this.description,
-    this.image,
-    this.city,
-    required this.withDelivery,
-    required this.createdAt,
-    this.subCategory,
-    this.farmer,
-    this.status,
-  });
+  ProductInfo({required this.id, required this.name, this.price, this.image});
 
-  factory Product.fromJson(Map<String, dynamic> json) {
-    // Helper function to safely parse price (handles String, int, double)
-    double parsePrice(dynamic value) {
-      if (value == null) return 0.0;
-      if (value is double) return value;
-      if (value is int) return value.toDouble();
-      if (value is String) return double.tryParse(value) ?? 0.0;
-      return 0.0;
-    }
-
-    // Helper function to safely parse amount (handles String, int)
-    int parseAmount(dynamic value) {
-      if (value == null) return 0;
-      if (value is int) return value;
-      if (value is String) return int.tryParse(value) ?? 0;
-      return 0;
-    }
-
-    return Product(
+  factory ProductInfo.fromJson(Map<String, dynamic> json) {
+    return ProductInfo(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      farmerId: json['farmerId']?.toString(),
-      subCategoryId: json['subCategoryId']?.toString(),
-      amount: parseAmount(json['amount']),
-      price: parsePrice(json['price']),
-      description: json['description']?.toString(),
+      price: (json['price'] as num?)?.toDouble(),
       image: json['image']?.toString(),
-      city: json['city']?.toString(),
-      withDelivery: json['withDelivery'] ?? false,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'].toString())
-          : DateTime.now(),
-      subCategory: json['subCategory'] != null
-          ? SubCategoryInfo.fromJson(json['subCategory'])
-          : null,
-      farmer: json['farmer'] != null
-          ? FarmerInfo.fromJson(json['farmer'])
-          : null,
-      status: json['status']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'farmerId': farmerId,
-      'subCategoryId': subCategoryId,
-      'amount': amount,
-      'price': price,
-      'description': description,
-      'image': image,
-      'city': city,
-      'withDelivery': withDelivery,
-      'createdAt': createdAt.toIso8601String(),
-      'subCategory': subCategory?.toJson(),
-      'farmer': farmer?.toJson(),
-      'status': status,
-    };
-  }
-
-  /// Check if product is approved for buyers
-  bool get isApproved => status == 'APPROVED' || status == null;
-}
-
-/// SubCategory information
-class SubCategoryInfo {
-  final String id;
-  final String name;
-  final String? categoryId;
-  final CategoryInfo? category;
-
-  SubCategoryInfo({
-    required this.id,
-    required this.name,
-    this.categoryId,
-    this.category,
-  });
-
-  factory SubCategoryInfo.fromJson(Map<String, dynamic> json) {
-    return SubCategoryInfo(
-      id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-      categoryId: json['categoryId']?.toString(),
-      category: json['category'] != null
-          ? CategoryInfo.fromJson(json['category'])
-          : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'categoryId': categoryId,
-      'category': category?.toJson(),
-    };
-  }
-}
-
-/// Category information
-class CategoryInfo {
-  final String id;
-  final String name;
-
-  CategoryInfo({required this.id, required this.name});
-
-  factory CategoryInfo.fromJson(Map<String, dynamic> json) {
-    return CategoryInfo(
-      id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name};
-  }
-}
-
-/// Farmer/User information (complete)
-class FarmerInfo {
-  final String id;
-  final String? phone;
-  final String email;
-  final String role;
-  final String status;
-  final DateTime? createdAt;
-  final ProfileInfo? profile;
-
-  FarmerInfo({
-    required this.id,
-    this.phone,
-    required this.email,
-    required this.role,
-    required this.status,
-    this.createdAt,
-    this.profile,
-  });
-
-  factory FarmerInfo.fromJson(Map<String, dynamic> json) {
-    return FarmerInfo(
-      id: json['id']?.toString() ?? '',
-      phone: json['phone']?.toString(),
-      email: json['email']?.toString() ?? '',
-      role: json['role']?.toString() ?? '',
-      status: json['status']?.toString() ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'].toString())
-          : null,
-      profile: json['profile'] != null
-          ? ProfileInfo.fromJson(json['profile'])
-          : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'phone': phone,
-      'email': email,
-      'role': role,
-      'status': status,
-      'createdAt': createdAt?.toIso8601String(),
-      'profile': profile?.toJson(),
-    };
-  }
-}
-
-/// Profile information
-class ProfileInfo {
-  final String id;
-  final String userId;
-  final String? fullName;
-  final String? profileImage;
-  final String? bio;
-
-  ProfileInfo({
-    required this.id,
-    required this.userId,
-    this.fullName,
-    this.profileImage,
-    this.bio,
-  });
-
-  factory ProfileInfo.fromJson(Map<String, dynamic> json) {
-    return ProfileInfo(
-      id: json['id']?.toString() ?? '',
-      userId: json['userId']?.toString() ?? '',
-      fullName: json['fullName']?.toString(),
-      profileImage: json['profileImage']?.toString(),
-      bio: json['bio']?.toString(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'userId': userId,
-      'fullName': fullName,
-      'profileImage': profileImage,
-      'bio': bio,
-    };
+    return {'id': id, 'name': name, 'price': price, 'image': image};
   }
 }
 
@@ -301,7 +87,7 @@ class MarketPriceResponse {
   final String productId;
   final String woredaId;
   final double price;
-  final String date;
+  final DateTime date;
   final String latitude;
   final String longitude;
   final String status;
@@ -325,16 +111,40 @@ class MarketPriceResponse {
   });
 
   factory MarketPriceResponse.fromJson(Map<String, dynamic> json) {
+    // Safe date parsing
+    DateTime parseDate(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is DateTime) return value;
+      try {
+        return DateTime.parse(value.toString());
+      } catch (e) {
+        return DateTime.now();
+      }
+    }
+
+    // Safe double parsing (handles String like "7.6753 N" - extract number)
+    double parseCoordinate(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) {
+        // Extract numeric part from strings like "7.6753 N"
+        final match = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(value);
+        return match != null ? double.tryParse(match.group(1)!) ?? 0.0 : 0.0;
+      }
+      return 0.0;
+    }
+
     return MarketPriceResponse(
       id: json['id']?.toString() ?? '',
       userId: json['userId']?.toString() ?? '',
       productId: json['productId']?.toString() ?? '',
       woredaId: json['woredaId']?.toString() ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      date: json['date']?.toString() ?? '',
-      latitude: json['latitude']?.toString() ?? '',
-      longitude: json['longitude']?.toString() ?? '',
-      status: json['status']?.toString() ?? '',
+      date: parseDate(json['date']),
+      latitude: parseCoordinate(json['latitude']).toString(),
+      longitude: parseCoordinate(json['longitude']).toString(),
+      status: json['status']?.toString()?.toUpperCase() ?? '',
       user: json['user'] != null ? UserInfo.fromJson(json['user']) : null,
       product: json['product'] != null
           ? ProductInfo.fromJson(json['product'])
@@ -352,7 +162,7 @@ class MarketPriceResponse {
       'productId': productId,
       'woredaId': woredaId,
       'price': price,
-      'date': date,
+      'date': date.toIso8601String(),
       'latitude': latitude,
       'longitude': longitude,
       'status': status,
@@ -362,9 +172,16 @@ class MarketPriceResponse {
     };
   }
 
-  bool get isApproved => status.toUpperCase() == 'APPROVED';
-  bool get isPending => status.toUpperCase() == 'PENDING';
-  bool get isRejected => status.toUpperCase() == 'REJECTED';
+  // Helper getters
+  bool get isApproved => status == 'APPROVED';
+  bool get isPending => status == 'PENDING';
+  bool get isRejected => status == 'REJECTED';
+
+  /// Get numeric latitude as double
+  double get latitudeAsDouble => double.tryParse(latitude) ?? 0.0;
+
+  /// Get numeric longitude as double
+  double get longitudeAsDouble => double.tryParse(longitude) ?? 0.0;
 }
 
 /// User information (nested in market price response)
@@ -372,15 +189,25 @@ class UserInfo {
   final String id;
   final String? phone;
   final String email;
+  final String? firebaseUid;
   final String role;
   final String status;
+  final DateTime? lastLogin;
+  final DateTime? createdAt;
+  final String? createdById;
+  final ProfileInfo? profile;
 
   UserInfo({
     required this.id,
     this.phone,
     required this.email,
+    this.firebaseUid,
     required this.role,
     required this.status,
+    this.lastLogin,
+    this.createdAt,
+    this.createdById,
+    this.profile,
   });
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
@@ -388,8 +215,19 @@ class UserInfo {
       id: json['id']?.toString() ?? '',
       phone: json['phone']?.toString(),
       email: json['email']?.toString() ?? '',
+      firebaseUid: json['firebaseUid']?.toString(),
       role: json['role']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
+      lastLogin: json['lastLogin'] != null
+          ? DateTime.tryParse(json['lastLogin'].toString())
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+      createdById: json['createdById']?.toString(),
+      profile: json['profile'] != null
+          ? ProfileInfo.fromJson(json['profile'])
+          : null,
     );
   }
 
@@ -398,46 +236,49 @@ class UserInfo {
       'id': id,
       'phone': phone,
       'email': email,
+      'firebaseUid': firebaseUid,
       'role': role,
       'status': status,
+      'lastLogin': lastLogin?.toIso8601String(),
+      'createdAt': createdAt?.toIso8601String(),
+      'createdById': createdById,
+      'profile': profile?.toJson(),
     };
   }
 }
 
-/// Product information (nested in market price response)
-class ProductInfo {
-  final String id;
-  final String name;
-  final double? price;
-  final String? image;
+/// Profile information (matching your JSON)
+class ProfileInfo {
+  final String? fullName;
+  final String? profileImage;
+  final String? bio;
 
-  ProductInfo({required this.id, required this.name, this.price, this.image});
+  ProfileInfo({this.fullName, this.profileImage, this.bio});
 
-  factory ProductInfo.fromJson(Map<String, dynamic> json) {
-    return ProductInfo(
-      id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-      price: (json['price'] as num?)?.toDouble(),
-      image: json['image']?.toString(),
+  factory ProfileInfo.fromJson(Map<String, dynamic> json) {
+    return ProfileInfo(
+      fullName: json['fullName']?.toString(),
+      profileImage: json['profileImage']?.toString(),
+      bio: json['bio']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name, 'price': price, 'image': image};
+    return {'fullName': fullName, 'profileImage': profileImage, 'bio': bio};
   }
 }
 
-/// Woreda information (nested in market price response)
+/// Woreda info (matching your actual JSON)
 class WoredaInfo {
-  final String id;
+  final String? id;
   final String name;
   final String? zoneId;
 
-  WoredaInfo({required this.id, required this.name, this.zoneId});
+  WoredaInfo({this.id, required this.name, this.zoneId});
 
   factory WoredaInfo.fromJson(Map<String, dynamic> json) {
     return WoredaInfo(
-      id: json['id']?.toString() ?? '',
+      id: json['id']?.toString(),
       name: json['name']?.toString() ?? '',
       zoneId: json['zoneId']?.toString(),
     );
@@ -445,5 +286,21 @@ class WoredaInfo {
 
   Map<String, dynamic> toJson() {
     return {'id': id, 'name': name, 'zoneId': zoneId};
+  }
+}
+
+/// Response model for GET /market-price (List response)
+class MarketPriceListResponse {
+  final List<MarketPriceResponse> items;
+
+  MarketPriceListResponse({required this.items});
+
+  factory MarketPriceListResponse.fromJson(List<dynamic> json) {
+    return MarketPriceListResponse(
+      items: json.map((item) => MarketPriceResponse.fromJson(item)).toList(),
+    );
+  }
+  List<Map<String, dynamic>> toJson() {
+    return items.map((e) => e.toJson()).toList();
   }
 }

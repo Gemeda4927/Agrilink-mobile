@@ -15,7 +15,8 @@ import 'package:agrilink/features/chat/presentation/chat.dart';
 import 'package:agrilink/features/home/homescreen.dart';
 import 'package:agrilink/features/insight/presentation/screens/market_screen.dart';
 import 'package:agrilink/features/insight/presentation/screens/submit_price_screen.dart';
-import 'package:agrilink/features/insight/presentation/screens/approved_prices_screen.dart';
+import 'package:agrilink/features/insight/presentation/screens/approved_prices_screen.dart'
+    hide SubmitPriceScreen;
 import 'package:agrilink/features/my_product/presentation/my_products_screen.dart';
 import 'package:agrilink/features/order/presentation/screens/my_orders_screen.dart';
 import 'package:agrilink/features/product/FarmerProfilePage.dart';
@@ -179,7 +180,7 @@ final GoRouter appRouter = GoRouter(
       name: RouteName.submitMarketPrice,
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-        final preSelectedProduct = extra?['preSelectedProduct'] as Product?;
+        final preSelectedProduct = extra?['preSelectedProduct'] as ProductInfo?;
         return SubmitPriceScreen(preSelectedProduct: preSelectedProduct);
       },
     ),
