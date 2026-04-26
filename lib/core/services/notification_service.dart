@@ -83,15 +83,29 @@ class NotificationService {
       const channels = [
         AndroidNotificationChannel(
           'general',
-          'General',
+          'General Notifications',
           importance: Importance.high,
         ),
         AndroidNotificationChannel(
           'orders',
-          'Orders',
+          'Order Notifications',
           importance: Importance.high,
         ),
-        AndroidNotificationChannel('chat', 'Chat', importance: Importance.high),
+        AndroidNotificationChannel(
+          'products',
+          'Product Notifications',
+          importance: Importance.high,
+        ),
+        AndroidNotificationChannel(
+          'role_requests',
+          'Role Request Notifications',
+          importance: Importance.high,
+        ),
+        AndroidNotificationChannel(
+          'market_prices',
+          'Market Price Notifications',
+          importance: Importance.high,
+        ),
       ];
 
       for (final channel in channels) {
@@ -128,6 +142,7 @@ class NotificationService {
   void _onTokenRefresh(String token) async {
     _fcmToken = token;
     await _saveToken(token);
+    await registerDeviceToken(token);
     _logger.i('Token refreshed');
   }
 
@@ -143,35 +158,34 @@ class NotificationService {
   }
 
   void _onMessageOpenedApp(RemoteMessage message) {
-    // Also add to stream when user taps notification to open app
     _addToStreamAndSave(message);
     _handleNavigation(message.data);
   }
 
   void _addToStreamAndSave(RemoteMessage message) {
     final enrichedData = _enrichMessageData(message);
-    
-    // Add to stream for real-time updates
     _streamController.add(enrichedData);
-    
-    // Save to SharedPreferences for persistence
     _saveNotificationToStorage(enrichedData);
   }
 
-  Future<void> _saveNotificationToStorage(Map<String, dynamic> notification) async {
+  Future<void> _saveNotificationToStorage(
+    Map<String, dynamic> notification,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedJson = prefs.getString('saved_notifications') ?? '[]';
       List<dynamic> savedList = jsonDecode(savedJson);
-      
+
       savedList.insert(0, {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
         'title': notification['title'],
         'body': notification['body'],
         'type': notification['type'],
-        'timestamp': notification['timestamp'],
+        'timestamp': DateTime.now().toIso8601String(),
         'read': false,
+        'data': notification,
       });
-      
+
       if (savedList.length > 50) savedList = savedList.take(50).toList();
       await prefs.setString('saved_notifications', jsonEncode(savedList));
     } catch (e) {
@@ -208,9 +222,10 @@ class NotificationService {
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
         _getChannelId(message.data),
-        'Notifications',
+        _getChannelName(message.data),
         importance: Importance.high,
         priority: Priority.high,
+        autoCancel: true,
       ),
       iOS: const DarwinNotificationDetails(),
     );
@@ -227,12 +242,38 @@ class NotificationService {
   String _getChannelId(Map<String, dynamic> data) {
     final type = data['type'] as String?;
     switch (type) {
-      case 'order':
+      case 'order_placed':
+      case 'order_status_changed':
         return 'orders';
-      case 'chat':
-        return 'chat';
+      case 'product_created':
+        return 'products';
+      case 'role_request_approved':
+      case 'role_request_rejected':
+        return 'role_requests';
+      case 'market_price_approved':
+      case 'market_price_rejected':
+        return 'market_prices';
       default:
         return 'general';
+    }
+  }
+
+  String _getChannelName(Map<String, dynamic> data) {
+    final type = data['type'] as String?;
+    switch (type) {
+      case 'order_placed':
+      case 'order_status_changed':
+        return 'Order Notifications';
+      case 'product_created':
+        return 'Product Notifications';
+      case 'role_request_approved':
+      case 'role_request_rejected':
+        return 'Role Request Notifications';
+      case 'market_price_approved':
+      case 'market_price_rejected':
+        return 'Market Price Notifications';
+      default:
+        return 'General Notifications';
     }
   }
 
@@ -250,6 +291,7 @@ class NotificationService {
 
   void _handleNavigation(Map<String, dynamic> data) {
     final route = _getRouteFromType(data);
+    _logger.i('Navigating to: $route');
     navigateTo?.call(route, extra: data);
   }
 
@@ -264,13 +306,23 @@ class NotificationService {
 
   static String _getRouteFromTypeStatic(Map<String, dynamic> data) {
     final type = data['type'] as String?;
+
     switch (type) {
-      case 'order':
+      case 'order_placed':
+      case 'order_status_changed':
         return RouteName.myOrders;
-      case 'chat':
-        return RouteName.aiRecommendation;
-      case 'product':
-        return RouteName.product;
+
+      case 'product_created':
+        return RouteName.myProducts;
+
+      case 'role_request_approved':
+      case 'role_request_rejected':
+        return RouteName.dashboard;
+
+      case 'market_price_approved':
+      case 'market_price_rejected':
+        return RouteName.approvedPrices;
+
       default:
         return RouteName.home;
     }
@@ -282,7 +334,7 @@ class NotificationService {
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         await _firebaseMessaging.setAutoInitEnabled(true);
       }
-      _logger.i('Badge and notifications cleared');
+      _logger.i('Badge cleared');
     } catch (e) {
       _logger.e('Failed to clear badge: $e');
     }
@@ -375,20 +427,21 @@ class NotificationService {
     WidgetsFlutterBinding.ensureInitialized();
     final logger = Logger();
     logger.i('Background message received: ${message.data}');
-    
-    // Save to storage even in background
+
     final prefs = await SharedPreferences.getInstance();
     final savedJson = prefs.getString('saved_notifications') ?? '[]';
     List<dynamic> savedList = jsonDecode(savedJson);
-    
+
     savedList.insert(0, {
+      'id': DateTime.now().millisecondsSinceEpoch.toString(),
       'title': message.notification?.title,
       'body': message.notification?.body,
       'type': message.data['type'],
       'timestamp': DateTime.now().toIso8601String(),
       'read': false,
+      'data': message.data,
     });
-    
+
     if (savedList.length > 50) savedList = savedList.take(50).toList();
     await prefs.setString('saved_notifications', jsonEncode(savedList));
   }

@@ -1,14 +1,11 @@
 import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/core/localization/generated/app_localizations.dart';
 import 'package:agrilink/core/localization/language_bloc.dart';
-import 'package:agrilink/core/services/notification_service.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_event.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
-import 'package:agrilink/injector.dart';
 import 'package:go_router/go_router.dart';
 
 class DebugUser {
@@ -38,21 +35,40 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   bool _isPasswordVisible = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
-  // Flag to prevent multiple registrations
-  bool _isTokenRegistered = false;
 
   static const List<DebugUser> _debugUsers = [
-    DebugUser(role: 'Agent', email: 'meronmulu2121@gmail.com', password: 'me4545'),
-    DebugUser(role: 'Admin', email: 'jidhaguta45@gmail.com', password: '87654321'),
-    DebugUser(role: 'Farmer', email: 'gemedatechnology@gmail.com', password: 'securepass'),
-    DebugUser(role: 'Buyer', email: 'caalaaturee1@gmail.com', password: 'Gammee'),
+    DebugUser(
+      role: 'Agent',
+      email: 'meronmulu2121@gmail.com',
+      password: 'me4545',
+    ),
+    DebugUser(
+      role: 'Admin',
+      email: 'jidhaguta45@gmail.com',
+      password: '87654321',
+    ),
+    DebugUser(
+      role: 'Farmer',
+      email: 'gemedatechnology@gmail.com',
+      password: 'securepass',
+    ),
+    DebugUser(
+      role: 'Buyer',
+      email: 'caalaaturee1@gmail.com',
+      password: 'Gammee',
+    ),
+    DebugUser(
+      role: 'Data Contributor',
+      email: 'meronmulu45@gmail.com',
+      password: 'meri44',
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
     _initAnimations();
+    // REMOVED: _registerDeviceIfNeeded() - NO notification registration on login page
   }
 
   void _initAnimations() {
@@ -168,8 +184,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     languageName,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Colors.green.shade700 : Colors.black87,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isSelected
+                          ? Colors.green.shade700
+                          : Colors.black87,
                     ),
                   ),
                   Text(
@@ -190,128 +210,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void _changeLanguage(String languageCode, String languageName) {
     context.read<LanguageBloc>().add(ChangeLanguage(Locale(languageCode)));
     Navigator.pop(context);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Language changed to $languageName'),
         backgroundColor: Colors.green.shade700,
         duration: const Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  Future<void> _registerDeviceToken(AuthSuccess state) async {
-    // Prevent multiple registrations
-    if (_isTokenRegistered) return;
-    
-    final notificationService = sl<NotificationService>();
-    final token = await notificationService.getSavedToken();
-    
-    if (token == null || token.isEmpty) return;
-    
-    final registered = await notificationService.registerDeviceToken(token);
-    if (!registered) return;
-    
-    final role = state.authResponse.user.role;
-    if (role != null && role.isNotEmpty) {
-      final normalizedRole = role.toLowerCase().trim();
-      await notificationService.subscribeToTopic('all_users');
-      await notificationService.subscribeToTopic('role_$normalizedRole');
-    }
-    
-    _isTokenRegistered = true;
-  }
-
-  void _showNotificationDiagnostic() async {
-    final notificationService = sl<NotificationService>();
-    final token = await notificationService.getSavedToken();
-    final permissions = await notificationService.getNotificationSettings();
-
-    final tokenStatus = token != null && token.isNotEmpty ? '✅' : '❌';
-    final tokenPreview = token != null && token.isNotEmpty
-        ? (token.length > 20 ? '${token.substring(0, 20)}...' : token)
-        : 'Not available';
-    
-    final permissionStatus = permissions.authorizationStatus == AuthorizationStatus.authorized
-        ? '✅' : '❌';
-
-    if (!mounted) return;
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '🔔 Notification Status',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            _buildDiagnosticRow('FCM Token', tokenStatus, tokenPreview),
-            _buildDiagnosticRow('Permission', permissionStatus, permissions.authorizationStatus.name),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _sendTestNotification(notificationService),
-                icon: const Icon(Icons.notifications_active),
-                label: const Text('Send Test Notification'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _sendTestNotification(NotificationService notificationService) async {
-    await notificationService.showTestNotification();
-
-    if (!mounted) return;
-    Navigator.pop(context);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Test notification sent!'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  Widget _buildDiagnosticRow(String label, String status, String detail) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-          ),
-          Text(status, style: const TextStyle(fontSize: 18)),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 3,
-            child: Text(
-              detail,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -369,13 +274,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         Row(
           children: [
             _buildIconButton(
-              icon: Icons.notifications_active,
-              color: Colors.orange.shade700,
-              onPressed: _showNotificationDiagnostic,
-              tooltip: 'Diagnostic',
-            ),
-            const SizedBox(width: 8),
-            _buildIconButton(
               icon: Icons.language,
               color: Colors.green.shade700,
               onPressed: () => _showLanguageSelector(context),
@@ -432,7 +330,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ),
             ],
           ),
-          child: const Icon(Icons.agriculture_rounded, size: 60, color: Colors.white),
+          child: const Icon(
+            Icons.agriculture_rounded,
+            size: 60,
+            color: Colors.white,
+          ),
         ),
         const SizedBox(height: 16),
         Text(
@@ -476,7 +378,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               _buildEmailField(t),
               const SizedBox(height: 16),
               _buildPasswordField(t),
-              const SizedBox(height: 10),
               const SizedBox(height: 20),
               _buildLoginButton(t),
               const SizedBox(height: 20),
@@ -510,10 +411,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       icon: const Icon(Icons.arrow_drop_down_circle, color: Colors.green),
       isExpanded: true,
       hint: Text(t.selectTestAccount, overflow: TextOverflow.ellipsis),
-      items: _debugUsers.map((user) => DropdownMenuItem(
-        value: user,
-        child: Text('${user.role} - ${user.email}', overflow: TextOverflow.ellipsis),
-      )).toList(),
+      items: _debugUsers
+          .map(
+            (user) => DropdownMenuItem(
+              value: user,
+              child: Text(
+                '${user.role} - ${user.email}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          )
+          .toList(),
       onChanged: (user) {
         if (user != null) {
           setState(() {
@@ -545,7 +453,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         filled: true,
         fillColor: Colors.grey.shade50,
       ),
-      validator: (value) => value == null || value.isEmpty ? t.emailOrPhoneRequired : null,
+      validator: (value) =>
+          value == null || value.isEmpty ? t.emailOrPhoneRequired : null,
     );
   }
 
@@ -558,8 +467,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         labelText: t.password,
         hintText: t.passwordHint,
         suffixIcon: IconButton(
-          icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility, color: Colors.green),
-          onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+            color: Colors.green,
+          ),
+          onPressed: () =>
+              setState(() => _isPasswordVisible = !_isPasswordVisible),
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
@@ -585,16 +498,19 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) async {
         if (state is AuthSuccess) {
-          await _registerDeviceToken(state);
-          _navigateAfterLogin(state, t);
+          if (mounted) {
+            _navigateAfterLogin(state, t);
+          }
         } else if (state is AuthFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.error),
-              backgroundColor: Colors.red.shade600,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.error),
+                backgroundColor: Colors.red.shade600,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
         }
       },
       builder: (context, state) {
@@ -606,15 +522,26 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green.shade700,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: state is AuthLoading
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
-                : Text(t.login, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                : Text(
+                    t.login,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         );
       },
@@ -623,22 +550,24 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   void _handleLogin() {
     if (!_formKey.currentState!.validate()) return;
-    
+
     final input = _identifierController.text.trim();
     final data = {'password': _passwordController.text.trim()};
-    
+
     if (input.contains('@')) {
       data['email'] = input;
     } else {
       data['phone'] = input;
     }
-    
+
     context.read<AuthBloc>().add(SignInEvent(data: data));
   }
 
   void _navigateAfterLogin(AuthSuccess state, AppLocalizations t) {
     final user = state.authResponse.user;
-    
+
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(t.welcomeMessage(user.email)),
@@ -646,13 +575,23 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         behavior: SnackBarBehavior.floating,
       ),
     );
-    
+
     if (user.status == 'ACTIVE') {
-      context.goNamed(RouteName.profile);
+      if (user.role != null && user.role.isNotEmpty && user.role != 'USER') {
+        context.goNamed(RouteName.home);
+      } else {
+        context.goNamed(RouteName.profile);
+      }
     } else {
+      // Pass user info to OTP page
       context.goNamed(
         RouteName.verifyOtp,
-        extra: {'identifier': user.email, 'purpose': 'VERIFICATION'},
+        extra: {
+          'identifier': user.email,
+          'purpose': 'LOGIN',
+          'userRole': user.role,
+          'userId': user.id, // Pass user ID for registration
+        },
       );
     }
   }
@@ -663,7 +602,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         Expanded(child: Divider(color: Colors.grey.shade400)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Text(t.orDivider, style: const TextStyle(color: Color(0xFF5E6D5C))),
+          child: Text(
+            t.orDivider,
+            style: const TextStyle(color: Color(0xFF5E6D5C)),
+          ),
         ),
         Expanded(child: Divider(color: Colors.grey.shade400)),
       ],
@@ -681,14 +623,22 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               'assets/images/google_logo.png',
               height: 24,
               width: 24,
-              errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, color: Colors.red, size: 30),
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.g_mobiledata, color: Colors.red, size: 30),
             ),
-            label: Text(t.signInWithGoogle, style: const TextStyle(color: Color(0xFF1E3A2F))),
+            label: Text(
+              t.signInWithGoogle,
+              style: const TextStyle(color: Color(0xFF1E3A2F)),
+            ),
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: Colors.grey.shade300),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            onPressed: state is AuthLoading ? null : () => context.read<AuthBloc>().add(GoogleSignInEvent()),
+            onPressed: state is AuthLoading
+                ? null
+                : () => context.read<AuthBloc>().add(GoogleSignInEvent()),
           ),
         );
       },
@@ -703,7 +653,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         TextButton(
           onPressed: () => context.goNamed(RouteName.signup),
           style: TextButton.styleFrom(foregroundColor: Colors.green.shade700),
-          child: Text(t.createAccount, style: const TextStyle(fontWeight: FontWeight.bold)),
+          child: Text(
+            t.createAccount,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );

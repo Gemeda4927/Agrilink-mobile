@@ -31,7 +31,6 @@ import 'package:agrilink/injector.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 
-// Global navigator key for notification navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class MyApp extends StatefulWidget {

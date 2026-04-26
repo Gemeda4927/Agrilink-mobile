@@ -9,7 +9,7 @@ class MarketRepositoryImpl implements IMarketRepository {
   MarketRepositoryImpl({required this.marketService});
 
   @override
-  Future<AllProductsResponse> getAllProducts() async {
+  Future<List<ProductInfo>> getAllProducts() async {
     try {
       return await marketService.getAllProducts();
     } catch (e) {
@@ -18,7 +18,7 @@ class MarketRepositoryImpl implements IMarketRepository {
   }
 
   @override
-  Future<AllProductsResponse> getPublicProducts() async {
+  Future<List<ProductInfo>> getPublicProducts() async {
     try {
       return await marketService.getPublicProducts();
     } catch (e) {
@@ -65,6 +65,33 @@ class MarketRepositoryImpl implements IMarketRepository {
   }
 
   @override
+  Future<List<MarketPriceResponse>> getMarketPricesByWoreda(String woredaId) async {
+    try {
+      return await marketService.getMarketPricesByWoreda(woredaId);
+    } catch (e) {
+      throw Exception('Failed to get market prices by woreda: $e');
+    }
+  }
+
+  @override
+  Future<List<MarketPriceResponse>> getMarketPricesByProduct(String productId) async {
+    try {
+      return await marketService.getMarketPricesByProduct(productId);
+    } catch (e) {
+      throw Exception('Failed to get market prices by product: $e');
+    }
+  }
+
+  @override
+  Future<MarketPriceResponse> getMarketPriceById(String id) async {
+    try {
+      return await marketService.getMarketPriceById(id);
+    } catch (e) {
+      throw Exception('Failed to get market price by id: $e');
+    }
+  }
+
+  @override
   Future<MarketPriceResponse> updateMarketPrice(
     String id,
     MarketPriceRequest request,
@@ -91,6 +118,33 @@ class MarketRepositoryImpl implements IMarketRepository {
       return await marketService.rejectMarketPrice(id);
     } catch (e) {
       throw Exception('Failed to reject market price: $e');
+    }
+  }
+
+  @override
+  Future<bool> deleteMarketPrice(String id) async {
+    try {
+      return await marketService.deleteMarketPrice(id);
+    } catch (e) {
+      throw Exception('Failed to delete market price: $e');
+    }
+  }
+
+  @override
+  Future<PriceStatistics> getProductPriceStatistics(String productId) async {
+    try {
+      return await marketService.getProductPriceStatistics(productId);
+    } catch (e) {
+      throw Exception('Failed to get product price statistics: $e');
+    }
+  }
+
+  @override
+  Future<List<MarketPriceResponse>> getRecentPriceAlerts() async {
+    try {
+      return await marketService.getRecentPriceAlerts();
+    } catch (e) {
+      throw Exception('Failed to get recent price alerts: $e');
     }
   }
 }

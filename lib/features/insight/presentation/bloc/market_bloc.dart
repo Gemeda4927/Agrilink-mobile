@@ -5,15 +5,26 @@ import 'package:agrilink/features/insight/domain/usecase/market_usecases.dart';
 
 // ================= BLOC =================
 class MarketBloc extends Bloc<MarketEvent, MarketState> {
+  // Product Use Cases
   final GetAllProductsUseCase getAllProductsUseCase;
   final GetPublicProductsUseCase getPublicProductsUseCase;
+
+  // Market Price Use Cases
   final SubmitMarketPriceUseCase submitMarketPriceUseCase;
   final GetAllMarketPricesUseCase getAllMarketPricesUseCase;
   final GetApprovedMarketPricesUseCase getApprovedMarketPricesUseCase;
   final GetMyMarketPricesUseCase getMyMarketPricesUseCase;
+  final GetMarketPricesByWoredaUseCase getMarketPricesByWoredaUseCase;
+  final GetMarketPricesByProductUseCase getMarketPricesByProductUseCase;
+  final GetMarketPriceByIdUseCase getMarketPriceByIdUseCase;
   final UpdateMarketPriceUseCase updateMarketPriceUseCase;
   final ApproveMarketPriceUseCase approveMarketPriceUseCase;
   final RejectMarketPriceUseCase rejectMarketPriceUseCase;
+  final DeleteMarketPriceUseCase deleteMarketPriceUseCase;
+
+  // Statistics Use Cases
+  final GetProductPriceStatisticsUseCase getProductPriceStatisticsUseCase;
+  final GetRecentPriceAlertsUseCase getRecentPriceAlertsUseCase;
 
   MarketBloc({
     required this.getAllProductsUseCase,
@@ -22,9 +33,15 @@ class MarketBloc extends Bloc<MarketEvent, MarketState> {
     required this.getAllMarketPricesUseCase,
     required this.getApprovedMarketPricesUseCase,
     required this.getMyMarketPricesUseCase,
+    required this.getMarketPricesByWoredaUseCase,
+    required this.getMarketPricesByProductUseCase,
+    required this.getMarketPriceByIdUseCase,
     required this.updateMarketPriceUseCase,
     required this.approveMarketPriceUseCase,
     required this.rejectMarketPriceUseCase,
+    required this.deleteMarketPriceUseCase,
+    required this.getProductPriceStatisticsUseCase,
+    required this.getRecentPriceAlertsUseCase,
   }) : super(MarketInitial()) {
     // Register event handlers
     on<GetAllProductsEvent>(_onGetAllProducts);
@@ -33,9 +50,15 @@ class MarketBloc extends Bloc<MarketEvent, MarketState> {
     on<GetAllMarketPricesEvent>(_onGetAllMarketPrices);
     on<GetApprovedMarketPricesEvent>(_onGetApprovedMarketPrices);
     on<GetMyMarketPricesEvent>(_onGetMyMarketPrices);
+    on<GetMarketPricesByWoredaEvent>(_onGetMarketPricesByWoreda);
+    on<GetMarketPricesByProductEvent>(_onGetMarketPricesByProduct);
+    on<GetMarketPriceByIdEvent>(_onGetMarketPriceById);
+    on<GetProductPriceStatisticsEvent>(_onGetProductPriceStatistics);
+    on<GetRecentPriceAlertsEvent>(_onGetRecentPriceAlerts);
     on<UpdateMarketPriceEvent>(_onUpdateMarketPrice);
     on<ApproveMarketPriceEvent>(_onApproveMarketPrice);
     on<RejectMarketPriceEvent>(_onRejectMarketPrice);
+    on<DeleteMarketPriceEvent>(_onDeleteMarketPrice);
     on<ResetMarketStateEvent>(_onResetState);
   }
 
@@ -125,6 +148,78 @@ class MarketBloc extends Bloc<MarketEvent, MarketState> {
     }
   }
 
+  /// Handle Get Market Prices By Woreda
+  Future<void> _onGetMarketPricesByWoreda(
+    GetMarketPricesByWoredaEvent event,
+    Emitter<MarketState> emit,
+  ) async {
+    try {
+      emit(MarketLoading());
+      final prices = await getMarketPricesByWoredaUseCase(event.woredaId);
+      emit(MarketPricesLoaded(prices));
+    } catch (e) {
+      _emitError(emit, e);
+    }
+  }
+
+  /// Handle Get Market Prices By Product
+  Future<void> _onGetMarketPricesByProduct(
+    GetMarketPricesByProductEvent event,
+    Emitter<MarketState> emit,
+  ) async {
+    try {
+      emit(MarketLoading());
+      final prices = await getMarketPricesByProductUseCase(event.productId);
+      emit(MarketPricesLoaded(prices));
+    } catch (e) {
+      _emitError(emit, e);
+    }
+  }
+
+  /// Handle Get Market Price By ID
+  Future<void> _onGetMarketPriceById(
+    GetMarketPriceByIdEvent event,
+    Emitter<MarketState> emit,
+  ) async {
+    try {
+      emit(MarketLoading());
+      final price = await getMarketPriceByIdUseCase(event.id);
+      emit(MarketPricesLoaded([price]));
+    } catch (e) {
+      _emitError(emit, e);
+    }
+  }
+
+  /// Handle Get Product Price Statistics
+  Future<void> _onGetProductPriceStatistics(
+    GetProductPriceStatisticsEvent event,
+    Emitter<MarketState> emit,
+  ) async {
+    try {
+      emit(MarketLoading());
+      final statistics = await getProductPriceStatisticsUseCase(
+        event.productId,
+      );
+      emit(PriceStatisticsLoaded(statistics));
+    } catch (e) {
+      _emitError(emit, e);
+    }
+  }
+
+  /// Handle Get Recent Price Alerts
+  Future<void> _onGetRecentPriceAlerts(
+    GetRecentPriceAlertsEvent event,
+    Emitter<MarketState> emit,
+  ) async {
+    try {
+      emit(MarketLoading());
+      final alerts = await getRecentPriceAlertsUseCase(NoParams());
+      emit(MarketPricesLoaded(alerts));
+    } catch (e) {
+      _emitError(emit, e);
+    }
+  }
+
   /// Handle Update Market Price
   Future<void> _onUpdateMarketPrice(
     UpdateMarketPriceEvent event,
@@ -133,10 +228,7 @@ class MarketBloc extends Bloc<MarketEvent, MarketState> {
     try {
       emit(MarketLoading());
       final response = await updateMarketPriceUseCase(
-        UpdateMarketPriceParams(
-          id: event.id,
-          request: event.request,
-        ),
+        UpdateMarketPriceParams(id: event.id, request: event.request),
       );
       emit(MarketPriceUpdated(response));
     } catch (e) {
@@ -170,6 +262,22 @@ class MarketBloc extends Bloc<MarketEvent, MarketState> {
       final response = await rejectMarketPriceUseCase(event.priceId);
       emit(MarketPriceRejected(response));
       // Refresh the list after rejection
+      add(GetAllMarketPricesEvent());
+    } catch (e) {
+      _emitError(emit, e);
+    }
+  }
+
+  /// Handle Delete Market Price - For ADMIN/AGENT
+  Future<void> _onDeleteMarketPrice(
+    DeleteMarketPriceEvent event,
+    Emitter<MarketState> emit,
+  ) async {
+    try {
+      emit(MarketLoading());
+      await deleteMarketPriceUseCase(event.priceId);
+      emit(MarketPriceDeleted(event.priceId));
+      // Refresh the list after deletion
       add(GetAllMarketPricesEvent());
     } catch (e) {
       _emitError(emit, e);

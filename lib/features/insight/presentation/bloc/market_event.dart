@@ -9,12 +9,46 @@ abstract class MarketEvent extends Equatable {
 
 // Product Events
 class GetAllProductsEvent extends MarketEvent {}
+
 class GetPublicProductsEvent extends MarketEvent {}
 
 // Market Price Events
 class GetAllMarketPricesEvent extends MarketEvent {}
+
 class GetApprovedMarketPricesEvent extends MarketEvent {}
+
 class GetMyMarketPricesEvent extends MarketEvent {}
+
+class GetMarketPricesByWoredaEvent extends MarketEvent {
+  final String woredaId;
+  const GetMarketPricesByWoredaEvent(this.woredaId);
+  @override
+  List<Object> get props => [woredaId];
+}
+
+class GetMarketPricesByProductEvent extends MarketEvent {
+  final String productId;
+  const GetMarketPricesByProductEvent(this.productId);
+  @override
+  List<Object> get props => [productId];
+}
+
+class GetMarketPriceByIdEvent extends MarketEvent {
+  final String id;
+  const GetMarketPriceByIdEvent(this.id);
+  @override
+  List<Object> get props => [id];
+}
+
+// Statistics Events
+class GetProductPriceStatisticsEvent extends MarketEvent {
+  final String productId;
+  const GetProductPriceStatisticsEvent(this.productId);
+  @override
+  List<Object> get props => [productId];
+}
+
+class GetRecentPriceAlertsEvent extends MarketEvent {}
 
 // Submission Events
 class SubmitMarketPriceEvent extends MarketEvent {
@@ -43,6 +77,13 @@ class ApproveMarketPriceEvent extends MarketEvent {
 class RejectMarketPriceEvent extends MarketEvent {
   final String priceId;
   const RejectMarketPriceEvent(this.priceId);
+  @override
+  List<Object> get props => [priceId];
+}
+
+class DeleteMarketPriceEvent extends MarketEvent {
+  final String priceId;
+  const DeleteMarketPriceEvent(this.priceId);
   @override
   List<Object> get props => [priceId];
 }

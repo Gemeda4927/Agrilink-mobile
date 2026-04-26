@@ -456,10 +456,6 @@ Future<void> initInjector() async {
   // ================= MARKET INSIGHT FEATURE =========
   // ==================================================
 
-  // ==================================================
-  // ================= MARKET INSIGHT FEATURE =========
-  // ==================================================
-
   // Register Service
   sl.registerLazySingleton<MarketService>(
     () => MarketService(dioClient: sl<DioClient>()),
@@ -470,57 +466,92 @@ Future<void> initInjector() async {
     () => MarketRepositoryImpl(marketService: sl<MarketService>()),
   );
 
-  // Register Use Cases
-  sl.registerLazySingleton<GetAllProductsUseCase>(
-    () => GetAllProductsUseCase(sl<IMarketRepository>()),
-  );
+  // Register Use Cases - Grouped by feature
+  void _registerMarketUseCases() {
+    // Product Use Cases
+    sl.registerLazySingleton<GetAllProductsUseCase>(
+      () => GetAllProductsUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<GetPublicProductsUseCase>(
+      () => GetPublicProductsUseCase(sl<IMarketRepository>()),
+    );
 
-  sl.registerLazySingleton<GetPublicProductsUseCase>(
-    () => GetPublicProductsUseCase(sl<IMarketRepository>()),
-  );
+    // Market Price CRUD Use Cases
+    sl.registerLazySingleton<SubmitMarketPriceUseCase>(
+      () => SubmitMarketPriceUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<GetAllMarketPricesUseCase>(
+      () => GetAllMarketPricesUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<GetApprovedMarketPricesUseCase>(
+      () => GetApprovedMarketPricesUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<GetMyMarketPricesUseCase>(
+      () => GetMyMarketPricesUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<GetMarketPricesByWoredaUseCase>(
+      () => GetMarketPricesByWoredaUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<GetMarketPricesByProductUseCase>(
+      () => GetMarketPricesByProductUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<GetMarketPriceByIdUseCase>(
+      () => GetMarketPriceByIdUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<UpdateMarketPriceUseCase>(
+      () => UpdateMarketPriceUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<DeleteMarketPriceUseCase>(
+      () => DeleteMarketPriceUseCase(sl<IMarketRepository>()),
+    );
 
-  sl.registerLazySingleton<SubmitMarketPriceUseCase>(
-    () => SubmitMarketPriceUseCase(sl<IMarketRepository>()),
-  );
+    // Moderation Use Cases (ADMIN/AGENT)
+    sl.registerLazySingleton<ApproveMarketPriceUseCase>(
+      () => ApproveMarketPriceUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<RejectMarketPriceUseCase>(
+      () => RejectMarketPriceUseCase(sl<IMarketRepository>()),
+    );
 
-  sl.registerLazySingleton<GetAllMarketPricesUseCase>(
-    () => GetAllMarketPricesUseCase(sl<IMarketRepository>()),
-  );
-
-  sl.registerLazySingleton<GetApprovedMarketPricesUseCase>(
-    () => GetApprovedMarketPricesUseCase(sl<IMarketRepository>()),
-  );
-
-  sl.registerLazySingleton<GetMyMarketPricesUseCase>(
-    () => GetMyMarketPricesUseCase(sl<IMarketRepository>()),
-  );
-
-  sl.registerLazySingleton<UpdateMarketPriceUseCase>(
-    () => UpdateMarketPriceUseCase(sl<IMarketRepository>()),
-  );
-
-  sl.registerLazySingleton<ApproveMarketPriceUseCase>(
-    () => ApproveMarketPriceUseCase(sl<IMarketRepository>()),
-  );
-
-  sl.registerLazySingleton<RejectMarketPriceUseCase>(
-    () => RejectMarketPriceUseCase(sl<IMarketRepository>()),
-  );
+    // Statistics & Analytics Use Cases
+    sl.registerLazySingleton<GetProductPriceStatisticsUseCase>(
+      () => GetProductPriceStatisticsUseCase(sl<IMarketRepository>()),
+    );
+    sl.registerLazySingleton<GetRecentPriceAlertsUseCase>(
+      () => GetRecentPriceAlertsUseCase(sl<IMarketRepository>()),
+    );
+  }
 
   // Register BLoC
-  sl.registerFactory<MarketBloc>(
-    () => MarketBloc(
-      getAllProductsUseCase: sl<GetAllProductsUseCase>(),
-      getPublicProductsUseCase: sl<GetPublicProductsUseCase>(),
-      submitMarketPriceUseCase: sl<SubmitMarketPriceUseCase>(),
-      getAllMarketPricesUseCase: sl<GetAllMarketPricesUseCase>(),
-      getApprovedMarketPricesUseCase: sl<GetApprovedMarketPricesUseCase>(),
-      getMyMarketPricesUseCase: sl<GetMyMarketPricesUseCase>(),
-      updateMarketPriceUseCase: sl<UpdateMarketPriceUseCase>(),
-      approveMarketPriceUseCase: sl<ApproveMarketPriceUseCase>(),
-      rejectMarketPriceUseCase: sl<RejectMarketPriceUseCase>(),
-    ),
-  );
+  void _registerMarketBloc() {
+    sl.registerFactory<MarketBloc>(
+      () => MarketBloc(
+        // Product Use Cases
+        getAllProductsUseCase: sl<GetAllProductsUseCase>(),
+        getPublicProductsUseCase: sl<GetPublicProductsUseCase>(),
+        // Market Price Use Cases
+        submitMarketPriceUseCase: sl<SubmitMarketPriceUseCase>(),
+        getAllMarketPricesUseCase: sl<GetAllMarketPricesUseCase>(),
+        getApprovedMarketPricesUseCase: sl<GetApprovedMarketPricesUseCase>(),
+        getMyMarketPricesUseCase: sl<GetMyMarketPricesUseCase>(),
+        getMarketPricesByWoredaUseCase: sl<GetMarketPricesByWoredaUseCase>(),
+        getMarketPricesByProductUseCase: sl<GetMarketPricesByProductUseCase>(),
+        getMarketPriceByIdUseCase: sl<GetMarketPriceByIdUseCase>(),
+        updateMarketPriceUseCase: sl<UpdateMarketPriceUseCase>(),
+        approveMarketPriceUseCase: sl<ApproveMarketPriceUseCase>(),
+        rejectMarketPriceUseCase: sl<RejectMarketPriceUseCase>(),
+        deleteMarketPriceUseCase: sl<DeleteMarketPriceUseCase>(),
+        // Statistics Use Cases
+        getProductPriceStatisticsUseCase:
+            sl<GetProductPriceStatisticsUseCase>(),
+        getRecentPriceAlertsUseCase: sl<GetRecentPriceAlertsUseCase>(),
+      ),
+    );
+  }
+
+  // Call the registration functions
+  _registerMarketUseCases();
+  _registerMarketBloc();
 }
 
 // ================= HELPER GETTERS =================

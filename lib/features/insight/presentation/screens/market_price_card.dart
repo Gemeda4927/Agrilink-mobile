@@ -50,8 +50,8 @@ class MarketPriceCard extends StatelessWidget {
           color: trend == 'up'
               ? Colors.green.withOpacity(0.2)
               : trend == 'down'
-                  ? Colors.red.withOpacity(0.2)
-                  : Colors.transparent,
+              ? Colors.red.withOpacity(0.2)
+              : Colors.transparent,
           width: 1,
         ),
       ),
@@ -69,10 +69,7 @@ class MarketPriceCard extends StatelessWidget {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        Colors.green.shade400,
-                        Colors.green.shade600,
-                      ],
+                      colors: [Colors.green.shade400, Colors.green.shade600],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -92,7 +89,7 @@ class MarketPriceCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                
+
                 // Product Info
                 Expanded(
                   child: Column(
@@ -108,7 +105,7 @@ class MarketPriceCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      
+
                       // Location and Date Row
                       Wrap(
                         spacing: 12,
@@ -120,11 +117,11 @@ class MarketPriceCard extends StatelessWidget {
                           ),
                           _buildInfoChip(
                             icon: Icons.calendar_today_outlined,
-                            label: _formatDate(marketPrice.date),
+                            label: _formatDate(marketPrice.date as String),
                           ),
                         ],
                       ),
-                      
+
                       // Status Badge
                       if (showStatus) ...[
                         const SizedBox(height: 8),
@@ -133,7 +130,7 @@ class MarketPriceCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 // Price and Trend Column
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -157,7 +154,7 @@ class MarketPriceCard extends StatelessWidget {
                         color: Colors.grey.shade600,
                       ),
                     ),
-                    
+
                     // Trend Indicator
                     if (trend != 'neutral') ...[
                       const SizedBox(height: 8),
@@ -177,11 +174,7 @@ class MarketPriceCard extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              trendIcon,
-                              size: 16,
-                              color: trendColor,
-                            ),
+                            Icon(trendIcon, size: 16, color: trendColor),
                             const SizedBox(width: 4),
                             Text(
                               '${percentage.toStringAsFixed(1)}%',
@@ -209,11 +202,7 @@ class MarketPriceCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 14,
-          color: Colors.grey.shade600,
-        ),
+        Icon(icon, size: 14, color: Colors.grey.shade600),
         const SizedBox(width: 4),
         Text(
           label,
@@ -259,10 +248,7 @@ class MarketPriceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: textColor.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: textColor.withOpacity(0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

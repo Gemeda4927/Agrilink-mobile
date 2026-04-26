@@ -16,6 +16,7 @@ import 'package:agrilink/features/profile/presentation/bloc/profile_event.dart';
 import 'package:agrilink/features/profile/presentation/bloc/profile_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RoleRequestScreen extends StatefulWidget {
@@ -534,17 +535,30 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
     );
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessPopup() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         child: Container(
           padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Animated Checkmark
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -556,63 +570,94 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4CAF50).withOpacity(0.3),
-                      blurRadius: 20,
-                      spreadRadius: 5,
+                      color: const Color(0xFF4CAF50).withOpacity(0.4),
+                      blurRadius: 30,
+                      spreadRadius: 8,
                     ),
                   ],
                 ),
                 child: const Icon(
                   Icons.check_rounded,
                   color: Colors.white,
-                  size: 48,
+                  size: 56,
                 ),
               ),
               const SizedBox(height: 24),
               const Text(
-                'Request Submitted! 🎉',
+                '🎉 Request Submitted!',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1A1A1A),
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                'Your role request has been successfully submitted for review.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey.shade700,
-                  height: 1.4,
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                child: const Text(
+                  'Your role request has been successfully submitted for review.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF666666),
+                    height: 1.4,
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 20),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.shade200),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.orange.shade50,
+                      Colors.orange.shade100.withOpacity(0.5),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.orange.shade200,
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      color: Colors.orange.shade700,
-                      size: 20,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        color: Colors.orange.shade700,
+                        size: 24,
+                      ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
-                        'Our team will review your request and notify you once approved.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.orange.shade900,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'What happens next?',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Our team will review your request within 2-3 business days and notify you once approved.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.orange.shade900,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -623,7 +668,7 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Close popup
                     Navigator.pop(context); // Go back to previous screen
                   },
                   style: ElevatedButton.styleFrom(
@@ -631,15 +676,206 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
                   child: const Text(
                     'Got it',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showErrorPopup(String errorMessage) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Error Icon
+                      Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFE53935), Color(0xFFC62828)],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE53935).withOpacity(0.4),
+                      blurRadius: 30,
+                      spreadRadius: 8,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.error_outline_rounded,
+                  color: Colors.white,
+                  size: 56,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                '❌ Submission Failed',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  errorMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF666666),
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.red.shade50,
+                      Colors.red.shade100.withOpacity(0.5),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.red.shade200,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.lightbulb_outline,
+                        color: Colors.red.shade700,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Try these solutions',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '• Check your internet connection\n'
+                            '• Verify all fields are filled correctly\n'
+                            '• Make sure documents are valid\n'
+                            '• Try again in a few moments',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.red.shade900,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.grey.shade300),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Dismiss',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF666666),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Close error popup
+                        _submitRequest(); // Retry submission
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A8F5E),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Try Again',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -703,12 +939,14 @@ class _RoleRequestScreenState extends State<RoleRequestScreen> {
           listener: (context, state) {
             if (state is RoleRequestSuccess) {
               _saveRequestStatus('PENDING');
-              _showSuccessDialog();
+              _showSuccessPopup();
             } else if (state is RoleRequestError) {
               if (state.message.toLowerCase().contains('already')) {
                 _saveRequestStatus('PENDING');
+                _showSuccessPopup();
+              } else {
+                _showErrorPopup(state.message);
               }
-              _showSnackBar(state.message, Colors.red);
             }
           },
         ),
