@@ -6,7 +6,6 @@ import 'dart:math' as math;
 import 'package:agrilink/features/recommendation/presentation/bloc/chat_bloc.dart';
 import 'package:agrilink/features/recommendation/presentation/bloc/chat_event.dart';
 import 'package:agrilink/features/recommendation/presentation/bloc/chat_state.dart';
-import 'package:agrilink/features/recommendation/domain/entity/chat_response_entity.dart';
 import 'package:agrilink/features/recommendation/domain/entity/agent_breakdown_entity.dart';
 import 'package:agrilink/injector.dart' as di;
 import 'package:flutter_markdown/flutter_markdown.dart';

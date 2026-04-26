@@ -2,6 +2,7 @@ import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/features/auth/domain/entities/auth_user.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:agrilink/core/localization/generated/app_localizations.dart';
 
 class BasePage extends StatefulWidget {
   const BasePage({super.key, required this.child, required this.user});
@@ -14,17 +15,30 @@ class BasePage extends StatefulWidget {
 }
 
 class _BasePageState extends State<BasePage> {
-  List<BottomNavigationBarItem> _buildNavItems() {
+  List<BottomNavigationBarItem> _buildNavItems(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final items = <BottomNavigationBarItem>[
-      const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-      const BottomNavigationBarItem(icon: Icon(Icons.store), label: 'Store'),
+      BottomNavigationBarItem(icon: const Icon(Icons.home), label: l10n.home),
+      BottomNavigationBarItem(icon: const Icon(Icons.store), label: l10n.store),
     ];
 
     if (widget.user.role == "AGENT") {
-      items.add(const BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'));
+      items.add(
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.dashboard),
+          label: l10n.dashboard,
+        ),
+      );
     }
 
-    items.add(const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'));
+    items.add(
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.person),
+        label: l10n.profile,
+      ),
+    );
+
     return items;
   }
 
@@ -34,14 +48,13 @@ class _BasePageState extends State<BasePage> {
       drawer: const Drawer(),
       body: widget.child,
       bottomNavigationBar: BottomNavigationBar(
-        items: _buildNavItems(),
+        items: _buildNavItems(context),
         currentIndex: _getCurrentIndex(context),
         selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         onTap: (index) => context.go(_convertIndexToRouteName(index)),
       ),
-      // No floatingActionButton here - the premium FAB is handled by HomeScreen
     );
   }
 
@@ -53,9 +66,13 @@ class _BasePageState extends State<BasePage> {
 
     if (widget.user.role == "AGENT") {
       if (route.startsWith(RouteName.dashboard)) return 2;
-      if (route.startsWith(RouteName.viewProfile) || route.startsWith(RouteName.profile)) return 3;
+      if (route.startsWith(RouteName.viewProfile) ||
+          route.startsWith(RouteName.profile))
+        return 3;
     } else {
-      if (route.startsWith(RouteName.viewProfile) || route.startsWith(RouteName.profile)) return 2;
+      if (route.startsWith(RouteName.viewProfile) ||
+          route.startsWith(RouteName.profile))
+        return 2;
     }
     return 0;
   }
@@ -63,18 +80,27 @@ class _BasePageState extends State<BasePage> {
   String _convertIndexToRouteName(int index) {
     if (widget.user.role == "AGENT") {
       switch (index) {
-        case 0: return RouteName.home;
-        case 1: return RouteName.product;
-        case 2: return RouteName.dashboard;
-        case 3: return RouteName.viewProfile;
-        default: return RouteName.home;
+        case 0:
+          return RouteName.home;
+        case 1:
+          return RouteName.product;
+        case 2:
+          return RouteName.dashboard;
+        case 3:
+          return RouteName.viewProfile;
+        default:
+          return RouteName.home;
       }
     } else {
       switch (index) {
-        case 0: return RouteName.home;
-        case 1: return RouteName.product;
-        case 2: return RouteName.viewProfile;
-        default: return RouteName.home;
+        case 0:
+          return RouteName.home;
+        case 1:
+          return RouteName.product;
+        case 2:
+          return RouteName.viewProfile;
+        default:
+          return RouteName.home;
       }
     }
   }

@@ -43,7 +43,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   bool kebelesEmpty = false;
   bool _isCheckingProfile = true;
   String? _userId;
-  
+
   double? _latitude;
   double? _longitude;
   bool _isGettingLocation = false;
@@ -89,9 +89,12 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
       if (image != null) {
         final Directory appDocDir = await getApplicationDocumentsDirectory();
-        final String fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final String fileName =
+            'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final File localImage = File(image.path);
-        final File copiedImage = await localImage.copy('${appDocDir.path}/$fileName');
+        final File copiedImage = await localImage.copy(
+          '${appDocDir.path}/$fileName',
+        );
 
         setState(() {
           _selectedImage = copiedImage;
@@ -112,33 +115,37 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
     try {
       PermissionStatus permission = await Permission.location.request();
-      
+
       if (permission.isGranted) {
         Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
         );
-        
+
         setState(() {
           _latitude = position.latitude;
           _longitude = position.longitude;
           _isGettingLocation = false;
         });
-        
+
         _showSuccessSnackBar(
-          'Location captured: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}'
+          'Location captured: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}',
         );
-        
+
         print('📍 Current location: $_latitude, $_longitude');
       } else if (permission.isDenied) {
         setState(() {
           _isGettingLocation = false;
         });
-        _showErrorSnackBar('Location permission denied. Please enable location access.');
+        _showErrorSnackBar(
+          'Location permission denied. Please enable location access.',
+        );
       } else if (permission.isPermanentlyDenied) {
         setState(() {
           _isGettingLocation = false;
         });
-        _showErrorSnackBar('Location permission permanently denied. Please enable from settings.');
+        _showErrorSnackBar(
+          'Location permission permanently denied. Please enable from settings.',
+        );
         await openAppSettings();
       }
     } catch (e) {
@@ -146,7 +153,9 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         _isGettingLocation = false;
       });
       print('❌ Error getting location: $e');
-      _showErrorSnackBar('Failed to get location. Please check GPS is enabled.');
+      _showErrorSnackBar(
+        'Failed to get location. Please check GPS is enabled.',
+      );
     }
   }
 
@@ -239,7 +248,9 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
               if (state.message.contains('type \'Null\' is not a subtype') ||
                   state.message.contains('profile is null') ||
                   state.message.contains('User not found')) {
-                print('ℹ️ User has no profile (from error) - showing create screen');
+                print(
+                  'ℹ️ User has no profile (from error) - showing create screen',
+                );
                 setState(() => _isCheckingProfile = false);
               } else {
                 setState(() => _isCheckingProfile = false);
@@ -596,7 +607,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             style: TextStyle(fontSize: 13, color: textGrey),
           ),
           const SizedBox(height: 16),
-          
+
           if (_latitude != null && _longitude != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
@@ -625,8 +636,16 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Latitude:', style: TextStyle(fontSize: 12, color: textGrey)),
-                            Text(_latitude!.toStringAsFixed(6), style: const TextStyle(fontWeight: FontWeight.w500)),
+                            const Text(
+                              'Latitude:',
+                              style: TextStyle(fontSize: 12, color: textGrey),
+                            ),
+                            Text(
+                              _latitude!.toStringAsFixed(6),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -634,8 +653,16 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Longitude:', style: TextStyle(fontSize: 12, color: textGrey)),
-                            Text(_longitude!.toStringAsFixed(6), style: const TextStyle(fontWeight: FontWeight.w500)),
+                            const Text(
+                              'Longitude:',
+                              style: TextStyle(fontSize: 12, color: textGrey),
+                            ),
+                            Text(
+                              _longitude!.toStringAsFixed(6),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -671,11 +698,17 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Icon(Icons.my_location),
-                label: Text(_isGettingLocation ? 'Getting Location...' : 'Use Current Location'),
+                label: Text(
+                  _isGettingLocation
+                      ? 'Getting Location...'
+                      : 'Use Current Location',
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   foregroundColor: Colors.white,

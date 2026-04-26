@@ -739,7 +739,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            localizations.welcomeMessage(user.email),
+                            localizations.welcomeMessage,
                           ),
                           backgroundColor: Colors.green.shade700,
                           behavior: SnackBarBehavior.floating,
