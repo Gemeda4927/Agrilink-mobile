@@ -3,13 +3,11 @@ import 'package:agrilink/core/localization/language_bloc.dart';
 import 'package:agrilink/core/services/notification_service.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
 import 'package:agrilink/features/insight/presentation/bloc/market_bloc.dart';
-import 'package:agrilink/features/insight/presentation/bloc/market_event.dart';
 import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_bloc.dart';
 import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_events.dart';
-import 'package:agrilink/features/notification/presentation/notification_bloc.dart';
+import 'package:agrilink/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_event.dart';
-import 'package:agrilink/features/role_request/presentation/bloc/role_request_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -62,7 +60,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _notificationService.clearBadge(); // Now this works!
+      _notificationService.clearBadge();
     }
   }
 
@@ -106,9 +104,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         BlocProvider<NotificationBloc>(
           create: (_) {
             final bloc = sl<NotificationBloc>();
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              bloc.add(InitializeNotifications());
-            });
+
+            // });
             return bloc;
           },
         ),
@@ -253,22 +250,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 listener: (context, state) {
                   _logger.i("🔔 AuthState changed: ${state.runtimeType}");
 
-                  if (state is AuthSuccess) {
-                    _logger.i(
-                      "✅ AuthSuccess detected - Registering device token",
-                    );
-                    _registerDeviceTokenAndSubscribe(state);
-                  } else if (state is AuthInitial) {
-                    _logger.i(
-                      "🔴 AuthInitial detected - Unregistering device token",
-                    );
-                    _unregisterDeviceToken();
-                  } else if (state is AuthFailure) {
-                    _logger.i(
-                      "🔴 AuthFailure detected - Unregistering device token",
-                    );
-                    _unregisterDeviceToken();
-                  }
+                  // ✅ REMOVED: No notification registration on login
+                  // Just log the state change, nothing else
                 },
                 child: child,
               );
@@ -279,77 +262,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _registerDeviceTokenAndSubscribe(AuthSuccess state) async {
-    _logger.i(
-      "📱 Starting device token registration for user: ${state.authResponse.user.email}",
-    );
-
-    try {
-      final token = await _notificationService.getSavedToken();
-      _logger.i(
-        "📱 Retrieved FCM token: ${token != null ? "Present (${token.substring(0, token.length > 20 ? 20 : token.length)}...)" : "NULL"}",
-      );
-
-      if (token != null && token.isNotEmpty) {
-        _logger.i("📤 Registering device token with backend...");
-        final registered = await _notificationService.registerDeviceToken(
-          token,
-        );
-
-        if (registered) {
-          _logger.i("✅ Device token registered successfully!");
-        } else {
-          _logger.w("⚠️ Device token registration failed");
-        }
-      } else {
-        _logger.w(
-          "⚠️ No FCM token available - waiting for FCM to generate token",
-        );
-        Future.delayed(const Duration(seconds: 2), () async {
-          final retryToken = await _notificationService.getSavedToken();
-          if (retryToken != null && retryToken.isNotEmpty) {
-            _logger.i("📤 Retrying device token registration...");
-            await _notificationService.registerDeviceToken(retryToken);
-          }
-        });
-      }
-
-      final user = state.authResponse.user;
-      final role = user.role;
-      _logger.i("📱 User role: $role");
-
-      if (role != null && role.toString().isNotEmpty) {
-        final normalizedRole = role.toString().toLowerCase().trim();
-
-        _logger.i("📤 Subscribing to topic: all_users");
-        await _notificationService.subscribeToTopic('all_users');
-
-        _logger.i("📤 Subscribing to topic: role_$normalizedRole");
-        await _notificationService.subscribeToTopic('role_$normalizedRole');
-
-        _logger.i("✅ Successfully subscribed to notification topics");
-      } else {
-        _logger.w("⚠️ No role found - subscribing only to all_users");
-        await _notificationService.subscribeToTopic('all_users');
-      }
-    } catch (e, stackTrace) {
-      _logger.e(
-        '❌ Failed to register device token and subscribe to topics',
-        error: e,
-        stackTrace: stackTrace,
-      );
-    }
-  }
-
-  Future<void> _unregisterDeviceToken() async {
-    try {
-      _logger.i("📤 Unregistering device token...");
-      await _notificationService.unregisterDeviceToken();
-      _logger.i("✅ Device token unregistered successfully");
-    } catch (e) {
-      _logger.w("⚠️ Failed to unregister device token: $e");
-    }
-  }
+  // ✅ REMOVED: _registerDeviceTokenAndSubscribe method completely
+  // ✅ REMOVED: _unregisterDeviceToken method completely
 
   String _getFontFamily(String languageCode) {
     switch (languageCode) {

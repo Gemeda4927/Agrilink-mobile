@@ -1,23 +1,28 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:agrilink/core/config/routes/route_name.dart';
 import 'package:agrilink/core/localization/generated/app_localizations.dart';
-import 'package:agrilink/core/localization/language_bloc.dart';
-import 'package:agrilink/core/services/notification_service.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_bloc.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_event.dart';
 import 'package:agrilink/features/category/presentation/bloc/categories_state.dart';
+import 'package:agrilink/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:agrilink/features/notification/presentation/bloc/notification_state.dart';
+import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
+import 'package:agrilink/features/order/presentation/bloc/order_event.dart';
+import 'package:agrilink/features/product/presentation/bloc/product_bloc.dart';
+import 'package:agrilink/features/product/presentation/bloc/product_event.dart';
 import 'package:agrilink/features/recommendation/presentation/ai_chatbot_floating_button.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_bloc.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_event.dart';
 import 'package:agrilink/features/role_request/presentation/bloc/role_request_state.dart';
+import 'package:agrilink/injector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../notification/domain/entities/notification.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,43 +39,26 @@ class _HomeScreenState extends State<HomeScreen>
   static const double _borderRadius = 16.0;
   static const double _iconSize = 24.0;
 
-  bool _hasLoadedNotifications = false;
-  bool _forceRefresh = false;
   String _cachedRequestStatus = 'NONE';
-  List<Map<String, dynamic>> _notifications = [];
-  final Set<String> _processedNotificationIds = {};
-
-  late final NotificationService _notificationService;
-  late StreamSubscription<Map<String, dynamic>> _notificationSubscription;
-
-  final Map<String, AnimationController> _animationControllers = {};
-  final Map<String, Animation<double>> _slideAnimations = {};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _notificationService = NotificationService();
     _loadCachedRequestStatus();
-    _loadSavedNotifications();
-    _listenToNotifications();
-    _cleanupStaleNotifications();
+    _loadNotifications();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _notificationSubscription.cancel();
-    for (var controller in _animationControllers.values) {
-      controller.dispose();
-    }
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _refreshNotifications();
+      _loadNotifications();
     }
   }
 
@@ -83,386 +71,64 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  void _listenToNotifications() {
-    _notificationSubscription = _notificationService.messageStream.listen(
-      (messageData) {
-        _addRealNotification(messageData);
-      },
-      onError: (error) {
-        debugPrint('Notification stream error: $error');
-      },
-    );
+  void _loadNotifications() {
+    context.read<NotificationBloc>().add(LoadNotificationsFromApi());
   }
 
-  void _addRealNotification(Map<String, dynamic> messageData) {
-    // Generate unique ID based on content to prevent duplicates
-    final contentHash =
-        '${messageData['title']}_${messageData['body']}_${messageData['timestamp']}';
-    final notificationId =
-        '${DateTime.now().millisecondsSinceEpoch}_${contentHash.hashCode.abs()}';
-
-    // Check if this notification was already processed
-    if (_processedNotificationIds.contains(notificationId)) {
-      debugPrint('Duplicate notification detected, skipping');
-      return;
-    }
-
-    // Add to processed set
-    _processedNotificationIds.add(notificationId);
-
-    // Clean up old IDs (keep last 100)
-    if (_processedNotificationIds.length > 100) {
-      final idsToRemove = _processedNotificationIds.take(50).toList();
-      for (var id in idsToRemove) {
-        _processedNotificationIds.remove(id);
-      }
-    }
-
-    final newNotification = {
-      'id': notificationId,
-      'title': messageData['title']?.toString() ?? 'Agrilink Update',
-      'body': messageData['body']?.toString() ?? 'You have a new notification',
-      'type': messageData['type']?.toString() ?? 'general',
-      'time': _getTimeAgo(DateTime.now()),
-      'timestamp': DateTime.now().toIso8601String(),
-      'read': false,
-      'data': messageData,
-    };
-
-    if (mounted) {
-      setState(() {
-        // Check again for duplicates in current list
-        final exists = _notifications.any(
-          (n) =>
-              n['id']?.toString() == notificationId ||
-              (n['title'] == newNotification['title'] &&
-                  n['body'] == newNotification['body'] &&
-                  n['timestamp'] == newNotification['timestamp']),
-        );
-
-        if (!exists) {
-          _notifications.insert(0, newNotification);
-          // Keep only last 50 notifications
-          if (_notifications.length > 50) {
-            _notifications = _notifications.take(50).toList();
-          }
-        }
-      });
-      _saveNotificationsToStorage();
-      _showNotificationSnackBar(newNotification);
-    }
+  void _markNotificationAsRead(String id) {
+    context.read<NotificationBloc>().add(MarkNotificationAsRead(id));
   }
 
-  void _showNotificationSnackBar(Map<String, dynamic> notification) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              _getIconForType(notification['type']?.toString() ?? 'general'),
-              color: Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    notification['title']?.toString() ?? 'Notification',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    notification['body']?.toString() ?? '',
-                    style: const TextStyle(fontSize: 12),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green.shade700,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'VIEW',
-          textColor: Colors.white,
-          onPressed: () => _handleNotificationTap(notification),
-        ),
-      ),
-    );
+  void _markAllNotificationsAsRead() {
+    context.read<NotificationBloc>().add(MarkAllNotificationsAsRead());
   }
 
-  Future<void> _saveNotificationsToStorage() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final notificationsToSave = _notifications.map((n) {
-        return {
-          'id': n['id']?.toString(),
-          'title': n['title']?.toString(),
-          'body': n['body']?.toString(),
-          'type': n['type']?.toString(),
-          'time': n['time']?.toString(),
-          'timestamp': n['timestamp']?.toString(),
-          'read': n['read'] ?? false,
-        };
-      }).toList();
-
-      await prefs.setString(
-        'home_notifications',
-        jsonEncode(notificationsToSave),
-      );
-    } catch (e) {
-      debugPrint('Error saving notifications: $e');
-    }
+  void _deleteNotification(String id) {
+    context.read<NotificationBloc>().add(DeleteNotification(id));
   }
 
-  Future<void> _loadSavedNotifications() async {
-    if (_hasLoadedNotifications && !_forceRefresh) return;
-
-    try {
-      final saved = await _notificationService.getSavedNotifications();
-      if (mounted) {
-        setState(() {
-          _notifications.clear();
-          _notifications = saved.map((item) {
-            return {
-              ...item,
-              'time': _getTimeAgo(
-                DateTime.parse(
-                  item['timestamp']?.toString() ??
-                      DateTime.now().toIso8601String(),
-                ),
-              ),
-            };
-          }).toList();
-
-          // Limit to 50 notifications
-          if (_notifications.length > 50) {
-            _notifications = _notifications.take(50).toList();
-          }
-
-          _hasLoadedNotifications = true;
-          _forceRefresh = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading notifications: $e');
-    }
+  void _deleteAllNotifications() {
+    context.read<NotificationBloc>().add(DeleteAllNotifications());
   }
 
-  Future<void> _refreshNotifications() async {
-    _forceRefresh = true;
-    await _loadSavedNotifications();
-    await _cleanupStaleNotifications();
-  }
-
-  Future<void> _cleanupStaleNotifications() async {
-    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-    final oldCount = _notifications.length;
-
-    setState(() {
-      _notifications.removeWhere((notification) {
-        final timestamp = DateTime.tryParse(
-          notification['timestamp']?.toString() ?? '',
-        );
-        return timestamp != null && timestamp.isBefore(thirtyDaysAgo);
-      });
-    });
-
-    if (oldCount != _notifications.length) {
-      await _saveNotificationsToStorage();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Cleaned up ${oldCount - _notifications.length} old notifications',
-            ),
-            backgroundColor: Colors.grey.shade700,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  }
-
-  String _getTimeAgo(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inSeconds < 60) return 'Just now';
-    if (difference.inMinutes < 60) return '${difference.inMinutes} min ago';
-    if (difference.inHours < 24) return '${difference.inHours} hours ago';
-    if (difference.inDays < 7) return '${difference.inDays} days ago';
-    if (difference.inDays < 30)
-      return '${(difference.inDays / 7).floor()} weeks ago';
-    return '${(difference.inDays / 30).floor()} months ago';
-  }
-
-  void _deleteNotification(String id) async {
-    if (_animationControllers.containsKey(id)) {
-      await _animationControllers[id]?.reverse();
-    }
-
-    if (mounted) {
-      setState(() {
-        _notifications.removeWhere((n) {
-          final notificationId = n['id']?.toString();
-          return notificationId == id;
-        });
-      });
-      await _saveNotificationsToStorage();
-    }
-
-    if (_animationControllers.containsKey(id)) {
-      _animationControllers[id]?.dispose();
-      _animationControllers.remove(id);
-      _slideAnimations.remove(id);
-    }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Notification deleted'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 1),
-        ),
-      );
-    }
-  }
-
-  void _deleteAllNotifications() async {
-    final count = _notifications.length;
-
-    for (var notification in _notifications) {
-      final id = notification['id']?.toString();
-      if (id != null && _animationControllers.containsKey(id)) {
-        await _animationControllers[id]?.reverse();
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        _notifications.clear();
-      });
-      await _saveNotificationsToStorage();
-    }
-
-    for (var controller in _animationControllers.values) {
-      controller.dispose();
-    }
-    _animationControllers.clear();
-    _slideAnimations.clear();
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Deleted $count notifications'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
-  void _clearAllNotifications() async {
-    if (_notifications.isEmpty) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Clear All Notifications'),
-        content: Text(
-          'Are you sure you want to clear all ${_notifications.length} notifications?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteAllNotifications();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Clear All'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _markAllAsRead() async {
-    if (mounted) {
-      setState(() {
-        for (var i = 0; i < _notifications.length; i++) {
-          _notifications[i]['read'] = true;
-        }
-      });
-      await _saveNotificationsToStorage();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('All notifications marked as read'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 1),
-        ),
-      );
-    }
-  }
-
-  void _markAsRead(String id) async {
-    if (mounted) {
-      setState(() {
-        final index = _notifications.indexWhere((n) {
-          final notificationId = n['id']?.toString();
-          return notificationId == id;
-        });
-        if (index != -1) {
-          _notifications[index]['read'] = true;
-        }
-      });
-      await _saveNotificationsToStorage();
-    }
-  }
-
-  void _handleNotificationTap(Map<String, dynamic> notification) async {
-    final id = notification['id']?.toString();
-    if (id != null) {
-      _markAsRead(id);
-    }
-
+  void _handleNotificationTap(NotificationEntity notification) async {
+    _markNotificationAsRead(notification.id);
     Navigator.pop(context);
 
-    final type = notification['type']?.toString() ?? 'general';
+    final type = notification.type.toString();
 
     switch (type) {
-      case 'order_placed':
-      case 'order_status_changed':
-        if (mounted) context.pushNamed(RouteName.myOrders);
+      case 'ORDER_PLACED':
+      case 'NEW_ORDER':
+      case 'ORDER_STATUS_CHANGED':
+        if (mounted) {
+          context.read<OrderBloc>().add(GetMyOrdersEvent());
+          context.pushNamed(RouteName.myOrders);
+        }
         break;
-      case 'product_created':
-        if (mounted) context.pushNamed(RouteName.myProducts);
+
+      case 'PRODUCT_CREATED':
+      case 'PRODUCT_UPDATED':
+        if (mounted) {
+          context.read<ProductBloc>().add(LoadProducts());
+          context.pushNamed(RouteName.myProducts);
+        }
         break;
-      case 'role_request_approved':
-      case 'role_request_rejected':
-        if (mounted) context.pushNamed(RouteName.dashboard);
+
+      case 'ROLE_APPROVED':
+        if (mounted) {
+          _loadCachedRequestStatus();
+          context.pushNamed(RouteName.dashboard);
+        }
         break;
-      case 'market_price_approved':
-      case 'market_price_rejected':
-        if (mounted) context.pushNamed(RouteName.approvedPrices);
+
+      case 'ROLE_REJECTED':
+        if (mounted) {
+          _loadCachedRequestStatus();
+          context.pushNamed(RouteName.roleRequest);
+        }
         break;
+
       default:
         break;
     }
@@ -473,495 +139,16 @@ class _HomeScreenState extends State<HomeScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _buildNotificationDrawer(),
-    ).then((_) {
-      _refreshNotifications();
-    });
-  }
-
-  Widget _buildNotificationDrawer() {
-    final unreadCount = _notifications.where((n) => n['read'] == false).length;
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildNotificationHeader(unreadCount),
-          if (_notifications.isEmpty)
-            Expanded(child: _buildEmptyState())
-          else
-            Expanded(child: _buildNotificationList()),
-          if (_notifications.isNotEmpty) _buildNotificationActions(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationHeader(int unreadCount) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade50, Colors.white],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.green.shade400, Colors.green.shade700],
-                  ),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: const Icon(
-                  Icons.notifications_active,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Notifications',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A2F),
-                      ),
-                    ),
-                    if (unreadCount > 0)
-                      Text(
-                        '$unreadCount unread notification${unreadCount > 1 ? 's' : ''}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.green.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.close,
-                    color: Colors.grey.shade700,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.notifications_off,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No notifications yet',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We\'ll notify you when something important happens',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationList() {
-    return RefreshIndicator(
-      onRefresh: _refreshNotifications,
-      color: Colors.green,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: _notifications.length,
-        itemBuilder: (context, index) {
-          final notification = _notifications[index];
-          final id = notification['id']?.toString() ?? 'notification_$index';
-
-          if (!_animationControllers.containsKey(id)) {
-            final controller = AnimationController(
-              duration: const Duration(milliseconds: 300),
-              vsync: this,
-            );
-            final animation = Tween<double>(begin: 0, end: 1).animate(
-              CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
-            );
-            _animationControllers[id] = controller;
-            _slideAnimations[id] = animation;
-            controller.forward();
-          }
-
-          return FadeTransition(
-            opacity: _slideAnimations[id] ?? const AlwaysStoppedAnimation(1.0),
-            child: SlideTransition(
-              position:
-                  Tween<Offset>(
-                    begin: const Offset(1, 0),
-                    end: Offset.zero,
-                  ).animate(
-                    _slideAnimations[id] ?? const AlwaysStoppedAnimation(1.0),
-                  ),
-              child: Dismissible(
-                key: Key(id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade400,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  child: const Icon(
-                    Icons.delete,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-                onDismissed: (_) => _deleteNotification(id),
-                child: _buildNotificationCard(notification),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildNotificationCard(Map<String, dynamic> notification) {
-    final isRead = notification['read'] == true;
-    final type = notification['type']?.toString() ?? 'general';
-    final icon = _getIconForType(type);
-    final iconColor = _getIconColorForType(type);
-    final title = notification['title']?.toString() ?? 'Notification';
-    final body =
-        notification['body']?.toString() ?? 'You have a new notification';
-    final time =
-        notification['time']?.toString() ?? _getTimeAgo(DateTime.now());
-
-    return GestureDetector(
-      onTap: () => _handleNotificationTap(notification),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: isRead
-              ? null
-              : LinearGradient(
-                  colors: [Colors.green.shade50, Colors.white],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-          color: isRead ? Colors.white : null,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isRead ? Colors.grey.shade200 : Colors.green.shade200,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade100,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: isRead
-                    ? null
-                    : LinearGradient(
-                        colors: [
-                          iconColor.withOpacity(0.1),
-                          iconColor.withOpacity(0.05),
-                        ],
-                      ),
-                color: isRead ? Colors.grey.shade100 : null,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                icon,
-                color: isRead ? Colors.grey.shade600 : iconColor,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            fontWeight: isRead
-                                ? FontWeight.w600
-                                : FontWeight.bold,
-                            fontSize: 15,
-                            color: isRead
-                                ? Colors.grey.shade800
-                                : Colors.black87,
-                          ),
-                        ),
-                      ),
-                      if (!isRead)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'NEW',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green.shade700,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    body,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isRead
-                          ? Colors.grey.shade600
-                          : Colors.grey.shade800,
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 12,
-                        color: isRead
-                            ? Colors.grey.shade500
-                            : Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        time,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isRead
-                              ? Colors.grey.shade500
-                              : Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (!isRead)
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: iconColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(color: iconColor.withOpacity(0.5), blurRadius: 4),
-                  ],
-                ),
-              ),
-          ],
+      builder: (context) => BlocProvider.value(
+        value: context.read<NotificationBloc>(),
+        child: _NotificationDrawer(
+          onNotificationTap: _handleNotificationTap,
+          onMarkAllRead: _markAllNotificationsAsRead,
+          onDeleteAll: _deleteAllNotifications,
+          onRefresh: _loadNotifications,
         ),
       ),
     );
-  }
-
-  Widget _buildNotificationActions() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade100,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildActionButton(
-            icon: Icons.delete_sweep,
-            label: 'Clear All',
-            color: Colors.red.shade400,
-            onPressed: _clearAllNotifications,
-          ),
-          Container(width: 1, height: 30, color: Colors.grey.shade300),
-          _buildActionButton(
-            icon: Icons.done_all,
-            label: 'Mark All Read',
-            color: Colors.green.shade600,
-            onPressed: _markAllAsRead,
-          ),
-          Container(width: 1, height: 30, color: Colors.grey.shade300),
-          _buildActionButton(
-            icon: Icons.refresh,
-            label: 'Refresh',
-            color: Colors.blue.shade600,
-            onPressed: _refreshNotifications,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return Expanded(
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: color, size: 22),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  IconData _getIconForType(String type) {
-    switch (type) {
-      case 'order_placed':
-      case 'order_status_changed':
-        return Icons.shopping_bag_outlined;
-      case 'product_created':
-        return Icons.inventory_2_outlined;
-      case 'role_request_approved':
-        return Icons.check_circle_outline;
-      case 'role_request_rejected':
-        return Icons.cancel_outlined;
-      case 'market_price_approved':
-        return Icons.trending_up;
-      case 'market_price_rejected':
-        return Icons.trending_down;
-      default:
-        return Icons.notifications_none;
-    }
-  }
-
-  Color _getIconColorForType(String type) {
-    switch (type) {
-      case 'order_placed':
-      case 'order_status_changed':
-        return Colors.orange.shade700;
-      case 'product_created':
-        return Colors.blue.shade700;
-      case 'role_request_approved':
-        return Colors.green.shade700;
-      case 'role_request_rejected':
-        return Colors.red.shade700;
-      case 'market_price_approved':
-        return Colors.green.shade700;
-      case 'market_price_rejected':
-        return Colors.red.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
   }
 
   String? _getTimeBasedGreeting(BuildContext context) {
@@ -1008,8 +195,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context, AppLocalizations t) {
-    final unreadCount = _notifications.where((n) => n['read'] == false).length;
-
     return AppBar(
       title: Text(
         t.appTitle,
@@ -1018,41 +203,49 @@ class _HomeScreenState extends State<HomeScreen>
       centerTitle: true,
       elevation: 0,
       actions: [
-        Stack(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: _showNotificationDrawer,
-              tooltip: t.notifications ?? 'Notifications',
-            ),
-            if (unreadCount > 0)
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.red.shade400, Colors.red.shade700],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 18,
-                    minHeight: 18,
-                  ),
-                  child: Text(
-                    unreadCount > 99 ? '99+' : '$unreadCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+        BlocBuilder<NotificationBloc, NotificationState>(
+          builder: (context, state) {
+            int unreadCount = 0;
+            if (state is NotificationLoaded) {
+              unreadCount = state.notifications.where((n) => !n.isRead).length;
+            }
+            return Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_outlined),
+                  onPressed: _showNotificationDrawer,
+                  tooltip: t.notifications ?? 'Notifications',
                 ),
-              ),
-          ],
+                if (unreadCount > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.red.shade400, Colors.red.shade700],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
         IconButton(
           icon: const Icon(Icons.logout),
@@ -1271,7 +464,7 @@ class _HomeScreenState extends State<HomeScreen>
                   icon: Icons.receipt_long_outlined,
                   label: t.ordersReceived ?? 'Orders Received',
                   color: Colors.teal,
-                  onTap: () => context.pushNamed(RouteName.myOrders),
+                  onTap: () => context.pushNamed(RouteName.ordersReceived),
                 ),
                 const SizedBox(width: _standardSpacing),
               ],
@@ -1388,10 +581,12 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           );
         }
-        if (state is CategoryLoaded)
+        if (state is CategoryLoaded) {
           return _buildModernCategoryGrid(context, state);
-        if (state is SubCategoryLoaded)
+        }
+        if (state is SubCategoryLoaded) {
           return _buildModernSubCategoryList(context, state);
+        }
         if (state is CategoryError) {
           return Center(
             child: Column(
@@ -1773,18 +968,10 @@ class _HomeScreenState extends State<HomeScreen>
             _buildDrawerItem(
               context: context,
               icon: Icons.shopping_cart,
-              title: t.myOrders ?? 'My Orders',
+              title: t.myOrders ?? 'Orders',
               route: RouteName.myOrders,
               color: Colors.deepOrange.shade700,
             ),
-            if (isFarmer)
-              _buildDrawerItem(
-                context: context,
-                icon: Icons.receipt_long,
-                title: t.ordersReceived ?? 'Orders Received',
-                route: RouteName.myOrders,
-                color: Colors.teal,
-              ),
             _buildDrawerItem(
               context: context,
               icon: Icons.chat_bubble_outline,
@@ -1894,8 +1081,9 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       );
     }
-    if (_cachedRequestStatus == 'PENDING')
+    if (_cachedRequestStatus == 'PENDING') {
       return _buildPendingStatusCard(context, t);
+    }
     if (_cachedRequestStatus == 'APPROVED') {
       return _buildStatusCard(
         icon: Icons.check_circle,
@@ -1906,8 +1094,9 @@ class _HomeScreenState extends State<HomeScreen>
         statusColor: Colors.green,
       );
     }
-    if (_cachedRequestStatus == 'REJECTED')
+    if (_cachedRequestStatus == 'REJECTED') {
       return _buildRejectedStatusCard(context, t);
+    }
     return _buildRequestButton(context, t, userId);
   }
 
@@ -2091,5 +1280,509 @@ class _HomeScreenState extends State<HomeScreen>
         },
       ),
     );
+  }
+}
+
+// ================= NOTIFICATION DRAWER WIDGET =================
+
+class _NotificationDrawer extends StatelessWidget {
+  final Function(NotificationEntity) onNotificationTap;
+  final VoidCallback onMarkAllRead;
+  final VoidCallback onDeleteAll;
+  final VoidCallback onRefresh;
+
+  const _NotificationDrawer({
+    required this.onNotificationTap,
+    required this.onMarkAllRead,
+    required this.onDeleteAll,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: BlocBuilder<NotificationBloc, NotificationState>(
+        builder: (context, state) {
+          if (state is NotificationLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state is NotificationLoaded) {
+            final notifications = state.notifications;
+            final unreadCount = notifications.where((n) => !n.isRead).length;
+
+            return Column(
+              children: [
+                _buildHeader(unreadCount, context),
+                if (notifications.isEmpty)
+                  Expanded(child: _buildEmptyState())
+                else
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async => onRefresh(),
+                      color: Colors.green,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        itemCount: notifications.length,
+                        itemBuilder: (context, index) {
+                          final notification = notifications[index];
+                          return _buildNotificationCard(notification, context);
+                        },
+                      ),
+                    ),
+                  ),
+                if (notifications.isNotEmpty) _buildActions(),
+              ],
+            );
+          }
+          if (state is NotificationError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 60,
+                    color: Colors.red.shade300,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    state.message,
+                    style: const TextStyle(color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: onRefresh,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeader(int unreadCount, BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.green.shade50, Colors.white],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.green.shade400, Colors.green.shade700],
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Icon(
+                  Icons.notifications_active,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Notifications',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E3A2F),
+                      ),
+                    ),
+                    if (unreadCount > 0)
+                      Text(
+                        '$unreadCount unread notification${unreadCount > 1 ? 's' : ''}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.grey.shade700,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.notifications_off,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No notifications yet',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We\'ll notify you when something important happens',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationCard(
+    NotificationEntity notification,
+    BuildContext context,
+  ) {
+    final isRead = notification.isRead;
+
+    final icon = _getIconForType(notification.type.stringValue);
+    final iconColor = _getIconColorForType(notification.type.stringValue);
+
+    return GestureDetector(
+      onTap: () => onNotificationTap(notification),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: isRead
+              ? null
+              : LinearGradient(
+                  colors: [Colors.green.shade50, Colors.white],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          color: isRead ? Colors.white : null,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isRead ? Colors.grey.shade200 : Colors.green.shade200,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade100,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: isRead
+                    ? null
+                    : LinearGradient(
+                        colors: [
+                          iconColor.withOpacity(0.1),
+                          iconColor.withOpacity(0.05),
+                        ],
+                      ),
+                color: isRead ? Colors.grey.shade100 : null,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                icon,
+                color: isRead ? Colors.grey.shade600 : iconColor,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          notification.title,
+                          style: TextStyle(
+                            fontWeight: isRead
+                                ? FontWeight.w600
+                                : FontWeight.bold,
+                            fontSize: 15,
+                            color: isRead
+                                ? Colors.grey.shade800
+                                : Colors.black87,
+                          ),
+                        ),
+                      ),
+                      if (!isRead)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'NEW',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    notification.message,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isRead
+                          ? Colors.grey.shade600
+                          : Colors.grey.shade800,
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 12,
+                        color: isRead
+                            ? Colors.grey.shade500
+                            : Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _getTimeAgo(notification.createdAt),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isRead
+                              ? Colors.grey.shade500
+                              : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (!isRead)
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: iconColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: iconColor.withOpacity(0.5), blurRadius: 4),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActions() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade100,
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildActionButton(
+            icon: Icons.delete_sweep,
+            label: 'Clear All',
+            color: Colors.red.shade400,
+            onPressed: onDeleteAll,
+          ),
+          Container(width: 1, height: 30, color: Colors.grey.shade300),
+          _buildActionButton(
+            icon: Icons.done_all,
+            label: 'Mark All Read',
+            color: Colors.green.shade600,
+            onPressed: onMarkAllRead,
+          ),
+          Container(width: 1, height: 30, color: Colors.grey.shade300),
+          _buildActionButton(
+            icon: Icons.refresh,
+            label: 'Refresh',
+            color: Colors.blue.shade600,
+            onPressed: onRefresh,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getIconForType(String type) {
+    switch (type.toUpperCase()) {
+      case 'ORDER_PLACED':
+      case 'NEW_ORDER':
+      case 'ORDER_STATUS_CHANGED':
+        return Icons.shopping_bag_outlined;
+      case 'PRODUCT_CREATED':
+      case 'PRODUCT_UPDATED':
+        return Icons.inventory_2_outlined;
+      case 'ROLE_APPROVED':
+        return Icons.check_circle_outline;
+      case 'ROLE_REJECTED':
+        return Icons.cancel_outlined;
+      case 'WELCOME':
+        return Icons.waving_hand;
+      default:
+        return Icons.notifications_none;
+    }
+  }
+
+  Color _getIconColorForType(String type) {
+    switch (type.toUpperCase()) {
+      case 'ORDER_PLACED':
+      case 'NEW_ORDER':
+      case 'ORDER_STATUS_CHANGED':
+        return Colors.orange.shade700;
+      case 'PRODUCT_CREATED':
+      case 'PRODUCT_UPDATED':
+        return Colors.blue.shade700;
+      case 'ROLE_APPROVED':
+        return Colors.green.shade700;
+      case 'ROLE_REJECTED':
+        return Colors.red.shade700;
+      case 'WELCOME':
+        return Colors.purple.shade700;
+      default:
+        return Colors.grey.shade700;
+    }
+  }
+
+  String _getTimeAgo(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+
+    if (difference.inSeconds < 60) return 'Just now';
+    if (difference.inMinutes < 60) return '${difference.inMinutes} min ago';
+    if (difference.inHours < 24) return '${difference.inHours} hours ago';
+    if (difference.inDays < 7) return '${difference.inDays} days ago';
+    if (difference.inDays < 30)
+      return '${(difference.inDays / 7).floor()} weeks ago';
+    return '${(difference.inDays / 30).floor()} months ago';
   }
 }

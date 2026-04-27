@@ -2,6 +2,11 @@ import 'package:agrilink/core/services/notification_service.dart';
 import 'package:agrilink/features/cart/data/repository/cartRemoteDataSourceImpl.dart';
 import 'package:agrilink/features/insight/data/services/marketService.dart';
 import 'package:agrilink/features/my_product/presentation/bloc/farmer_order_bloc.dart';
+import 'package:agrilink/features/notification/data/repositories/notification_repository_impl.dart';
+import 'package:agrilink/features/notification/data/services/notification_service.dart';
+import 'package:agrilink/features/notification/domain/repositories/notification_repository.dart';
+import 'package:agrilink/features/notification/domain/usecases/notification_usecases.dart';
+import 'package:agrilink/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:agrilink/features/product/domain/usecases/delete_product.dart';
 import 'package:agrilink/features/product/domain/usecases/get_my_products.dart';
 import 'package:agrilink/features/product/domain/usecases/get_product_by_id.dart';
@@ -71,7 +76,6 @@ import 'package:agrilink/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:agrilink/features/order/data/repository/order_repository_impl.dart';
 import 'package:agrilink/features/order/data/services/order_service.dart';
 import 'package:agrilink/features/order/domain/repositories/order_repository.dart';
-import 'package:agrilink/features/order/domain/usecases/get_my_orders.dart';
 import 'package:agrilink/features/order/presentation/bloc/order_bloc.dart';
 
 // ================= FARMER ORDERS =================
@@ -102,6 +106,8 @@ import 'package:agrilink/features/insight/presentation/bloc/market_bloc.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'features/order/domain/usecases/get_my_orders.dart';
+
 final sl = GetIt.instance;
 
 Future<void> initInjector() async {
@@ -125,7 +131,6 @@ Future<void> initInjector() async {
   // ==================================================
   sl.registerSingleton<FirebaseAuth>(FirebaseAuth.instance);
   sl.registerSingleton<GoogleSignIn>(GoogleSignIn());
-  sl.registerLazySingleton<NotificationService>(() => NotificationService());
 
   // ==================================================
   // ================= CORE ===========================
@@ -234,9 +239,7 @@ Future<void> initInjector() async {
   // ================= ROLE REQUEST FEATURE ==========
   // ==================================================
   // SharedPreferences is already registered above ✓
-  sl.registerSingleton<RoleRequestService>(
-    RoleRequestService(sl<DioClient>(), sl<SharedPreferences>()),
-  );
+  sl.registerSingleton<RoleRequestService>(RoleRequestService(sl<DioClient>()));
 
   sl.registerSingleton<RoleRequestRepository>(
     RoleRequestRepositoryImpl(sl<RoleRequestService>()),
@@ -281,6 +284,69 @@ Future<void> initInjector() async {
   // ==================================================
   sl.registerSingleton<ProductService>(
     ProductService(dioClient: sl<DioClient>()),
+  );
+
+  // ==================================================
+  // ================= CORE SERVICES ==================
+  // ==================================================
+
+  sl.registerLazySingleton<NotificationService>(() => NotificationService());
+
+  // ==================================================
+  // ================= NOTIFICATION FEATURE ===========
+  // ==================================================
+
+  sl.registerLazySingleton<ApiNotificationService>(
+    () => ApiNotificationService(
+      dioClient: sl<DioClient>(),
+      prefs: sl<SharedPreferences>(),
+    ),
+  );
+
+  // Repository
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(
+      notificationService: sl<ApiNotificationService>(),
+    ),
+  );
+
+  // Use Cases
+  sl.registerLazySingleton<GetNotificationsUseCase>(
+    () => GetNotificationsUseCase(sl<NotificationRepository>()),
+  );
+  sl.registerLazySingleton<GetNewNotificationsUseCase>(
+    () => GetNewNotificationsUseCase(sl<NotificationRepository>()),
+  );
+  sl.registerLazySingleton<GetUnreadNotificationsUseCase>(
+    () => GetUnreadNotificationsUseCase(sl<NotificationRepository>()),
+  );
+  sl.registerLazySingleton<MarkAsReadUseCase>(
+    () => MarkAsReadUseCase(sl<NotificationRepository>()),
+  );
+  sl.registerLazySingleton<MarkAllAsReadUseCase>(
+    () => MarkAllAsReadUseCase(sl<NotificationRepository>()),
+  );
+  sl.registerLazySingleton<DeleteNotificationUseCase>(
+    () => DeleteNotificationUseCase(sl<NotificationRepository>()),
+  );
+  sl.registerLazySingleton<DeleteAllNotificationsUseCase>(
+    () => DeleteAllNotificationsUseCase(sl<NotificationRepository>()),
+  );
+  sl.registerLazySingleton<GetUnreadCountUseCase>(
+    () => GetUnreadCountUseCase(sl<NotificationRepository>()),
+  );
+
+  // BLoC
+  sl.registerFactory<NotificationBloc>(
+    () => NotificationBloc(
+      getNotificationsUseCase: sl<GetNotificationsUseCase>(),
+      getNewNotificationsUseCase: sl<GetNewNotificationsUseCase>(),
+      getUnreadCountUseCase: sl<GetUnreadCountUseCase>(),
+      markAsReadUseCase: sl<MarkAsReadUseCase>(),
+      markAllAsReadUseCase: sl<MarkAllAsReadUseCase>(),
+      deleteNotificationUseCase: sl<DeleteNotificationUseCase>(),
+      deleteAllNotificationsUseCase: sl<DeleteAllNotificationsUseCase>(),
+    ),
   );
 
   sl.registerSingleton<ProductRepository>(
@@ -370,7 +436,7 @@ Future<void> initInjector() async {
   );
 
   // ==================================================
-  // ================= BUYER ORDER FEATURE ============
+  // ================= ORDER FEATURE ==================
   // ==================================================
   sl.registerLazySingleton<OrderService>(
     () => OrderService(dioClient: sl<DioClient>()),
@@ -378,11 +444,76 @@ Future<void> initInjector() async {
   sl.registerLazySingleton<OrderRepository>(
     () => OrderRepositoryImpl(orderService: sl<OrderService>()),
   );
-  sl.registerLazySingleton<GetMyOrdersUseCase>(
-    () => GetMyOrdersUseCase(sl<OrderRepository>()),
+
+  // Register all Order Use Cases with 2 suffix
+  sl.registerLazySingleton<GetMyOrdersUseCase2>(
+    () => GetMyOrdersUseCase2(sl<OrderRepository>()),
   );
+  sl.registerLazySingleton<GetFarmerOrdersUseCase2>(
+    () => GetFarmerOrdersUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<GetPendingFarmerOrdersUseCase2>(
+    () => GetPendingFarmerOrdersUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<GetOrderByIdUseCase2>(
+    () => GetOrderByIdUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<GetFarmerOrderByIdUseCase2>(
+    () => GetFarmerOrderByIdUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<UpdateOrderStatusUseCase2>(
+    () => UpdateOrderStatusUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<AcceptOrderUseCase2>(
+    () => AcceptOrderUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<RejectOrderUseCase2>(
+    () => RejectOrderUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<MarkAsDeliveredUseCase2>(
+    () => MarkAsDeliveredUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<CancelOrderUseCase2>(
+    () => CancelOrderUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<CompleteOrderUseCase2>(
+    () => CompleteOrderUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<CheckoutUseCase2>(
+    () => CheckoutUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<VerifyOrderUseCase2>(
+    () => VerifyOrderUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<GetOrderCountsUseCase2>(
+    () => GetOrderCountsUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<GetFarmerOrderCountsUseCase2>(
+    () => GetFarmerOrderCountsUseCase2(sl<OrderRepository>()),
+  );
+  sl.registerLazySingleton<GetOrdersByDateRangeUseCase2>(
+    () => GetOrdersByDateRangeUseCase2(sl<OrderRepository>()),
+  );
+
+  // Register OrderBloc with all required use cases
   sl.registerFactory<OrderBloc>(
-    () => OrderBloc(getMyOrdersUseCase: sl<GetMyOrdersUseCase>()),
+    () => OrderBloc(
+      getMyOrdersUseCase: sl<GetMyOrdersUseCase2>(),
+      getOrderByIdUseCase: sl<GetOrderByIdUseCase2>(),
+      cancelOrderUseCase: sl<CancelOrderUseCase2>(),
+      completeOrderUseCase: sl<CompleteOrderUseCase2>(),
+      getOrderCountsUseCase: sl<GetOrderCountsUseCase2>(),
+      getFarmerOrdersUseCase: sl<GetFarmerOrdersUseCase2>(),
+      getPendingFarmerOrdersUseCase: sl<GetPendingFarmerOrdersUseCase2>(),
+      getFarmerOrderByIdUseCase: sl<GetFarmerOrderByIdUseCase2>(),
+      updateOrderStatusUseCase: sl<UpdateOrderStatusUseCase2>(),
+      acceptOrderUseCase: sl<AcceptOrderUseCase2>(),
+      rejectOrderUseCase: sl<RejectOrderUseCase2>(),
+      markAsDeliveredUseCase: sl<MarkAsDeliveredUseCase2>(),
+      getFarmerOrderCountsUseCase: sl<GetFarmerOrderCountsUseCase2>(),
+      checkoutUseCase: sl<CheckoutUseCase2>(),
+      verifyOrderUseCase: sl<VerifyOrderUseCase2>(),
+    ),
   );
 
   // ==================================================
