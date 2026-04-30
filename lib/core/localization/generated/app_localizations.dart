@@ -301,7 +301,7 @@ abstract class AppLocalizations {
   /// No description provided for @myOrders.
   ///
   /// In en, this message translates to:
-  /// **'My Orders'**
+  /// **'Orders'**
   String get myOrders;
 
   /// No description provided for @postProduct.

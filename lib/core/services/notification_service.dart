@@ -26,30 +26,34 @@ class NotificationService {
 
   late final Logger _logger;
   String? _fcmToken;
+  bool _isInitialized = false;
+  bool _isSubscribed = false; // Track if already subscribed
 
   Stream<Map<String, dynamic>> get messageStream => _streamController.stream;
 
   static Function(String route, {Map<String, dynamic>? extra})? navigateTo;
 
   Future<void> initialize() async {
+    if (_isInitialized) return;
+    
     _logger = sl<Logger>();
-    _logger.i('Notification service initializing...');
+    _logger.i('Initializing notification service...');
 
     await _requestPermission();
     await _initLocalNotifications();
     await _initFirebaseMessaging();
     _setupListeners();
-
-    _logger.i('Notification service ready');
+    
+    _isInitialized = true;
+    _logger.i('Notification service ready - waiting for manual subscription');
   }
 
   Future<void> _requestPermission() async {
-    final settings = await _firebaseMessaging.requestPermission(
+    await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
-    _logger.i('Permission: ${settings.authorizationStatus}');
   }
 
   Future<void> _initLocalNotifications() async {
@@ -74,38 +78,17 @@ class NotificationService {
   Future<void> _createChannels() async {
     final android = _localNotifications
         .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+            AndroidFlutterLocalNotificationsPlugin>();
 
     if (android == null) return;
 
     try {
       const channels = [
-        AndroidNotificationChannel(
-          'general',
-          'General Notifications',
-          importance: Importance.high,
-        ),
-        AndroidNotificationChannel(
-          'orders',
-          'Order Notifications',
-          importance: Importance.high,
-        ),
-        AndroidNotificationChannel(
-          'products',
-          'Product Notifications',
-          importance: Importance.high,
-        ),
-        AndroidNotificationChannel(
-          'role_requests',
-          'Role Request Notifications',
-          importance: Importance.high,
-        ),
-        AndroidNotificationChannel(
-          'market_prices',
-          'Market Price Notifications',
-          importance: Importance.high,
-        ),
+        AndroidNotificationChannel('general', 'General Notifications', importance: Importance.high),
+        AndroidNotificationChannel('orders', 'Order Notifications', importance: Importance.high),
+        AndroidNotificationChannel('products', 'Product Notifications', importance: Importance.high),
+        AndroidNotificationChannel('role_requests', 'Role Request Notifications', importance: Importance.high),
+        AndroidNotificationChannel('market_prices', 'Market Price Notifications', importance: Importance.high),
       ];
 
       for (final channel in channels) {
@@ -121,8 +104,8 @@ class NotificationService {
       _fcmToken = await _firebaseMessaging.getToken();
       if (_fcmToken != null) {
         await _saveToken(_fcmToken!);
+        _logger.i('FCM token saved - waiting for manual subscription');
       }
-
       _firebaseMessaging.onTokenRefresh.listen(_onTokenRefresh);
     } catch (e) {
       _logger.e('FCM initialization failed: $e');
@@ -142,8 +125,8 @@ class NotificationService {
   void _onTokenRefresh(String token) async {
     _fcmToken = token;
     await _saveToken(token);
-    await registerDeviceToken(token);
-    _logger.i('Token refreshed');
+    _isSubscribed = false; // Reset subscription flag on token refresh
+    _logger.i('Token refreshed - subscription reset');
   }
 
   void _setupListeners() {
@@ -168,9 +151,7 @@ class NotificationService {
     _saveNotificationToStorage(enrichedData);
   }
 
-  Future<void> _saveNotificationToStorage(
-    Map<String, dynamic> notification,
-  ) async {
+  Future<void> _saveNotificationToStorage(Map<String, dynamic> notification) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedJson = prefs.getString('saved_notifications') ?? '[]';
@@ -200,7 +181,6 @@ class NotificationService {
       final List<dynamic> decoded = jsonDecode(savedJson);
       return decoded.map((item) => Map<String, dynamic>.from(item)).toList();
     } catch (e) {
-      _logger.e('Failed to load saved notifications: $e');
       return [];
     }
   }
@@ -215,9 +195,7 @@ class NotificationService {
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
-    final notificationId = DateTime.now().millisecondsSinceEpoch.remainder(
-      100000,
-    );
+    final notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
 
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -311,18 +289,14 @@ class NotificationService {
       case 'order_placed':
       case 'order_status_changed':
         return RouteName.myOrders;
-
       case 'product_created':
         return RouteName.myProducts;
-
       case 'role_request_approved':
       case 'role_request_rejected':
         return RouteName.dashboard;
-
       case 'market_price_approved':
       case 'market_price_rejected':
         return RouteName.approvedPrices;
-
       default:
         return RouteName.home;
     }
@@ -331,103 +305,87 @@ class NotificationService {
   Future<void> clearBadge() async {
     try {
       await _localNotifications.cancelAll();
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        await _firebaseMessaging.setAutoInitEnabled(true);
-      }
-      _logger.i('Badge cleared');
     } catch (e) {
       _logger.e('Failed to clear badge: $e');
     }
   }
 
-  Future<void> showTestNotification() async {
-    await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch.remainder(100000),
-      'Test Notification',
-      'Your notifications are working! ✅',
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'general',
-          'General Notifications',
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
-    );
-  }
-
-  Future<NotificationSettings> getNotificationSettings() async {
-    try {
-      return await _firebaseMessaging.getNotificationSettings();
-    } catch (e) {
-      _logger.e('Failed to get notification settings: $e');
-      rethrow;
+  // ✅ ONLY CALL THIS WHEN USER CLICKS NOTIFICATION BADGE
+  Future<void> subscribeManually(String role) async {
+    if (_isSubscribed) {
+      _logger.i('Already subscribed to notifications');
+      return;
     }
-  }
 
-  Future<void> subscribeToTopic(String topic) async {
     try {
-      await _firebaseMessaging.subscribeToTopic(topic);
-      _logger.i('Subscribed to topic: $topic');
-    } catch (e) {
-      _logger.e('Failed to subscribe to topic $topic: $e');
-    }
-  }
+      final token = await getSavedToken();
+      if (token == null) {
+        _logger.w('No FCM token available');
+        return;
+      }
 
-  Future<void> unsubscribeFromTopic(String topic) async {
-    try {
-      await _firebaseMessaging.unsubscribeFromTopic(topic);
-      _logger.i('Unsubscribed from topic: $topic');
-    } catch (e) {
-      _logger.e('Failed to unsubscribe from topic $topic: $e');
-    }
-  }
-
-  Future<bool> registerDeviceToken(String token) async {
-    try {
+      _logger.i('📱 Manually subscribing to notifications (user clicked badge)...');
+      
+      // Register device token with backend
       final dioClient = sl<DioClient>();
       final response = await dioClient.post(
         ApiConstants.deviceRegister,
         data: {
           'token': token,
-          'platform': defaultTargetPlatform == TargetPlatform.iOS
-              ? 'ios'
-              : 'android',
+          'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
         },
       );
 
-      final success = response.statusCode == 200 || response.statusCode == 201;
-      if (success) _logger.i('Device token registered');
-      return success;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Subscribe to topics
+        await _firebaseMessaging.subscribeToTopic('all_users');
+        await _firebaseMessaging.subscribeToTopic('role_${role.toLowerCase()}');
+        
+        _isSubscribed = true;
+        _logger.i('✅ Successfully subscribed to notifications (manual)');
+        
+        // Show confirmation
+        _showSubscriptionConfirmation();
+      }
     } catch (e) {
-      _logger.e('Failed to register token: $e');
-      return false;
+      _logger.e('Failed to subscribe manually: $e');
     }
   }
 
-  Future<void> unregisterDeviceToken() async {
-    final token = await getSavedToken();
-    if (token == null) return;
+  void _showSubscriptionConfirmation() {
+    // You can show a snackbar or dialog
+    _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      'Notifications Enabled 🔔',
+      'You will now receive notifications',
+      const NotificationDetails(
+        android: AndroidNotificationDetails('general', 'General Notifications'),
+        iOS: DarwinNotificationDetails(),
+      ),
+    );
+  }
+
+  Future<void> unsubscribeManually() async {
+    if (!_isSubscribed) return;
 
     try {
-      final dioClient = sl<DioClient>();
-      await dioClient.post(
-        ApiConstants.deviceUnregister,
-        data: {'token': token},
-      );
-      _logger.i('Device token unregistered');
+      final token = await getSavedToken();
+      if (token != null) {
+        final dioClient = sl<DioClient>();
+        await dioClient.post(ApiConstants.deviceUnregister, data: {'token': token});
+      }
+      
+      await _firebaseMessaging.unsubscribeFromTopic('all_users');
+      _isSubscribed = false;
+      _logger.i('Unsubscribed from notifications');
     } catch (e) {
-      _logger.e('Failed to unregister token: $e');
+      _logger.e('Failed to unsubscribe: $e');
     }
   }
 
   @pragma('vm:entry-point')
   static Future<void> _onBackgroundMessage(RemoteMessage message) async {
     WidgetsFlutterBinding.ensureInitialized();
-    final logger = Logger();
-    logger.i('Background message received: ${message.data}');
-
     final prefs = await SharedPreferences.getInstance();
     final savedJson = prefs.getString('saved_notifications') ?? '[]';
     List<dynamic> savedList = jsonDecode(savedJson);

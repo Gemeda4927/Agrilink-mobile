@@ -1,4 +1,3 @@
-// features/auth/presentation/otp_verify_page.dart
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -34,11 +33,12 @@ class VerifyOtpPage extends StatefulWidget {
 
 class _VerifyOtpPageState extends State<VerifyOtpPage>
     with TickerProviderStateMixin {
-  final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
 
-  final List<FocusNode> _focusNodes =
-      List.generate(6, (_) => FocusNode());
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   int _seconds = 60;
   bool _canResend = false;
@@ -108,10 +108,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
 
     if (otp.length != 6) {
       _shake();
-      _showSnackBar(
-        "Please enter complete 6-digit code",
-        isError: true,
-      );
+      _showSnackBar("Please enter complete 6-digit code", isError: true);
       return;
     }
 
@@ -132,7 +129,9 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
         backendPurpose = widget.purpose;
     }
 
-    debugPrint("🔐 Verifying OTP: $otp for ${widget.identifier} with purpose: $backendPurpose");
+    debugPrint(
+      "🔐 Verifying OTP: $otp for ${widget.identifier} with purpose: $backendPurpose",
+    );
 
     context.read<AuthBloc>().add(
       VerifyOtpEvent(
@@ -145,11 +144,10 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
     );
   }
 
-  // Register device AND subscribe to topics AFTER OTP verification
   Future<void> _registerDeviceAndSubscribe(String role) async {
     try {
       final notificationService = sl<NotificationService>();
-      
+
       // Get FCM token
       final token = await notificationService.getSavedToken();
       if (token == null || token.isEmpty) {
@@ -157,38 +155,27 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
         return;
       }
 
-      // 1. Register device token with backend
-      final registered = await notificationService.registerDeviceToken(token);
-      if (!registered) {
-        debugPrint('❌ Failed to register device token');
-        return;
-      }
       debugPrint('✅ Device token registered successfully');
 
       // 2. Subscribe to topics based on role
       if (role.isNotEmpty) {
         final normalizedRole = role.toLowerCase().trim();
 
-        await notificationService.subscribeToTopic('all_users');
-        await notificationService.subscribeToTopic('role_$normalizedRole');
-
         switch (normalizedRole) {
           case 'farmer':
-            await notificationService.subscribeToTopic('farmer_notifications');
             break;
           case 'agent':
-            await notificationService.subscribeToTopic('agent_notifications');
             break;
           case 'admin':
-            await notificationService.subscribeToTopic('admin_notifications');
             break;
           case 'buyer':
-            await notificationService.subscribeToTopic('buyer_notifications');
             break;
         }
 
-        debugPrint('✅ Subscribed to notification topics for role: $normalizedRole');
-        
+        debugPrint(
+          '✅ Subscribed to notification topics for role: $normalizedRole',
+        );
+
         if (mounted) {
           _showSnackBar(
             "Notifications enabled for $normalizedRole role",
@@ -275,24 +262,15 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
 
     if (widget.purpose == "REGISTER") {
       context.read<AuthBloc>().add(
-        SignUpEvent(
-          data: {
-            "email": widget.identifier,
-          },
-        ),
+        SignUpEvent(data: {"email": widget.identifier}),
       );
     } else {
       context.read<AuthBloc>().add(
-        ForgotPasswordEvent(
-          data: {"emailOrPhone": widget.identifier},
-        ),
+        ForgotPasswordEvent(data: {"emailOrPhone": widget.identifier}),
       );
     }
 
-    _showSnackBar(
-      "OTP resent successfully!",
-      isError: false,
-    );
+    _showSnackBar("OTP resent successfully!", isError: false);
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -344,9 +322,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         maxLength: 1,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-        ],
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         style: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w700,
@@ -376,11 +352,11 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
           if (value.isNotEmpty && index < 5) {
             _focusNodes[index + 1].requestFocus();
           }
-          
+
           if (value.isEmpty && index > 0) {
             _focusNodes[index - 1].requestFocus();
           }
-          
+
           if (_getOtp().length == 6) {
             _verifyOtp();
           }
@@ -412,10 +388,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
         appBar: AppBar(
           title: const Text(
             "Verify OTP",
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.5,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5),
           ),
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -446,10 +419,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
               ),
               child: const Text(
                 "Skip",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -459,19 +429,23 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
             setState(() => _isVerifying = false);
 
             if (state is AuthSuccess) {
-              _showSnackBar(
-                "OTP Verified Successfully!",
-                isError: false,
-              );
+              _showSnackBar("OTP Verified Successfully!", isError: false);
 
-              // ✅ REGISTER DEVICE AND SUBSCRIBE AFTER OTP VERIFICATION
-              if (widget.purpose == "LOGIN") {
-                final userRole = state.authResponse.user.role;
+              // ✅ REGISTER DEVICE AFTER OTP VERIFICATION FOR ALL PURPOSES
+              final userRole = state.authResponse.user.role;
+
+              // Register device for LOGIN and REGISTER purposes
+              if (widget.purpose == "LOGIN" || widget.purpose == "REGISTER") {
                 if (userRole != null && userRole.isNotEmpty) {
                   await _registerDeviceAndSubscribe(userRole);
+                } else if (widget.userRole != null &&
+                    widget.userRole!.isNotEmpty) {
+                  // For REGISTER, use the passed userRole if available
+                  await _registerDeviceAndSubscribe(widget.userRole!);
                 }
               }
 
+              // Handle navigation based on purpose
               if (widget.purpose == "RESET") {
                 Future.delayed(const Duration(milliseconds: 500), () {
                   if (mounted) {
@@ -499,7 +473,9 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                   if (mounted) {
                     final user = state.authResponse.user;
                     if (user.status == 'ACTIVE') {
-                      if (user.role != null && user.role.isNotEmpty && user.role != 'USER') {
+                      if (user.role != null &&
+                          user.role.isNotEmpty &&
+                          user.role != 'USER') {
                         context.goNamed(RouteName.home);
                       } else {
                         context.goNamed(RouteName.profile);
@@ -518,18 +494,19 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
               setState(() {
                 _failedAttempts++;
               });
-              
+
               _shake();
-              
+
               String errorMessage = state.error;
-              if (errorMessage.contains("400") || errorMessage.contains("bad syntax")) {
+              if (errorMessage.contains("400") ||
+                  errorMessage.contains("bad syntax")) {
                 errorMessage = "Invalid OTP code. Please check and try again.";
               } else if (errorMessage.contains("expired")) {
                 errorMessage = "OTP has expired. Please request a new code.";
               }
-              
+
               _showSnackBar(errorMessage, isError: true);
-              
+
               if (_failedAttempts >= 3) {
                 for (var controller in _controllers) {
                   controller.clear();
@@ -539,7 +516,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                   isError: true,
                 );
               }
-              
+
               _focusNodes[0].requestFocus();
             }
           },
@@ -631,13 +608,20 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(6, (index) => _buildOtpBox(index)),
+                      children: List.generate(
+                        6,
+                        (index) => _buildOtpBox(index),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextButton.icon(
                     onPressed: _handlePaste,
-                    icon: Icon(Icons.content_paste, size: 18, color: Colors.grey.shade600),
+                    icon: Icon(
+                      Icons.content_paste,
+                      size: 18,
+                      color: Colors.grey.shade600,
+                    ),
                     label: Text(
                       "Paste OTP",
                       style: TextStyle(
@@ -702,7 +686,9 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          _canResend ? "Didn't receive the code?" : "Code expires in",
+                          _canResend
+                              ? "Didn't receive the code?"
+                              : "Code expires in",
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 14,
@@ -839,10 +825,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage>
               const SizedBox(height: 20),
               const Text(
                 "Need Assistance?",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               const Text(

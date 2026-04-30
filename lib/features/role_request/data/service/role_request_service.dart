@@ -1,14 +1,11 @@
 import 'package:agrilink/core/network/api_constants.dart';
 import 'package:agrilink/core/network/dio_client.dart';
-import 'package:agrilink/features/role_request/data/models/role_request_model.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class RoleRequestService {
   final DioClient client;
-  final SharedPreferences? prefs;
 
-  RoleRequestService(this.client, [this.prefs]);
+  RoleRequestService(this.client);
 
   /// Submit role request to API
   Future<Map<String, dynamic>> createRoleRequest({
@@ -61,63 +58,23 @@ class RoleRequestService {
         data: formData,
       );
 
-      // ✅ Handle successful response (API returns 201 with {message})
+      // ✅ Handle successful response
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Save to SharedPreferences
-        await prefs?.setBool('has_submitted_role_request', true);
-        await prefs?.setString('role_request_status', 'PENDING');
-        await prefs?.setString(
-          'role_request_date',
-          DateTime.now().toIso8601String(),
-        );
-
-        // ✅ Return success response with message
         return {
           'success': true,
-          'message': response.data['message'] ?? 'Role request submitted successfully',
+          'message': response.data['message'] ??
+              'Role request submitted successfully',
           'data': response.data,
         };
       } else {
         throw Exception('Failed to submit request: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      // ✅ Handle Dio errors gracefully
       final errorMessage = _handleDioError(e);
       throw Exception(errorMessage);
     } catch (e) {
       rethrow;
     }
-  }
-
-  /// Check if user has already submitted a request
-  bool hasSubmittedRequest() {
-    return prefs?.getBool('has_submitted_role_request') ?? false;
-  }
-
-  /// Get current request status from local storage
-  String getRequestStatus() {
-    return prefs?.getString('role_request_status') ?? 'NONE';
-  }
-
-  /// Get request submission date
-  String? getRequestDate() {
-    return prefs?.getString('role_request_date');
-  }
-
-  /// Get full request info
-  Map<String, dynamic> getRequestInfo() {
-    return {
-      'hasSubmitted': hasSubmittedRequest(),
-      'status': getRequestStatus(),
-      'date': getRequestDate(),
-    };
-  }
-
-  /// Clear request status from local storage
-  Future<void> clearRequestStatus() async {
-    await prefs?.remove('has_submitted_role_request');
-    await prefs?.remove('role_request_status');
-    await prefs?.remove('role_request_date');
   }
 
   /// Handle Dio errors
@@ -187,7 +144,6 @@ class RoleRequestService {
 
 // ================= RESPONSE MODEL =================
 
-/// Simple response model for role request API
 class RoleRequestResponse {
   final bool success;
   final String message;

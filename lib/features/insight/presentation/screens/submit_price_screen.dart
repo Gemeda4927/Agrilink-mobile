@@ -1,4 +1,4 @@
-// features/insight/presentation/screens/submit_price_screen.dart
+import 'dart:async';
 import 'package:agrilink/features/insight/presentation/bloc/market_event.dart';
 import 'package:agrilink/features/insight/presentation/bloc/market_state.dart';
 import 'package:flutter/material.dart';
@@ -6,12 +6,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:agrilink/features/insight/presentation/bloc/market_bloc.dart';
+import 'package:agrilink/features/registration/presentation/bloc/registration_bloc.dart';
+import 'package:agrilink/features/registration/presentation/bloc/registration_event.dart';
+import 'package:agrilink/features/registration/presentation/bloc/registration_state.dart';
 import '../../data/model/market_insight.dart';
 
 class SubmitPriceScreen extends StatefulWidget {
   final ProductInfo? preSelectedProduct;
+  final MarketPriceResponse? existingPrice;
 
-  const SubmitPriceScreen({super.key, this.preSelectedProduct});
+  const SubmitPriceScreen({
+    super.key,
+    this.preSelectedProduct,
+    this.existingPrice,
+  });
 
   @override
   State<SubmitPriceScreen> createState() => _SubmitPriceScreenState();
@@ -24,20 +32,44 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
   final _longitudeController = TextEditingController();
 
   ProductInfo? _selectedProduct;
-  String? _selectedWoredaId;
+
+  // Hierarchical location selections
+  dynamic _selectedRegion;
+  dynamic _selectedZone;
+  dynamic _selectedWoreda;
+  dynamic _selectedKebele;
+
+  String? _selectedWoredaId; // For submission
+
   List<ProductInfo> _products = [];
-  List<WoredaInfo> _woredas = [];
+  List<dynamic> _regions = [];
+  List<dynamic> _zones = [];
+  List<dynamic> _woredas = [];
+  List<dynamic> _kebeles = [];
+
   bool _isLoadingProducts = true;
-  bool _isLoadingWoredas = true;
+  bool _isLoadingRegions = true;
+  bool _isLoadingZones = false;
+  bool _isLoadingWoredas = false;
+  bool _isLoadingKebeles = false;
   bool _isGettingLocation = false;
+
   String? _errorMessage;
   bool _isSubmitting = false;
+
+  // Edit mode flag
+  bool get _isEditMode => widget.existingPrice != null;
+  String? _editingPriceId;
 
   @override
   void initState() {
     super.initState();
     _loadProducts();
-    _loadWoredas();
+    _loadRegions();
+
+    if (_isEditMode) {
+      _populateExistingData();
+    }
   }
 
   @override
@@ -48,20 +80,92 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
     super.dispose();
   }
 
+  // ================= EDIT MODE METHODS =================
+
+  void _populateExistingData() {
+    final price = widget.existingPrice!;
+    _editingPriceId = price.id;
+    _priceController.text = price.price.toString();
+
+    if (price.latitude != null && price.latitude!.isNotEmpty) {
+      _latitudeController.text = price.latitude!;
+    }
+    if (price.longitude != null && price.longitude!.isNotEmpty) {
+      _longitudeController.text = price.longitude!;
+    }
+
+    _selectedWoredaId = price.woredaId;
+  }
+
+  // ================= HIERARCHICAL LOCATION METHODS =================
+
+  void _loadRegions() {
+    context.read<RegistrationBloc>().add(LoadRegions());
+  }
+
+  void _onRegionSelected(dynamic region) {
+    setState(() {
+      _selectedRegion = region;
+      _selectedZone = null;
+      _selectedWoreda = null;
+      _selectedKebele = null;
+      _selectedWoredaId = null;
+      _zones = [];
+      _woredas = [];
+      _kebeles = [];
+      _isLoadingZones = true;
+    });
+    context.read<RegistrationBloc>().add(
+      LoadZones(region['id']),
+    );
+  }
+
+  void _onZoneSelected(dynamic zone) {
+    setState(() {
+      _selectedZone = zone;
+      _selectedWoreda = null;
+      _selectedKebele = null;
+      _selectedWoredaId = null;
+      _woredas = [];
+      _kebeles = [];
+      _isLoadingWoredas = true;
+    });
+    context.read<RegistrationBloc>().add(
+      LoadWoredas(zone['id']),
+    );
+  }
+
+  void _onWoredaSelected(dynamic woreda) {
+    setState(() {
+      _selectedWoreda = woreda;
+      _selectedKebele = null;
+      _selectedWoredaId = woreda['id'];
+      _kebeles = [];
+      _isLoadingKebeles = true;
+    });
+    context.read<RegistrationBloc>().add(
+      LoadKebeles(woreda['id']),
+    );
+  }
+
+  void _onKebeleSelected(dynamic kebele) {
+    setState(() {
+      _selectedKebele = kebele;
+    });
+  }
+
   // ================= LOCATION METHODS =================
 
   Future<void> _getCurrentLocation() async {
     setState(() => _isGettingLocation = true);
 
     try {
-      // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         _showLocationDialog('Location services are disabled. Please enable them.');
         return;
       }
 
-      // Check permission
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -76,7 +180,6 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
         return;
       }
 
-      // Get current position
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -134,32 +237,19 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
     }
   }
 
-  void _loadWoredas() async {
-    // Fetch from API or use mock
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) {
-      setState(() {
-        _woredas = [
-          WoredaInfo(id: "3ad29a6c-f11a-4041-94fe-0cbd20cd75eb", name: "Jimma"),
-          WoredaInfo(id: "woreda2", name: "Addis Ababa"),
-          WoredaInfo(id: "woreda3", name: "Bahir Dar"),
-          WoredaInfo(id: "woreda4", name: "Hawassa"),
-          WoredaInfo(id: "woreda5", name: "Dire Dawa"),
-        ];
-        _isLoadingWoredas = false;
-      });
-    }
-  }
-
   void _listenForProducts() {
-    final subscription = context.read<MarketBloc>().stream.listen((state) {
+    late StreamSubscription<MarketState> subscription;
+
+    subscription = context.read<MarketBloc>().stream.listen((state) {
       if (state is ProductsLoaded && mounted) {
         _updateProductsList(state);
+        subscription.cancel();
       } else if (state is MarketError && mounted) {
         setState(() {
           _isLoadingProducts = false;
           _errorMessage = state.message;
         });
+        subscription.cancel();
       }
     });
   }
@@ -170,7 +260,13 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
       _isLoadingProducts = false;
       _errorMessage = null;
 
-      if (widget.preSelectedProduct != null) {
+      if (_isEditMode && widget.existingPrice != null) {
+        _selectedProduct = _products.firstWhere(
+          (product) => product.id == widget.existingPrice!.productId,
+          orElse: () => _products.isNotEmpty ? _products.first : ProductInfo(id: '', name: ''),
+        );
+        if (_selectedProduct?.id == '') _selectedProduct = null;
+      } else if (widget.preSelectedProduct != null) {
         _selectedProduct = widget.preSelectedProduct;
       } else if (_products.isNotEmpty) {
         _selectedProduct = _products.first;
@@ -178,14 +274,17 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
     });
   }
 
-  // ================= REVIEW & SUBMIT =================
+  // ================= REVIEW & SUBMIT/UPDATE =================
 
   void _showReviewDialog() {
-    if (!_formKey.currentState!.validate() || _selectedProduct == null || _selectedWoredaId == null) {
+    if (!_formKey.currentState!.validate() ||
+        _selectedProduct == null ||
+        _selectedWoredaId == null) {
       return;
     }
 
-    final woreda = _woredas.firstWhere((w) => w.id == _selectedWoredaId, orElse: () => WoredaInfo(id: '', name: 'Unknown'));
+    final isEdit = _isEditMode;
+    final actionButtonText = isEdit ? 'Confirm Update' : 'Confirm Submit';
 
     showModalBottomSheet(
       context: context,
@@ -215,13 +314,10 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: Text(
-                'Review Submission',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Review ${isEdit ? 'Update' : 'Submission'}',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 24),
@@ -234,9 +330,23 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
             const SizedBox(height: 12),
             _buildReviewTile(
               icon: Icons.location_city,
-              label: 'Woreda',
-              value: woreda.name,
+              label: 'Region',
+              value: _selectedRegion?['name'] ?? 'N/A',
               color: Colors.blue,
+            ),
+            const SizedBox(height: 12),
+            _buildReviewTile(
+              icon: Icons.location_on,
+              label: 'Zone',
+              value: _selectedZone?['name'] ?? 'N/A',
+              color: Colors.purple,
+            ),
+            const SizedBox(height: 12),
+            _buildReviewTile(
+              icon: Icons.map,
+              label: 'Woreda',
+              value: _selectedWoreda?['name'] ?? 'Selected',
+              color: Colors.teal,
             ),
             const SizedBox(height: 12),
             _buildReviewTile(
@@ -250,23 +360,29 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
               icon: Icons.map,
               label: 'Coordinates',
               value: '${_latitudeController.text} N, ${_longitudeController.text} E',
-              color: Colors.purple,
+              color: Colors.pink,
             ),
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
+                color: isEdit ? Colors.blue.shade50 : Colors.amber.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.amber, size: 20),
-                  SizedBox(width: 12),
+                  Icon(
+                    isEdit ? Icons.edit_note : Icons.info_outline,
+                    color: isEdit ? Colors.blue : Colors.amber,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Please review your information carefully. Submitted prices will be reviewed by moderators.',
-                      style: TextStyle(fontSize: 12),
+                      isEdit
+                          ? 'Updating this price will require re-approval by moderators.'
+                          : 'Please review your information carefully. Submitted prices will be reviewed by moderators.',
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ],
@@ -292,7 +408,11 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      _submitPrice();
+                      if (isEdit) {
+                        _updatePrice();
+                      } else {
+                        _submitPrice();
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2E7D32),
@@ -301,7 +421,7 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Confirm Submit'),
+                    child: Text(actionButtonText),
                   ),
                 ),
               ],
@@ -371,7 +491,23 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
     context.read<MarketBloc>().add(SubmitMarketPriceEvent(request));
   }
 
-  void _showSuccessModal() {
+  void _updatePrice() {
+    setState(() => _isSubmitting = true);
+
+    final request = MarketPriceRequest(
+      productId: _selectedProduct!.id,
+      woredaId: _selectedWoredaId!,
+      price: double.parse(_priceController.text),
+      latitude: _latitudeController.text,
+      longitude: _longitudeController.text,
+    );
+
+    context.read<MarketBloc>().add(
+      UpdateMarketPriceEvent(id: _editingPriceId!, request: request),
+    );
+  }
+
+  void _showSuccessModal({required bool isEdit}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -388,35 +524,30 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
                   color: Colors.green.shade50,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: Colors.green,
-                  size: 64,
-                ),
+                child: const Icon(Icons.check_circle, color: Colors.green, size: 64),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Success!',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Price submitted successfully',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+              Text(
+                isEdit ? 'Updated!' : 'Success!',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                'Your submission is pending review',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                isEdit ? 'Price updated successfully' : 'Price submitted successfully',
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
+              if (!isEdit) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Your submission is pending review',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.pop(context, true); // Go back with success
+                  Navigator.pop(context);
+                  Navigator.pop(context, true);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2E7D32),
@@ -438,47 +569,90 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Submit Market Price'),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            onPressed: () => _showHelpDialog(),
-          ),
-        ],
-      ),
-      body: BlocListener<MarketBloc, MarketState>(
-        listener: (context, state) {
-          if (state is MarketPriceSubmitted) {
-            _showSuccessModal();
-          } else if (state is MarketError && !_isLoadingProducts) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('❌ Error: ${state.message}'),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-            setState(() => _isSubmitting = false);
-          }
-        },
-        child: _buildBody(),
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<MarketBloc, MarketState>(
+          listener: (context, state) {
+            if (state is MarketPriceSubmitted) {
+              _showSuccessModal(isEdit: false);
+            } else if (state is MarketPriceUpdated) {
+              _showSuccessModal(isEdit: true);
+            } else if (state is MarketError && !_isLoadingProducts) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('❌ Error: ${state.message}'),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+              setState(() => _isSubmitting = false);
+            }
+          },
+        ),
+        BlocListener<RegistrationBloc, RegistrationState>(
+          listener: (context, state) {
+            if (state is RegionsLoaded) {
+              setState(() {
+                _regions = state.regions;
+                _isLoadingRegions = false;
+              });
+            } else if (state is ZonesLoaded) {
+              setState(() {
+                _zones = state.zones;
+                _isLoadingZones = false;
+              });
+            } else if (state is WoredasLoaded) {
+              setState(() {
+                _woredas = state.woredas;
+                _isLoadingWoredas = false;
+              });
+            } else if (state is KebelesLoaded) {
+              setState(() {
+                _kebeles = state.kebeles;
+                _isLoadingKebeles = false;
+              });
+            } else if (state is RegistrationError) {
+              setState(() {
+                _isLoadingZones = false;
+                _isLoadingWoredas = false;
+                _isLoadingKebeles = false;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Location Error: ${state.message}'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+          },
+        ),
+      ],
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_isEditMode ? 'Edit Market Price' : 'Submit Market Price'),
+          elevation: 0,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          centerTitle: false,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline),
+              onPressed: () => _showHelpDialog(),
+            ),
+          ],
+        ),
+        body: _buildBody(),
       ),
     );
   }
 
   Widget _buildBody() {
-    if (_isLoadingProducts || _isLoadingWoredas) {
+    if ((_isLoadingProducts || _isLoadingRegions) && _products.isEmpty && _regions.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_errorMessage != null) {
+    if (_errorMessage != null && _products.isEmpty) {
       return _buildErrorState();
     }
 
@@ -498,8 +672,10 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
             onPressed: () {
               setState(() {
                 _isLoadingProducts = true;
+                _isLoadingRegions = true;
                 _errorMessage = null;
                 _loadProducts();
+                _loadRegions();
               });
             },
             icon: const Icon(Icons.refresh),
@@ -514,20 +690,26 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildProductDropdown(),
-            const SizedBox(height: 16),
-            _buildWoredaDropdown(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+            _buildRegionDropdown(),
+            const SizedBox(height: 20),
+            if (_selectedRegion != null) _buildZoneDropdown(),
+            if (_selectedZone != null) const SizedBox(height: 20),
+            if (_selectedZone != null) _buildWoredaDropdown(),
+            if (_selectedWoreda != null) const SizedBox(height: 20),
+            if (_selectedWoreda != null) _buildKebeleDropdown(),
+            const SizedBox(height: 20),
             _buildPriceField(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             _buildLocationSection(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             _buildSubmitButton(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _buildInfoNote(),
           ],
         ),
@@ -536,146 +718,271 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
   }
 
   Widget _buildProductDropdown() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: DropdownButtonFormField<ProductInfo>(
-        decoration: InputDecoration(
-          labelText: 'Product *',
-          labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          enabledBorder: OutlineInputBorder(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Product', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
-          ),
-          prefixIcon: const Icon(Icons.production_quantity_limits),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        value: _selectedProduct,
-        items: _products.map((product) {
-          return DropdownMenuItem(
-            value: product,
-            child: Row(
-              children: [
-                Icon(_getProductIcon(product.name), size: 18, color: Colors.green.shade700),
-                const SizedBox(width: 12),
-                Text(product.name),
-              ],
+          child: DropdownButtonFormField<ProductInfo>(
+            decoration: InputDecoration(
+              hintText: 'Select a product',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
-          );
-        }).toList(),
-        onChanged: (value) => setState(() => _selectedProduct = value),
-        validator: (value) => value == null ? 'Please select a product' : null,
-      ),
+            value: _selectedProduct,
+            isExpanded: true,
+            items: _products.map((product) {
+              return DropdownMenuItem(
+                value: product,
+                child: Row(
+                  children: [
+                    Icon(_getProductIcon(product.name), size: 20, color: Colors.green.shade700),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(product.name)),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) => setState(() => _selectedProduct = value),
+            validator: (value) => value == null ? 'Please select a product' : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRegionDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Region', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+          ),
+          child: DropdownButtonFormField<dynamic>(
+            decoration: InputDecoration(
+              hintText: 'Select a region',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+            value: _selectedRegion,
+            isExpanded: true,
+            items: _regions.map((region) {
+              return DropdownMenuItem(
+                value: region,
+                child: Row(
+                  children: [
+                    Icon(Icons.location_city, size: 18, color: Colors.grey.shade600),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(region['name'])),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) => _onRegionSelected(value),
+            validator: (value) => value == null ? 'Please select a region' : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildZoneDropdown() {
+    if (_isLoadingZones) {
+      return const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Center(child: CircularProgressIndicator()));
+    }
+    if (_zones.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Zone', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+          ),
+          child: DropdownButtonFormField<dynamic>(
+            decoration: InputDecoration(
+              hintText: 'Select a zone',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+            value: _selectedZone,
+            isExpanded: true,
+            items: _zones.map((zone) {
+              return DropdownMenuItem(
+                value: zone,
+                child: Row(
+                  children: [
+                    Icon(Icons.location_on, size: 18, color: Colors.grey.shade600),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(zone['name'])),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) => _onZoneSelected(value),
+            validator: (value) => value == null ? 'Please select a zone' : null,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildWoredaDropdown() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: DropdownButtonFormField<String>(
-        decoration: InputDecoration(
-          labelText: 'Woreda (District) *',
-          labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          enabledBorder: OutlineInputBorder(
+    if (_isLoadingWoredas) {
+      return const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Center(child: CircularProgressIndicator()));
+    }
+    if (_woredas.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Woreda (District)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
-          ),
-          prefixIcon: const Icon(Icons.location_city),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        value: _selectedWoredaId,
-        items: _woredas.map((woreda) {
-          return DropdownMenuItem(
-            value: woreda.id,
-            child: Row(
-              children: [
-                Icon(Icons.location_on, size: 16, color: Colors.grey.shade600),
-                const SizedBox(width: 12),
-                Text(woreda.name),
-              ],
+          child: DropdownButtonFormField<dynamic>(
+            decoration: InputDecoration(
+              hintText: 'Select a woreda',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
-          );
-        }).toList(),
-        onChanged: (value) => setState(() => _selectedWoredaId = value),
-        validator: (value) => value == null || value.isEmpty ? 'Please select a woreda' : null,
-      ),
+            value: _selectedWoreda,
+            isExpanded: true,
+            items: _woredas.map((woreda) {
+              return DropdownMenuItem(
+                value: woreda,
+                child: Row(
+                  children: [
+                    Icon(Icons.map, size: 18, color: Colors.grey.shade600),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(woreda['name'])),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) => _onWoredaSelected(value),
+            validator: (value) => value == null ? 'Please select a woreda' : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKebeleDropdown() {
+    if (_isLoadingKebeles) {
+      return const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Center(child: CircularProgressIndicator()));
+    }
+    if (_kebeles.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Kebele', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+          ),
+          child: DropdownButtonFormField<dynamic>(
+            decoration: InputDecoration(
+              hintText: 'Select a kebele',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+            value: _selectedKebele,
+            isExpanded: true,
+            items: _kebeles.map((kebele) {
+              return DropdownMenuItem(
+                value: kebele,
+                child: Row(
+                  children: [
+                    Icon(Icons.place, size: 18, color: Colors.grey.shade600),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(kebele['name'])),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) => _onKebeleSelected(value),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildPriceField() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: _priceController,
-        decoration: InputDecoration(
-          labelText: 'Price (ETB) *',
-          labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          enabledBorder: OutlineInputBorder(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Price', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
+          child: TextFormField(
+            controller: _priceController,
+            decoration: InputDecoration(
+              hintText: 'Enter price in ETB',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
+              prefixIcon: const Icon(Icons.attach_money, color: Colors.grey),
+              suffixText: 'ETB',
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
+            validator: (value) {
+              if (value == null || value.isEmpty) return 'Please enter price';
+              final price = double.tryParse(value);
+              if (price == null) return 'Please enter a valid number';
+              if (price <= 0) return 'Price must be greater than 0';
+              if (price > 100000) return 'Price seems unrealistic. Please verify';
+              return null;
+            },
           ),
-          prefixIcon: const Icon(Icons.attach_money),
-          suffixText: 'ETB',
-          filled: true,
-          fillColor: Colors.white,
-          helperText: 'Enter the current market price',
         ),
-        keyboardType: TextInputType.number,
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-        ],
-        validator: (value) {
-          if (value == null || value.isEmpty) return 'Please enter price';
-          final price = double.tryParse(value);
-          if (price == null) return 'Please enter a valid number';
-          if (price <= 0) return 'Price must be greater than 0';
-          if (price > 100000) return 'Price seems unrealistic. Please verify';
-          return null;
-        },
-      ),
+      ],
     );
   }
 
@@ -685,29 +992,14 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
       children: [
         Row(
           children: [
-            Expanded(
-              child: Text(
-                'Location Coordinates',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ),
+            Expanded(child: Text('Location Coordinates', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.grey.shade700))),
             TextButton.icon(
               onPressed: _isGettingLocation ? null : _getCurrentLocation,
               icon: _isGettingLocation
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.my_location, size: 18),
               label: Text(_isGettingLocation ? 'Getting...' : 'Use My Location'),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2E7D32),
-              ),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF2E7D32)),
             ),
           ],
         ),
@@ -715,96 +1007,52 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
         Row(
           children: [
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+              child: TextFormField(
+                controller: _latitudeController,
+                decoration: InputDecoration(
+                  hintText: 'Latitude (e.g., 7.6753)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
+                  prefixIcon: const Icon(Icons.map, color: Colors.grey),
+                  suffixText: 'N',
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
-                child: TextFormField(
-                  controller: _latitudeController,
-                  decoration: InputDecoration(
-                    labelText: 'Latitude *',
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
-                    ),
-                    prefixIcon: const Icon(Icons.map),
-                    suffixText: 'N',
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: 'e.g., 7.6753',
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^-?\d+\.?\d*')),
-                  ],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter latitude';
-                    final lat = double.tryParse(value);
-                    if (lat == null) return 'Please enter a valid number';
-                    if (lat < -90 || lat > 90) return 'Latitude must be between -90 and 90';
-                    return null;
-                  },
-                ),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?\d+\.?\d*'))],
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Please enter latitude';
+                  final lat = double.tryParse(value);
+                  if (lat == null) return 'Please enter a valid number';
+                  if (lat < -90 || lat > 90) return 'Latitude must be between -90 and 90';
+                  return null;
+                },
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+              child: TextFormField(
+                controller: _longitudeController,
+                decoration: InputDecoration(
+                  hintText: 'Longitude (e.g., 36.8373)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
+                  prefixIcon: const Icon(Icons.map, color: Colors.grey),
+                  suffixText: 'E',
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
-                child: TextFormField(
-                  controller: _longitudeController,
-                  decoration: InputDecoration(
-                    labelText: 'Longitude *',
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
-                    ),
-                    prefixIcon: const Icon(Icons.map),
-                    suffixText: 'E',
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: 'e.g., 36.8373',
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^-?\d+\.?\d*')),
-                  ],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter longitude';
-                    final lng = double.tryParse(value);
-                    if (lng == null) return 'Please enter a valid number';
-                    if (lng < -180 || lng > 180) return 'Longitude must be between -180 and 180';
-                    return null;
-                  },
-                ),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?\d+\.?\d*'))],
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Please enter longitude';
+                  final lng = double.tryParse(value);
+                  if (lng == null) return 'Please enter a valid number';
+                  if (lng < -180 || lng > 180) return 'Longitude must be between -180 and 180';
+                  return null;
+                },
               ),
             ),
           ],
@@ -814,8 +1062,12 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
   }
 
   Widget _buildSubmitButton() {
+    final isEdit = _isEditMode;
+    final buttonText = isEdit ? 'Review & Update' : 'Review & Submit';
+    final isFormValid = _selectedProduct != null && _selectedWoredaId != null && _priceController.text.isNotEmpty;
+
     return ElevatedButton(
-      onPressed: _isSubmitting ? null : _showReviewDialog,
+      onPressed: _isSubmitting || !isFormValid ? null : _showReviewDialog,
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF2E7D32),
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -824,35 +1076,25 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
         elevation: 2,
       ),
       child: _isSubmitting
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-          : const Text(
-              'Review & Submit',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          : Text(buttonText, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
     );
   }
 
   Widget _buildInfoNote() {
+    final isEdit = _isEditMode;
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Your submission will be reviewed before appearing in the market insights.',
+              isEdit
+                  ? 'Updating this price will require re-approval by moderators.'
+                  : 'Your submission will be reviewed before appearing in the market insights.',
               style: TextStyle(fontSize: 12, color: Colors.blue.shade700),
             ),
           ),
@@ -862,40 +1104,45 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
   }
 
   void _showHelpDialog() {
+    final isEdit = _isEditMode;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('How to Submit Prices'),
+        title: Text(isEdit ? 'How to Update Prices' : 'How to Submit Prices'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHelpItem('1. Select Product', 'Choose the agricultural product you want to report', Icons.production_quantity_limits),
-            const SizedBox(height: 12),
-            _buildHelpItem('2. Select Woreda', 'Choose the district where you observed the price', Icons.location_city),
-            const SizedBox(height: 12),
-            _buildHelpItem('3. Enter Price', 'Input the current market price in Ethiopian Birr (ETB)', Icons.attach_money),
-            const SizedBox(height: 12),
-            _buildHelpItem('4. Get Location', 'Tap "Use My Location" to auto-fill coordinates', Icons.my_location),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(12)),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.amber, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Submitted prices will be reviewed by moderators before appearing publicly.',
-                      style: TextStyle(fontSize: 12),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHelpItem('1. Select Product', 'Choose the agricultural product you want to report', Icons.production_quantity_limits),
+              const SizedBox(height: 12),
+              _buildHelpItem('2. Select Region → Zone → Woreda', 'Navigate through the hierarchical location selection', Icons.location_city),
+              const SizedBox(height: 12),
+              _buildHelpItem('3. Enter Price', 'Input the current market price in Ethiopian Birr (ETB)', Icons.attach_money),
+              const SizedBox(height: 12),
+              _buildHelpItem('4. Get Location', 'Tap "Use My Location" to auto-fill coordinates', Icons.my_location),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.amber, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        isEdit
+                            ? 'Updated prices will be reviewed by moderators before appearing publicly.'
+                            : 'Submitted prices will be reviewed by moderators before appearing publicly.',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Got it')),
@@ -939,9 +1186,4 @@ class _SubmitPriceScreenState extends State<SubmitPriceScreen> {
       default: return Icons.production_quantity_limits;
     }
   }
-}
-
-class WoredasLoaded extends MarketState {
-  final List<WoredaInfo> woredas;
-  WoredasLoaded(this.woredas);
 }

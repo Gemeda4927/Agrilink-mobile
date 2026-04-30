@@ -11,6 +11,8 @@ class ProductOrderModel {
   final double price;
   final String description;
   final String? image;
+  final String? city;
+  final bool withDelivery;
   final DateTime createdAt;
 
   ProductOrderModel({
@@ -22,6 +24,8 @@ class ProductOrderModel {
     required this.price,
     required this.description,
     this.image,
+    this.city,
+    required this.withDelivery,
     required this.createdAt,
   });
 
@@ -36,7 +40,9 @@ class ProductOrderModel {
           ? double.tryParse(json['price'].toString()) ?? 0.0
           : 0.0,
       description: json['description'] ?? '',
-      image: json['image'], // This can be null - key fix!
+      image: json['image'],
+      city: json['city'],
+      withDelivery: json['withDelivery'] ?? false,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
@@ -53,6 +59,8 @@ class ProductOrderModel {
       price: 0.0,
       description: 'No description available',
       image: null,
+      city: null,
+      withDelivery: false,
       createdAt: DateTime.now(),
     );
   }
@@ -68,6 +76,8 @@ class ProductOrderModel {
       description: description,
       image: image,
       createdAt: createdAt,
+      city: city,
+      withDelivery: withDelivery,
     );
   }
 

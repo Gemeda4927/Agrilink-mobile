@@ -22,7 +22,7 @@ class RouteName {
 
   // Orders
   static const String myOrders = '/my-orders';
-  static const String farmerOrders = '/farmer-orders';
+  static const String ordersReceived = '/farmer-orders';
 
   // Product Management (UI Routes)
   static const String createProduct = '/create-product';

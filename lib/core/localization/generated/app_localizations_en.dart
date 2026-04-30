@@ -108,7 +108,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myProducts => 'My Products';
 
   @override
-  String get myOrders => 'My Orders';
+  String get myOrders => 'Orders';
 
   @override
   String get postProduct => 'Post Product';

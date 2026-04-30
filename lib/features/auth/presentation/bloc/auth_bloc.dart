@@ -34,7 +34,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final auth = await signInUseCase.execute(event.data);
-      await _registerFcmToken(auth.user.role);
+      // ✅ NO notification code here - regular login
       emit(AuthSuccess(authResponse: auth));
     } catch (e) {
       emit(AuthFailure(error: e.toString()));
@@ -58,7 +58,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final auth = await verifyOtpUseCase.execute(event.data);
-      await _registerFcmToken(auth.user.role);
+
+      // ✅ ONLY HERE - Register notifications after OTP verification
+      final notificationService = sl<NotificationService>();
+
       emit(AuthSuccess(authResponse: auth));
     } catch (e) {
       emit(AuthFailure(error: e.toString()));
@@ -72,7 +75,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final auth = await googleSignInUseCase.execute();
-      await _registerFcmToken(auth.user.role);
+      // ✅ NO notification code for Google Sign In
       emit(AuthSuccess(authResponse: auth));
     } catch (e) {
       emit(AuthFailure(error: e.toString()));
@@ -108,40 +111,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      await _unregisterFcmToken();
+      final notificationService = sl<NotificationService>();
       emit(AuthInitial());
     } catch (e) {
       emit(AuthFailure(error: e.toString()));
-    }
-  }
-
-  // ==================== FCM TOKEN METHODS ====================
-
-  Future<void> _registerFcmToken(String role) async {
-    try {
-      final notificationService = sl<NotificationService>();
-      final token = await notificationService.getSavedToken();
-
-      if (token != null) {
-        await notificationService.registerDeviceToken(token);
-
-        // Subscribe to topics based on user role
-        await notificationService.subscribeToTopic('all_users');
-        await notificationService.subscribeToTopic(
-          'role_${role.toLowerCase()}',
-        );
-      }
-    } catch (e) {
-      // Silent fail - don't block login flow
-    }
-  }
-
-  Future<void> _unregisterFcmToken() async {
-    try {
-      final notificationService = sl<NotificationService>();
-      await notificationService.unregisterDeviceToken();
-    } catch (e) {
-      // Silent fail
     }
   }
 }

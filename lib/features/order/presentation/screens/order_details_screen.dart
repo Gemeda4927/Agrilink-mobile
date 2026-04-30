@@ -1,12 +1,17 @@
+// lib/features/order/presentation/screens/order_details_screen.dart
+
 import 'package:agrilink/features/order/domain/entities/order.dart';
 import 'package:flutter/material.dart';
 
-import '../../domain/entities/product.dart';
-
 class OrderDetailsScreen extends StatelessWidget {
   final Order order;
+  final bool isFarmerView;
 
-  const OrderDetailsScreen({Key? key, required this.order}) : super(key: key);
+  const OrderDetailsScreen({
+    Key? key,
+    required this.order,
+    required this.isFarmerView,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +39,11 @@ class OrderDetailsScreen extends StatelessWidget {
               children: [
                 _buildOrderStatusCard(context),
                 const SizedBox(height: 16),
-                _buildDeliveryProgress(),
+                if (!isFarmerView) _buildDeliveryProgress(),
                 const SizedBox(height: 16),
                 _buildOrderInfoCard(),
+                const SizedBox(height: 16),
+                if (isFarmerView) _buildBuyerInfoCard(),
                 const SizedBox(height: 16),
                 _buildItemsList(),
                 const SizedBox(height: 16),
@@ -55,7 +62,6 @@ class OrderDetailsScreen extends StatelessWidget {
 
   Widget _buildOrderStatusCard(BuildContext context) {
     Color backgroundColor;
-    Color iconColor;
     String statusText;
     String statusMessage;
     IconData statusIcon;
@@ -63,36 +69,54 @@ class OrderDetailsScreen extends StatelessWidget {
     switch (order.status) {
       case 'PAID':
         backgroundColor = Colors.green;
-        iconColor = Colors.white;
         statusText = 'Order Confirmed';
-        statusMessage =
-            'Your order has been confirmed and will be delivered soon';
+        statusMessage = 'Your order has been confirmed and will be delivered soon';
+        statusIcon = Icons.check_circle;
+        break;
+      case 'APPROVED':
+        backgroundColor = Colors.green;
+        statusText = 'Order Approved';
+        statusMessage = 'Farmer has approved your order';
         statusIcon = Icons.check_circle;
         break;
       case 'PENDING':
         backgroundColor = Colors.orange;
-        iconColor = Colors.white;
         statusText = 'Payment Pending';
         statusMessage = 'Complete payment to confirm your order';
         statusIcon = Icons.pending;
         break;
+      case 'DELIVERED':
+        backgroundColor = Colors.teal;
+        statusText = 'Order Delivered';
+        statusMessage = 'Your order has been delivered';
+        statusIcon = Icons.local_shipping;
+        break;
+      case 'COMPLETED':
+        backgroundColor = Colors.green;
+        statusText = 'Order Completed';
+        statusMessage = 'Thank you for shopping with us!';
+        statusIcon = Icons.done_all;
+        break;
       case 'FAILED':
         backgroundColor = Colors.red;
-        iconColor = Colors.white;
         statusText = 'Payment Failed';
         statusMessage = 'Payment was unsuccessful. Please try again.';
         statusIcon = Icons.error;
         break;
       case 'CANCELLED':
         backgroundColor = Colors.grey;
-        iconColor = Colors.white;
         statusText = 'Order Cancelled';
         statusMessage = 'This order has been cancelled';
         statusIcon = Icons.cancel;
         break;
+      case 'REJECTED':
+        backgroundColor = Colors.red;
+        statusText = 'Order Rejected';
+        statusMessage = 'Farmer has rejected this order';
+        statusIcon = Icons.block;
+        break;
       default:
         backgroundColor = Colors.blue;
-        iconColor = Colors.white;
         statusText = order.status;
         statusMessage = 'Your order is being processed';
         statusIcon = Icons.info;
@@ -118,7 +142,7 @@ class OrderDetailsScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(statusIcon, size: 50, color: iconColor),
+          Icon(statusIcon, size: 50, color: Colors.white),
           const SizedBox(height: 12),
           Text(
             statusText,
@@ -140,7 +164,10 @@ class OrderDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildDeliveryProgress() {
-    if (order.status != 'PAID') return const SizedBox.shrink();
+    if (order.status != 'PAID' && order.status != 'APPROVED') return const SizedBox.shrink();
+
+    final bool isPaid = order.status == 'PAID' || order.status == 'APPROVED';
+    final bool isProcessing = order.status == 'APPROVED';
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -168,8 +195,8 @@ class OrderDetailsScreen extends StatelessWidget {
             children: [
               _buildProgressStep(0, 'Order Placed', true),
               Expanded(child: _buildProgressLine(true)),
-              _buildProgressStep(1, 'Processing', true),
-              Expanded(child: _buildProgressLine(false)),
+              _buildProgressStep(1, 'Processing', isPaid),
+              Expanded(child: _buildProgressLine(isProcessing)),
               _buildProgressStep(2, 'Shipped', false),
               Expanded(child: _buildProgressLine(false)),
               _buildProgressStep(3, 'Delivered', false),
@@ -257,12 +284,105 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProductImage(Product product) {
-    if (product.hasImage) {
+  Widget _buildBuyerInfoCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.person, color: Colors.green),
+              SizedBox(width: 8),
+              Text(
+                'Buyer Information',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Colors.green.shade100,
+                child: Text(
+                  order.buyerInitials,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      order.buyerDisplayName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (order.buyerEmail != null)
+                      Text(
+                        order.buyerEmail!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    if (order.buyerPhone != null)
+                      Text(
+                        order.buyerPhone!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    if (order.buyerKebele != null)
+                      Text(
+                        '📍 ${order.buyerKebele}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductImage(dynamic product) {
+    final hasImage = product.hasImage;
+    final imageUrl = product.imageUrl;
+
+    if (hasImage && imageUrl.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.network(
-          product.imageUrl,
+          imageUrl,
           width: 80,
           height: 80,
           fit: BoxFit.cover,
@@ -329,7 +449,7 @@ class OrderDetailsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.product.name,
+                          item.productName,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -345,7 +465,7 @@ class OrderDetailsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Price: ${item.priceAtOrder.toStringAsFixed(0)} ETB',
+                          'Price: ${item.formattedPriceAtOrder}',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 14,
@@ -363,7 +483,7 @@ class OrderDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${(item.amount * item.priceAtOrder).toStringAsFixed(0)} ETB',
+                        item.formattedSubtotal,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -424,7 +544,7 @@ class OrderDetailsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildInfoRow('Payment ID', order.paymentId),
           const Divider(height: 16),
-          _buildInfoRow('Status', order.status),
+          _buildInfoRow('Status', order.statusDisplay),
           if (order.paymentUrl.isNotEmpty) ...[
             const Divider(height: 16),
             const SizedBox(height: 8),
@@ -539,7 +659,6 @@ class OrderDetailsScreen extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    // Cancel order
                     _showCancelDialog(context);
                   },
                   style: OutlinedButton.styleFrom(
@@ -574,22 +693,7 @@ class OrderDetailsScreen extends StatelessWidget {
           ),
         ),
       );
-    } else if (order.status == 'PAID') {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-      );
     }
-
     return const SizedBox.shrink();
   }
 
