@@ -835,6 +835,170 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
         ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 4),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoriesHeader(AppLocalizations t) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.green.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.category,
+            color: Colors.green.shade800,
+            size: _iconSize,
+          ),
+        ),
+        const SizedBox(width: _standardSpacing),
+        Text(
+          t.exploreCategories,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoriesSection(BuildContext context, AppLocalizations t) {
+    return BlocBuilder<CategoryBloc, CategoryState>(
+      builder: (context, state) {
+        if (state is CategoryLoading) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                ),
+                const SizedBox(height: 16),
+                Text('Loading amazing categories...'),
+              ],
+            ),
+          );
+        }
+        if (state is CategoryLoaded)
+          return _buildModernCategoryGrid(context, state);
+        if (state is SubCategoryLoaded)
+          return _buildModernSubCategoryList(context, state);
+        if (state is CategoryError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 60,
+                  color: Colors.orange.shade700,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  state.message,
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () =>
+                      context.read<CategoryBloc>().add(LoadCategories()),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+        return Center(child: Text(t.noCategoriesAvailable));
+      },
+    );
+  }
+
+  Widget _buildModernCategoryGrid(BuildContext context, CategoryLoaded state) {
+    return GridView.builder(
+      physics: const BouncingScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: state.categories.length,
+      itemBuilder: (context, index) {
+        final category = state.categories[index];
+        final colors = [
+          [Colors.green.shade600, Colors.lightGreen.shade400],
+          [Colors.orange.shade600, Colors.deepOrange.shade400],
+          [Colors.blue.shade600, Colors.lightBlue.shade400],
+          [Colors.purple.shade600, Colors.deepPurple.shade400],
+          [Colors.teal.shade600, Colors.cyan.shade400],
+          [Colors.pink.shade600, Colors.pinkAccent],
+        ];
+        final gradientColors = colors[index % colors.length];
+        return _buildCategoryCard(
+          context: context,
+          category: category,
+          gradientColors: gradientColors,
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryCard({
+    required BuildContext context,
+    required dynamic category,
+    required List<Color> gradientColors,
+  }) {
+    return GestureDetector(
+      onTap: () =>
+          context.read<CategoryBloc>().add(LoadSubCategories(category.id)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradientColors,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: gradientColors[0].withOpacity(0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
@@ -927,8 +1091,6 @@ class _HomeScreenState extends State<HomeScreen>
       userId = authState.authResponse.user.id;
     }
 
-    final isFarmer = _isPrivilegedRole(role);
-
     return Drawer(
       child: Container(
         decoration: BoxDecoration(
@@ -959,28 +1121,119 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               _buildDrawerItem(
                 context: context,
+                icon: Icons.trending_up,
+                title: 'Market Insights',
+                route: RouteName.market,
+                color: Colors.green,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.receipt_long,
+                title: t.ordersReceived ?? 'Orders Received',
+                route: RouteName.myOrders,
+                color: Colors.teal,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.chat_bubble_outline,
+                title: 'AI Chatbot',
+                route: RouteName.aiRecommendation,
+                color: Colors.green.shade600,
+              ),
+            ],
+
+            if (role == 'BUYER') ...[
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.shopping_cart,
+                title: t.myOrders ?? 'My Orders',
+                route: RouteName.myOrders,
+                color: Colors.deepOrange.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.chat_bubble_outline,
+                title: 'AI Chatbot',
+                route: RouteName.aiRecommendation,
+                color: Colors.green.shade600,
+              ),
+            ],
+
+            if (role == 'AGENT') ...[
+              _buildDrawerItem(
+                context: context,
                 icon: Icons.add_box,
                 title: t.postProduct,
                 route: RouteName.createProduct,
                 color: Colors.green.shade700,
               ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.trending_up,
+                title: 'Market Insights',
+                route: RouteName.market,
+                color: Colors.green,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.chat_bubble_outline,
+                title: 'AI Chatbot',
+                route: RouteName.aiRecommendation,
+                color: Colors.green.shade600,
+              ),
             ],
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.shopping_cart,
-              title: t.myOrders ?? 'Orders',
-              route: RouteName.myOrders,
-              color: Colors.deepOrange.shade700,
-            ),
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.chat_bubble_outline,
-              title: 'AI Chatbot',
-              route: RouteName.aiRecommendation,
-              color: Colors.green.shade600,
-            ),
+
+            if (role == 'ADMIN') ...[
+              // Admin can see everything
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.add_box,
+                title: t.postProduct,
+                route: RouteName.createProduct,
+                color: Colors.green.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.inventory_2,
+                title: t.myProducts,
+                route: RouteName.myProducts,
+                color: Colors.blue.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.trending_up,
+                title: 'Market Insights',
+                route: RouteName.market,
+                color: Colors.green,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.receipt_long,
+                title: t.ordersReceived ?? 'Orders Received',
+                route: RouteName.myOrders,
+                color: Colors.teal,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.shopping_cart,
+                title: t.myOrders ?? 'My Orders',
+                route: RouteName.myOrders,
+                color: Colors.deepOrange.shade700,
+              ),
+              _buildDrawerItem(
+                context: context,
+                icon: Icons.chat_bubble_outline,
+                title: 'AI Chatbot',
+                route: RouteName.aiRecommendation,
+                color: Colors.green.shade600,
+              ),
+            ],
+
             const Divider(),
-            _buildRoleRequestSection(context, t, role, userId),
+
+            // ROLE REQUEST SECTION (Only show for Farmer and Buyer who haven't requested yet)
+            if (role == 'FARMER' || role == 'BUYER')
+              _buildRoleRequestSection(context, t, role, userId),
           ],
         ),
       ),
@@ -1048,6 +1301,7 @@ class _HomeScreenState extends State<HomeScreen>
     String role,
     String userId,
   ) {
+    // Don't show role request section for Agent or Admin
     if (role == 'AGENT') {
       return _buildStatusCard(
         icon: Icons.handshake,
@@ -1058,6 +1312,7 @@ class _HomeScreenState extends State<HomeScreen>
         statusColor: Colors.green,
       );
     }
+
     if (role == 'ADMIN') {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

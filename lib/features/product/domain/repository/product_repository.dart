@@ -38,6 +38,7 @@ abstract class ProductRepository {
     int? price,
     String? description,
     String? subCategoryId,
+    
     File? image,
   });
 
