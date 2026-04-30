@@ -153,12 +153,6 @@ void main() {
     expect(visibilityIcon, findsOneWidget);
     print('  ✅ Password visibility toggle found');
 
-    // Test debug dropdown
-    print('\n🔧 Testing debug dropdown:');
-    final debugDropdown = find.byType(DropdownButtonFormField<DebugUser>);
-    expect(debugDropdown, findsOneWidget);
-
-    await tester.tap(debugDropdown);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 

@@ -49,30 +49,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
       lightColor: const Color(0xFFE8EAF6),
     ),
-    PaymentMethod(
-      id: 'telebirr',
-      name: 'Telebirr',
-      icon: Icons.phone_android,
-      description: 'Mobile payment via Telebirr',
-      gradient: const LinearGradient(
-        colors: [Color(0xFF00A651), Color(0xFF00C853)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      lightColor: const Color(0xFFE8F5E9),
-    ),
-    PaymentMethod(
-      id: 'cod',
-      name: 'Cash on Delivery',
-      icon: Icons.money,
-      description: 'Pay when you receive',
-      gradient: const LinearGradient(
-        colors: [Color(0xFFFF6F00), Color(0xFFFF8F00)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      lightColor: const Color(0xFFFFF3E0),
-    ),
   ];
 
   @override
@@ -128,7 +104,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(),
+            onPressed: () => context.goNamed(RouteName.cart),
           ),
         ),
         body: Center(
@@ -1064,7 +1040,7 @@ class _PaymentWebViewState extends State<PaymentWebView> {
             child: const Text("Continue Payment"),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => context.goNamed(RouteName.checkout),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text("Cancel Payment"),
           ),

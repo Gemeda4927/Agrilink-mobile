@@ -113,7 +113,7 @@ class AppLocalizationsOm extends AppLocalizations {
   String get myProducts => 'Oomisha koo';
 
   @override
-  String get myOrders => 'Ajaja koo';
+  String get myOrders => 'Ajaja';
 
   @override
   String get postProduct => 'Oomisha maxxansi';

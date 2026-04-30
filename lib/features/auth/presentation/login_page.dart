@@ -8,18 +8,6 @@ import 'package:agrilink/features/auth/presentation/bloc/auth_event.dart';
 import 'package:agrilink/features/auth/presentation/bloc/auth_state.dart';
 import 'package:go_router/go_router.dart';
 
-class DebugUser {
-  final String role;
-  final String email;
-  final String password;
-
-  const DebugUser({
-    required this.role,
-    required this.email,
-    required this.password,
-  });
-}
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -36,39 +24,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  static const List<DebugUser> _debugUsers = [
-    DebugUser(
-      role: 'Agent',
-      email: 'meronmulu2121@gmail.com',
-      password: 'me4545',
-    ),
-    DebugUser(
-      role: 'Admin',
-      email: 'jidhaguta45@gmail.com',
-      password: '87654321',
-    ),
-    DebugUser(
-      role: 'Farmer',
-      email: 'gemedatechnology@gmail.com',
-      password: 'securepass',
-    ),
-    DebugUser(
-      role: 'Buyer',
-      email: 'caalaaturee1@gmail.com',
-      password: 'Gammee',
-    ),
-    DebugUser(
-      role: 'Data Contributor',
-      email: 'meronmulu45@gmail.com',
-      password: 'meri44',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
     _initAnimations();
-    // REMOVED: _registerDeviceIfNeeded() - NO notification registration on login page
   }
 
   void _initAnimations() {
@@ -373,8 +332,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           key: _formKey,
           child: Column(
             children: [
-              _buildDebugUserDropdown(t),
-              const SizedBox(height: 20),
               _buildEmailField(t),
               const SizedBox(height: 16),
               _buildPasswordField(t),
@@ -388,48 +345,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDebugUserDropdown(AppLocalizations t) {
-    return DropdownButtonFormField<DebugUser>(
-      decoration: InputDecoration(
-        labelText: t.quickDebugLogin,
-        prefixIcon: const Icon(Icons.bug_report_outlined, color: Colors.green),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.green.shade600, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-      ),
-      icon: const Icon(Icons.arrow_drop_down_circle, color: Colors.green),
-      isExpanded: true,
-      hint: Text(t.selectTestAccount, overflow: TextOverflow.ellipsis),
-      items: _debugUsers
-          .map(
-            (user) => DropdownMenuItem(
-              value: user,
-              child: Text(
-                '${user.role} - ${user.email}',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: (user) {
-        if (user != null) {
-          setState(() {
-            _identifierController.text = user.email;
-            _passwordController.text = user.password;
-          });
-        }
-      },
     );
   }
 
@@ -583,14 +498,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         context.goNamed(RouteName.profile);
       }
     } else {
-      // Pass user info to OTP page
       context.goNamed(
         RouteName.verifyOtp,
         extra: {
           'identifier': user.email,
           'purpose': 'LOGIN',
           'userRole': user.role,
-          'userId': user.id, // Pass user ID for registration
+          'userId': user.id,
         },
       );
     }

@@ -110,7 +110,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get myProducts => 'የእኔ ምርቶች';
 
   @override
-  String get myOrders => 'የእኔ ትዕዛዞች';
+  String get myOrders => 'ትዕዛዞች';
 
   @override
   String get postProduct => 'ምርት ይለጥፉ';

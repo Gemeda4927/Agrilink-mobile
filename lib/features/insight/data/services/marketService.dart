@@ -257,7 +257,7 @@ class MarketService {
     try {
       final response = await dioClient.patch(
         ApiConstants.rejectMarketPrice(id),
-        data: {'approve': false}, // ✅ Send boolean false for rejection
+        data: {'approve': false}, 
       );
 
       if (response.statusCode == 200) {

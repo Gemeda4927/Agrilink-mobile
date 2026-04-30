@@ -19,6 +19,7 @@ import 'package:agrilink/features/insight/presentation/screens/approved_prices_s
     hide SubmitPriceScreen;
 import 'package:agrilink/features/my_product/presentation/my_products_screen.dart';
 import 'package:agrilink/features/order/presentation/screens/my_orders_screen.dart';
+import 'package:agrilink/features/order/presentation/screens/orders_received_screen.dart';
 import 'package:agrilink/features/product/FarmerProfilePage.dart';
 import 'package:agrilink/features/product/presentation/create_product_page.dart';
 import 'package:agrilink/features/product/presentation/product_details_page.dart';
@@ -330,12 +331,10 @@ final GoRouter appRouter = GoRouter(
           },
         ),
 
-        // Placeholder Routes (for routes without screens yet)
         GoRoute(
-          path: RouteName.farmerOrders,
-          name: RouteName.farmerOrders,
-          builder: (context, state) =>
-              const PlaceholderScreen(title: "Farmer Orders"),
+          path: RouteName.ordersReceived,
+          name: RouteName.ordersReceived,
+          builder: (context, state) => const OrdersReceivedScreen(),
         ),
 
         GoRoute(

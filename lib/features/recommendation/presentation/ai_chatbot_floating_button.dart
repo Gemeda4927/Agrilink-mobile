@@ -676,8 +676,16 @@ class _AIChatbotModalState extends State<AIChatbotModal> {
     _messages.add(
       ChatMessage(
         isUser: false,
-        text:
-            "👋 Hello! I'm your AI Crop Advisor. I can help you with:\n\n🌱 Crop recommendations\n🌍 Soil health advice\n🐛 Pest management\n🌦️ Weather planning\n\n🎤 Tap the microphone button and speak your question - I'll respond by voice!\n\n📝 Or type your question - I'll respond in text.\n\nWhat would you like to know?",
+
+
+      text:
+"👋 Hello! I'm your AI Crop Advisor.\n\n"
+"I can help you with:\n\n"
+"🌱 Crop management\n"
+"🌦️ Current weather condition\n"
+"📊 Market insights\n\n"
+"What would you like to know?",
+
         timestamp: DateTime.now(),
       ),
     );

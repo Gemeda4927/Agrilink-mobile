@@ -46,8 +46,16 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
   }
 
   void _navigateToUpdateProfile() {
+    print("Navigating to update profile");
+    print("Current profile: $_currentProfile");
+
     if (_currentProfile != null && _currentProfile!.profile != null) {
+      print("Profile exists, navigating with extra data");
       context.pushNamed(RouteName.updateProfile, extra: _currentProfile);
+    } else {
+      print("Profile is null, navigating without extra data");
+      // Still navigate even if profile is null
+      context.pushNamed(RouteName.profile);
     }
   }
 
@@ -292,11 +300,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                     title: 'Location Information',
                     icon: Icons.location_on,
                     children: [
-                      _buildInfoRow(
-                        icon: Icons.badge,
-                        label: 'Kebele ID',
-                        value: profileData.kebeleId,
-                      ),
                       if (profileData.kebele != null) ...[
                         const Divider(height: 24),
                         _buildInfoRow(

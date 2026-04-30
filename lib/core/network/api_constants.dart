@@ -2,7 +2,8 @@ class ApiConstants {
   // ================= BASE URLS =================
   static const String baseUrl = "https://agrilink-1-x6ph.onrender.com";
   static const String cropAdvisorBaseUrl =
-      "https://senakebede-crop-advisor-backend.hf.space";
+      "https://senakebede-agrilink.hf.space";
+      
   static const String chatSocketUrl =
       "wss://agrilink-1-x6ph.onrender.com/socket";
 
@@ -64,6 +65,14 @@ class ApiConstants {
   static const String cart = "$baseUrl/cart";
   static String deleteCartItem(String productId) => "$baseUrl/cart/$productId";
 
+  static String myOrdersDateRange(String startDate, String endDate) =>
+      '/orders/my/date-range?startDate=$startDate&endDate=$endDate';
+
+  static String farmerOrdersDateRange(String startDate, String endDate) =>
+      '/orders/farmer/date-range?startDate=$startDate&endDate=$endDate';
+
+  static const String notifications = "$baseUrl/notification";
+
   // ================= ORDER ENDPOINTS =================
   static const String myOrders = "$baseUrl/orders/my-orders";
   static const String farmerOrders = "$baseUrl/orders/farmer-orders";
@@ -80,7 +89,7 @@ class ApiConstants {
   // ================= MARKET INSIGHT ENDPOINTS =================
   static const String marketPrice = "$baseUrl/market-price";
   static const String marketPriceApproved = "$baseUrl/market-price/approved";
-  static const String marketPriceMyProduct = "$baseUrl/market-price/myproduct";
+  static const String marketPriceMyProduct = "$baseUrl/market-price";
 
   static String approveMarketPrice(String id) =>
       "$baseUrl/market-price/approve/$id";

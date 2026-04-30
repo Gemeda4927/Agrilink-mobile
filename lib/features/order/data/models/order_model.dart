@@ -1,66 +1,47 @@
-import '../../domain/entities/order.dart';
-import 'order_item_model.dart';
 
-class OrderModel {
+import '../../domain/entities/order_item.dart';
+import 'product_model.dart';
+
+class OrderItemModel {
   final String id;
-  final String buyerId;
-  final double totalAmount;
-  final String txRef;
-  final String status;
-  final String paymentId;
-  final String paymentUrl;
-  final String currency;
-  final DateTime createdAt;
-  final List<OrderItemModel> items;
+  final String orderId;
+  final String productId;
+  final int amount;
+  final double priceAtOrder;
+  final ProductOrderModel product;
 
-  OrderModel({
+  OrderItemModel({
     required this.id,
-    required this.buyerId,
-    required this.totalAmount,
-    required this.txRef,
-    required this.status,
-    required this.paymentId,
-    required this.paymentUrl,
-    required this.currency,
-    required this.createdAt,
-    required this.items,
+    required this.orderId,
+    required this.productId,
+    required this.amount,
+    required this.priceAtOrder,
+    required this.product,
   });
 
-  factory OrderModel.fromJson(Map<String, dynamic> json) {
-    return OrderModel(
+  factory OrderItemModel.fromJson(Map<String, dynamic> json) {
+    return OrderItemModel(
       id: json['id'] ?? '',
-      buyerId: json['buyerId'] ?? '',
-      totalAmount: json['totalAmount'] != null 
-          ? (json['totalAmount'] as num).toDouble() 
+      orderId: json['orderId'] ?? '',
+      productId: json['productId'] ?? '',
+      amount: json['amount'] ?? 0,
+      priceAtOrder: json['priceAtOrder'] != null
+          ? (json['priceAtOrder'] as num).toDouble()
           : 0.0,
-      txRef: json['tx_ref'] ?? '',
-      status: json['status'] ?? 'PENDING',
-      paymentId: json['paymentId'] ?? '',
-      paymentUrl: json['paymentUrl'] ?? '',
-      currency: json['currency'] ?? 'ETB',
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
-          : DateTime.now(),
-      items: json['items'] != null && json['items'] is List
-          ? (json['items'] as List)
-              .map((item) => OrderItemModel.fromJson(item))
-              .toList()
-          : [],
+      product: json['product'] != null
+          ? ProductOrderModel.fromJson(json['product'])
+          : ProductOrderModel.empty(),
     );
   }
 
-  Order toEntity() {
-    return Order(
+  OrderItem toEntity() {
+    return OrderItem(
       id: id,
-      buyerId: buyerId,
-      totalAmount: totalAmount,
-      txRef: txRef,
-      status: status,
-      paymentId: paymentId,
-      paymentUrl: paymentUrl,
-      currency: currency,
-      createdAt: createdAt,
-      items: items.map((item) => item.toEntity()).toList(),
+      orderId: orderId,
+      productId: productId,
+      amount: amount,
+      priceAtOrder: priceAtOrder,
+      product: product.toEntity(),
     );
   }
 }
